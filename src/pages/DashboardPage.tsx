@@ -3,15 +3,38 @@
  * Panel principal para usuarios autenticados
  */
 
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { MainLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Calendar, QrCode, Download, Settings, LogOut } from 'lucide-react';
+import { Plus, LogOut } from 'lucide-react';
+import { useUserEvents } from '@/hooks/useUserEvents';
+import { 
+  StatsCards, 
+  EventsList, 
+  QRCodesModal, 
+  QuickActions 
+} from '@/components/dashboard';
+import type { UserEvent } from '@/hooks/useUserEvents';
 
 export default function DashboardPage() {
   const { profile, signOut } = useAuth();
+  const { events, stats, isLoading } = useUserEvents();
+  const [selectedEvent, setSelectedEvent] = useState<UserEvent | null>(null);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+
+  const handleViewQR = (event: UserEvent) => {
+    setSelectedEvent(event);
+    setQrModalOpen(true);
+  };
+
+  const handleQuickQR = () => {
+    if (events.length > 0) {
+      setSelectedEvent(events[0]);
+      setQrModalOpen(true);
+    }
+  };
 
   return (
     <MainLayout showFooter={false}>
@@ -41,94 +64,47 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Eventos Activos</CardDescription>
-              <CardTitle className="text-4xl font-display">0</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Fotos Totales</CardDescription>
-              <CardTitle className="text-4xl font-display">0</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Mensajes Recibidos</CardDescription>
-              <CardTitle className="text-4xl font-display">0</CardTitle>
-            </CardHeader>
-          </Card>
+        <div className="mb-8">
+          <StatsCards stats={stats} isLoading={isLoading} />
         </div>
 
         {/* Eventos Section */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-display font-semibold">Mis Eventos</h2>
-          </div>
-
-          {/* Empty State */}
-          <Card className="border-dashed border-2">
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Calendar className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="font-display font-semibold text-lg mb-2">
-                Todavía no tenés eventos
-              </h3>
-              <p className="text-muted-foreground mb-6 max-w-md">
-                Creá tu primer evento y empezá a recibir fotos y mensajes de tus invitados en tiempo real.
-              </p>
-              <Button className="btn-hero" asChild>
+            {events.length > 0 && (
+              <Button variant="outline" size="sm" asChild>
                 <Link to="/crear-evento">
                   <Plus className="w-4 h-4 mr-2" />
-                  Crear Mi Primer Evento
+                  Nuevo
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-            <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-              <CardHeader>
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
-                  <QrCode className="w-5 h-5 text-primary" />
-                </div>
-                <CardTitle className="text-lg">Ver QR Codes</CardTitle>
-                <CardDescription>
-                  Accedé a los códigos QR de tus eventos
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-              <CardHeader>
-                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center mb-2">
-                  <Download className="w-5 h-5 text-accent" />
-                </div>
-                <CardTitle className="text-lg">Descargar Álbumes</CardTitle>
-                <CardDescription>
-                  Descargá el contenido de tus eventos
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="hover:border-primary/50 transition-colors cursor-pointer">
-              <CardHeader>
-                <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center mb-2">
-                  <Settings className="w-5 h-5 text-secondary" />
-                </div>
-                <CardTitle className="text-lg">Configuración</CardTitle>
-                <CardDescription>
-                  Editá tu perfil y preferencias
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            )}
           </div>
+
+          <EventsList 
+            events={events} 
+            isLoading={isLoading} 
+            onViewQR={handleViewQR}
+          />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mt-12 space-y-4">
+          <h2 className="text-xl font-display font-semibold">Acciones Rápidas</h2>
+          <QuickActions 
+            hasEvents={events.length > 0} 
+            onOpenQRModal={handleQuickQR}
+          />
         </div>
       </div>
+
+      {/* QR Codes Modal */}
+      <QRCodesModal
+        event={selectedEvent}
+        open={qrModalOpen}
+        onOpenChange={setQrModalOpen}
+      />
     </MainLayout>
   );
 }
