@@ -16,7 +16,23 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          {/* Rutas públicas */}
+          <Route path="/login" element={<NotFound />} />
+          <Route path="/crear-evento" element={<NotFound />} />
+          {/* Rutas del muro (públicas, sin auth) */}
+          <Route path="/muro/:token" element={<NotFound />} />
+          <Route path="/subir/:token" element={<NotFound />} />
+          <Route path="/album/:token" element={<NotFound />} />
+          {/* Rutas de cliente */}
+          <Route path="/dashboard" element={<NotFound />} />
+          <Route path="/evento/:id" element={<NotFound />} />
+          {/* Rutas de asistente */}
+          <Route path="/asistente/*" element={<NotFound />} />
+          {/* Rutas de salón */}
+          <Route path="/salon/*" element={<NotFound />} />
+          {/* Rutas de super admin */}
+          <Route path="/admin/*" element={<NotFound />} />
+          {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
