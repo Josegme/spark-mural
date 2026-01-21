@@ -1,0 +1,158 @@
+/**
+ * Header del detalle del evento con info principal y acciones
+ */
+
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  ArrowLeft, 
+  Calendar, 
+  Clock, 
+  Sparkles, 
+  Play, 
+  Pause, 
+  CheckCircle,
+  MoreVertical,
+  ExternalLink,
+  QrCode
+} from 'lucide-react';
+import { formatDate, formatTime, getMuroUrl } from '@/lib/utils';
+import type { EventDetails } from '@/hooks/useEventDetails';
+
+interface EventHeaderProps {
+  event: EventDetails;
+  onChangeStatus: (status: string) => void;
+  onOpenQR: () => void;
+  isUpdating?: boolean;
+}
+
+const statusConfig: Record<string, { label: string; className: string; icon: React.ComponentType<{ className?: string }> }> = {
+  programado: { label: 'Programado', className: 'badge-info', icon: Calendar },
+  activo: { label: 'En vivo', className: 'badge-success', icon: Play },
+  pausado: { label: 'Pausado', className: 'badge-warning', icon: Pause },
+  finalizado: { label: 'Finalizado', className: 'bg-muted text-muted-foreground', icon: CheckCircle },
+  cancelado: { label: 'Cancelado', className: 'badge-destructive', icon: CheckCircle },
+};
+
+const eventTypeLabels: Record<string, string> = {
+  cumpleanos: '🎂 Cumpleaños',
+  casamiento: '💒 Casamiento',
+  quince: '👑 15 Años',
+  corporativo: '🏢 Corporativo',
+  bautismo: '👶 Bautismo',
+  comunion: '✝️ Comunión',
+  otro: '🎉 Evento',
+};
+
+export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating }: EventHeaderProps) {
+  const status = statusConfig[event.estado] || statusConfig.programado;
+  const typeLabel = eventTypeLabels[event.tipo] || eventTypeLabels.otro;
+  const StatusIcon = status.icon;
+
+  const muroUrl = getMuroUrl(event.qr_pantalla_token);
+
+  const canActivate = event.estado === 'programado' || event.estado === 'pausado';
+  const canPause = event.estado === 'activo';
+  const canFinish = event.estado === 'activo' || event.estado === 'pausado';
+
+  return (
+    <div className="border-b pb-6 mb-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+        <Link to="/dashboard" className="hover:text-foreground transition-colors flex items-center gap-1">
+          <ArrowLeft className="w-4 h-4" />
+          Dashboard
+        </Link>
+        <span>/</span>
+        <span className="text-foreground">{event.nombre}</span>
+      </div>
+
+      {/* Header principal */}
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-display font-bold">
+              {event.nombre}
+            </h1>
+            {event.es_premium && (
+              <Badge className="badge-premium">
+                <Sparkles className="w-3 h-3 mr-1" />
+                Premium
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <span className="text-muted-foreground">{typeLabel}</span>
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Calendar className="w-4 h-4" />
+              <span>{formatDate(event.fecha_evento)}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Clock className="w-4 h-4" />
+              <span>{formatTime(event.hora_inicio)}</span>
+            </div>
+            <span className={`${status.className} flex items-center gap-1`}>
+              <StatusIcon className="w-3 h-3" />
+              {status.label}
+            </span>
+          </div>
+        </div>
+
+        {/* Acciones */}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onOpenQR}>
+            <QrCode className="w-4 h-4 mr-2" />
+            QR Codes
+          </Button>
+
+          <Button size="sm" asChild>
+            <a href={muroUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Ver Muro
+            </a>
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" disabled={isUpdating}>
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {canActivate && (
+                <DropdownMenuItem onClick={() => onChangeStatus('activo')}>
+                  <Play className="w-4 h-4 mr-2 text-success" />
+                  Iniciar Evento
+                </DropdownMenuItem>
+              )}
+              {canPause && (
+                <DropdownMenuItem onClick={() => onChangeStatus('pausado')}>
+                  <Pause className="w-4 h-4 mr-2 text-warning" />
+                  Pausar Evento
+                </DropdownMenuItem>
+              )}
+              {canFinish && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onChangeStatus('finalizado')}>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Finalizar Evento
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  );
+}
