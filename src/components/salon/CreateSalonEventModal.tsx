@@ -44,6 +44,10 @@ import { EVENT_TYPES, IA_STYLES } from '@/lib/constants';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { SalonStats, SalonTenantInfo } from '@/hooks/useSalonData';
+import type { Database } from '@/integrations/supabase/types';
+
+type EventType = Database['public']['Enums']['event_type'];
+type IAStyle = Database['public']['Enums']['ia_style'];
 
 interface CreateSalonEventModalProps {
   open: boolean;
@@ -55,13 +59,13 @@ interface CreateSalonEventModalProps {
 
 interface FormData {
   nombre: string;
-  tipo: string;
+  tipo: EventType;
   fecha_evento: Date | undefined;
   hora_inicio: string;
   duracion_horas: number;
   es_premium: boolean;
   tema_ia: string;
-  estilo_ia: string;
+  estilo_ia: IAStyle;
 }
 
 export function CreateSalonEventModal({ 
@@ -210,7 +214,7 @@ export function CreateSalonEventModal({
             <Label>Tipo de Evento *</Label>
             <Select 
               value={formData.tipo}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, tipo: value }))}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, tipo: value as EventType }))}
               disabled={!stats.puedeCrearEvento}
             >
               <SelectTrigger>
@@ -327,7 +331,7 @@ export function CreateSalonEventModal({
                 <Label>Estilo Visual</Label>
                 <Select 
                   value={formData.estilo_ia}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, estilo_ia: value }))}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, estilo_ia: value as IAStyle }))}
                   disabled={!stats.puedeCrearEvento}
                 >
                   <SelectTrigger>
