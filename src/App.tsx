@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/auth";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
+import CreateEventPage from "./pages/CreateEventPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,7 +24,6 @@ const App = () => (
             {/* Rutas públicas */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<AuthPage />} />
-            <Route path="/crear-evento" element={<NotFound />} />
             
             {/* Rutas del muro (públicas, sin auth) */}
             <Route path="/muro/:token" element={<NotFound />} />
@@ -36,6 +36,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/crear-evento"
+              element={
+                <ProtectedRoute>
+                  <CreateEventPage />
                 </ProtectedRoute>
               }
             />
