@@ -13,6 +13,7 @@ import EventDetailPage from "./pages/EventDetailPage";
 import MuroPage from "./pages/MuroPage";
 import UploadPage from "./pages/UploadPage";
 import AdminPage from "./pages/AdminPage";
+import AsistentePage from "./pages/AsistentePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,10 +63,18 @@ const App = () => (
             
             {/* Rutas protegidas - Asistente */}
             <Route
+              path="/asistente"
+              element={
+                <ProtectedRoute allowedRoles={['asistente', 'super_admin']}>
+                  <AsistentePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/asistente/*"
               element={
                 <ProtectedRoute allowedRoles={['asistente', 'super_admin']}>
-                  <NotFound />
+                  <AsistentePage />
                 </ProtectedRoute>
               }
             />
