@@ -12,6 +12,7 @@ import CreateEventPage from "./pages/CreateEventPage";
 import EventDetailPage from "./pages/EventDetailPage";
 import MuroPage from "./pages/MuroPage";
 import UploadPage from "./pages/UploadPage";
+import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -81,10 +82,18 @@ const App = () => (
             
             {/* Rutas protegidas - Super Admin */}
             <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['super_admin']}>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/*"
               element={
                 <ProtectedRoute allowedRoles={['super_admin']}>
-                  <NotFound />
+                  <AdminPage />
                 </ProtectedRoute>
               }
             />

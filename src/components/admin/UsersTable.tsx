@@ -1,0 +1,188 @@
+/**
+ * Tabla de gestión de usuarios
+ */
+
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  Users, 
+  MoreVertical, 
+  Search,
+  Eye,
+  Edit,
+  Shield,
+  UserCog
+} from 'lucide-react';
+import { formatDate } from '@/lib/utils';
+import type { AdminUser } from '@/hooks/useAdminData';
+
+interface UsersTableProps {
+  users: AdminUser[];
+  isLoading?: boolean;
+}
+
+const roleConfig: Record<string, { label: string; className: string }> = {
+  super_admin: { label: 'Super Admin', className: 'bg-primary/10 text-primary' },
+  asistente: { label: 'Asistente', className: 'bg-accent/10 text-accent' },
+  salon: { label: 'Salón', className: 'bg-secondary/10 text-secondary' },
+  cliente: { label: 'Cliente', className: 'bg-muted text-muted-foreground' },
+};
+
+export function UsersTable({ users, isLoading }: UsersTableProps) {
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string | null>(null);
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = 
+      user.nombre.toLowerCase().includes(search.toLowerCase()) ||
+      user.email.toLowerCase().includes(search.toLowerCase());
+    const matchesRole = !roleFilter || user.rol === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+
+  // Contar por rol
+  const roleCounts = users.reduce((acc, user) => {
+    acc[user.rol] = (acc[user.rol] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="animate-pulse space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-12 bg-muted rounded" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Usuarios ({users.length})
+          </CardTitle>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar..."
+                className="pl-8 w-64"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <Button
+              variant={roleFilter === null ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setRoleFilter(null)}
+            >
+              Todos
+            </Button>
+            {Object.entries(roleConfig).map(([role, config]) => (
+              <Button
+                key={role}
+                variant={roleFilter === role ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setRoleFilter(role)}
+              >
+                {config.label} ({roleCounts[role] || 0})
+              </Button>
+            ))}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {filteredUsers.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No hay usuarios que coincidan con la búsqueda
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Usuario</TableHead>
+                <TableHead>Rol</TableHead>
+                <TableHead>País</TableHead>
+                <TableHead>Registrado</TableHead>
+                <TableHead className="w-10"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredUsers.map((user) => {
+                const roleInfo = roleConfig[user.rol] || roleConfig.cliente;
+
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{user.nombre}</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={roleInfo.className}>
+                        {user.rol === 'super_admin' && <Shield className="w-3 h-3 mr-1" />}
+                        {roleInfo.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{user.pais || '-'}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(user.created_at)}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Ver Perfil
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <UserCog className="w-4 h-4 mr-2" />
+                            Cambiar Rol
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
