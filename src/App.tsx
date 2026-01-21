@@ -10,6 +10,7 @@ import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import CreateEventPage from "./pages/CreateEventPage";
 import MuroPage from "./pages/MuroPage";
+import UploadPage from "./pages/UploadPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,7 +29,7 @@ const App = () => (
             
             {/* Rutas del muro (públicas, sin auth) */}
             <Route path="/muro/:token" element={<MuroPage />} />
-            <Route path="/subir/:token" element={<NotFound />} />
+            <Route path="/subir/:token" element={<UploadPage />} />
             <Route path="/album/:token" element={<NotFound />} />
             
             {/* Rutas protegidas - Cliente */}
