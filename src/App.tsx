@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import DashboardPage from "./pages/DashboardPage";
 import CreateEventPage from "./pages/CreateEventPage";
+import EventDetailPage from "./pages/EventDetailPage";
 import MuroPage from "./pages/MuroPage";
 import UploadPage from "./pages/UploadPage";
 import NotFound from "./pages/NotFound";
@@ -53,7 +54,7 @@ const App = () => (
               path="/evento/:id"
               element={
                 <ProtectedRoute>
-                  <NotFound />
+                  <EventDetailPage />
                 </ProtectedRoute>
               }
             />
