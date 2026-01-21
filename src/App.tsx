@@ -14,6 +14,7 @@ import MuroPage from "./pages/MuroPage";
 import UploadPage from "./pages/UploadPage";
 import AdminPage from "./pages/AdminPage";
 import AsistentePage from "./pages/AsistentePage";
+import SalonPage from "./pages/SalonPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -81,10 +82,18 @@ const App = () => (
             
             {/* Rutas protegidas - Salón */}
             <Route
+              path="/salon"
+              element={
+                <ProtectedRoute allowedRoles={['salon', 'super_admin']}>
+                  <SalonPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/salon/*"
               element={
                 <ProtectedRoute allowedRoles={['salon', 'super_admin']}>
-                  <NotFound />
+                  <SalonPage />
                 </ProtectedRoute>
               }
             />
