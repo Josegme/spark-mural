@@ -1,5 +1,6 @@
 /**
  * PICKEVENT - Paso 4: Pago y Confirmación
+ * Muestra automáticamente Stripe o Mercado Pago según el país
  */
 
 import { useForm } from 'react-hook-form';
@@ -9,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { stepPaymentSchema, StepPaymentData } from '@/lib/validations/event';
-import { WizardFormData } from '@/hooks/useCreateEvent';
+import { WizardFormData, PaymentGateway } from '@/hooks/useCreateEvent';
 import { EVENT_TYPES, EVENT_PRICES } from '@/lib/constants';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -20,9 +21,10 @@ interface StepPaymentProps {
   onBack: () => void;
   isSubmitting: boolean;
   calculatePrice: () => number;
+  activeGateway?: PaymentGateway;
 }
 
-export function StepPayment({ formData, onSubmit, onBack, isSubmitting, calculatePrice }: StepPaymentProps) {
+export function StepPayment({ formData, onSubmit, onBack, isSubmitting, calculatePrice, activeGateway = 'mercadopago' }: StepPaymentProps) {
   const form = useForm<StepPaymentData>({
     resolver: zodResolver(stepPaymentSchema),
     defaultValues: {
@@ -153,9 +155,14 @@ export function StepPayment({ formData, onSubmit, onBack, isSubmitting, calculat
             </div>
             <div className="flex items-center gap-2">
               <CreditCard className="w-6 h-6 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                Mercado Pago / Tarjeta
-              </span>
+              <div className="text-right">
+                <span className="text-sm text-muted-foreground block">
+                  {activeGateway === 'stripe' ? 'Stripe' : 'Mercado Pago'}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {activeGateway === 'stripe' ? 'Tarjeta de crédito/débito' : 'Tarjeta / Transferencia'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
