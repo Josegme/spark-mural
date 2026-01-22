@@ -15,7 +15,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAdminData } from '@/hooks/useAdminData';
-import { AdminStats, TenantsTable, UsersTable } from '@/components/admin';
+import { AdminStats, TenantsTable, UsersTable, LaunchChecklist } from '@/components/admin';
 
 export default function AdminPage() {
   const { stats, tenants, users, isLoading, refetch } = useAdminData();
@@ -69,7 +69,14 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <AdminStats stats={stats} isLoading={isLoading} />
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <AdminStats stats={stats} isLoading={isLoading} />
+              </div>
+              <div>
+                <LaunchChecklist />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="tenants">
