@@ -15,6 +15,7 @@ export default function MuroPage() {
   const {
     event,
     contents,
+    photoContents,
     currentIndex,
     isLoading,
     error,
@@ -73,16 +74,17 @@ export default function MuroPage() {
           totalMessages={totalMessages}
         />
 
-        {/* Área principal: Carrusel + Mensajes */}
+        {/* Área principal: Carrusel de FOTOS + Mensajes flotantes */}
         <div className="flex-1 relative">
+          {/* Carrusel solo muestra fotos */}
           <MuroCarousel
-            contents={contents}
+            contents={photoContents}
             currentIndex={currentIndex}
             isPremium={event.es_premium}
           />
           
-          {/* Mensajes flotantes en el lateral */}
-          <MuroMessages messages={contents} maxVisible={3} />
+          {/* Mensajes flotantes en el lateral (aparecen y desaparecen en 5 seg) */}
+          <MuroMessages messages={contents} />
         </div>
       </div>
     </MuroLayout>

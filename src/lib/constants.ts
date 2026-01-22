@@ -29,6 +29,10 @@ export const APP_CONFIG = {
   CAROUSEL_PHOTO_WITH_IA_DURATION: 7000, // 7 segundos (3 original + 1 transición + 3 IA)
   CAROUSEL_TRANSITION_DURATION: 1000, // 1 segundo
   
+  // Tiempos de mensajes flotantes (en milisegundos)
+  MESSAGE_BUBBLE_DURATION: 5000, // 5 segundos - luego desaparece
+  MESSAGE_MAX_VISIBLE: 3, // Máximo 3 mensajes visibles a la vez
+  
   // Colores por defecto del muro
   DEFAULT_BANNER_COLOR: '#4c1d95', // Púrpura oscuro
 } as const;

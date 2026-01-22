@@ -35,6 +35,7 @@ export interface MuroEvent {
 interface UseMuroRealtimeReturn {
   event: MuroEvent | null;
   contents: MuroContent[];
+  photoContents: MuroContent[];
   currentIndex: number;
   isLoading: boolean;
   error: string | null;
@@ -79,6 +80,7 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
       .select('id, tipo, url_original, url_ia, mensaje_texto, invitado_nombre, likes_count, created_at, estado_ia')
       .eq('evento_id', eventId)
       .eq('aprobado', true)
+      .in('tipo', ['foto', 'mensaje']) // Solo fotos y mensajes - videos van al álbum
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -156,12 +158,15 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
     };
   }, [token, fetchEvent, fetchContents, setupRealtime]);
 
-  // Auto-rotación del carrusel
+  // Solo fotos para el carrusel (mensajes van en globitos flotantes)
+  const photoContents = contents.filter((c) => c.tipo === 'foto');
+
+  // Auto-rotación del carrusel (solo fotos)
   useEffect(() => {
-    if (contents.length <= 1) return;
+    if (photoContents.length <= 1) return;
 
     carouselIntervalRef.current = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % contents.length);
+      setCurrentIndex((prev) => (prev + 1) % photoContents.length);
     }, APP_CONFIG.CAROUSEL_PHOTO_DURATION);
 
     return () => {
@@ -169,24 +174,27 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
         clearInterval(carouselIntervalRef.current);
       }
     };
-  }, [contents.length]);
+  }, [photoContents.length]);
 
-  // Navegación manual
+  // Navegación manual (solo entre fotos)
   const goToNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % contents.length);
-  }, [contents.length]);
+    if (photoContents.length === 0) return;
+    setCurrentIndex((prev) => (prev + 1) % photoContents.length);
+  }, [photoContents.length]);
 
   const goToPrevious = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + contents.length) % contents.length);
-  }, [contents.length]);
+    if (photoContents.length === 0) return;
+    setCurrentIndex((prev) => (prev - 1 + photoContents.length) % photoContents.length);
+  }, [photoContents.length]);
 
   // Estadísticas
-  const totalPhotos = contents.filter((c) => c.tipo === 'foto').length;
+  const totalPhotos = photoContents.length;
   const totalMessages = contents.filter((c) => c.tipo === 'mensaje').length;
 
   return {
     event,
-    contents,
+    contents, // Todos los contenidos (para mensajes flotantes)
+    photoContents, // Solo fotos (para el carrusel)
     currentIndex,
     isLoading,
     error,
