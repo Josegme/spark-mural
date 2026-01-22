@@ -16,6 +16,7 @@ import AdminPage from "./pages/AdminPage";
 import AsistentePage from "./pages/AsistentePage";
 import SalonPage from "./pages/SalonPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import TestingGuidePage from "./pages/TestingGuidePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -123,6 +124,16 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['super_admin']}>
                   <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Testing Guide - Solo desarrollo/super_admin */}
+            <Route
+              path="/testing-guide"
+              element={
+                <ProtectedRoute allowedRoles={['super_admin']}>
+                  <TestingGuidePage />
                 </ProtectedRoute>
               }
             />
