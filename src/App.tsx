@@ -7,6 +7,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
+import RecuperarPasswordPage from "./pages/RecuperarPasswordPage";
+import RestablecerPasswordPage from "./pages/RestablecerPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import CreateEventPage from "./pages/CreateEventPage";
 import EventDetailPage from "./pages/EventDetailPage";
@@ -32,6 +34,8 @@ const App = () => (
             {/* Rutas públicas */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<AuthPage />} />
+            <Route path="/recuperar-password" element={<RecuperarPasswordPage />} />
+            <Route path="/restablecer-password" element={<RestablecerPasswordPage />} />
             
             {/* Rutas del muro (públicas, sin auth) */}
             <Route path="/muro/:token" element={<MuroPage />} />
