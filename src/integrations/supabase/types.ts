@@ -524,6 +524,47 @@ export type Database = {
           },
         ]
       }
+      tenant_payment_credentials: {
+        Row: {
+          created_at: string
+          credentials_encrypted: string
+          id: string
+          is_active: boolean
+          is_sandbox: boolean
+          provider: Database["public"]["Enums"]["payment_gateway"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credentials_encrypted: string
+          id?: string
+          is_active?: boolean
+          is_sandbox?: boolean
+          provider: Database["public"]["Enums"]["payment_gateway"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credentials_encrypted?: string
+          id?: string
+          is_active?: boolean
+          is_sandbox?: boolean
+          provider?: Database["public"]["Enums"]["payment_gateway"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_payment_credentials_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           comision_asistente: number | null
