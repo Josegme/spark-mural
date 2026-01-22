@@ -14,6 +14,7 @@ import CreateEventPage from "./pages/CreateEventPage";
 import EventDetailPage from "./pages/EventDetailPage";
 import MuroPage from "./pages/MuroPage";
 import UploadPage from "./pages/UploadPage";
+import AlbumPage from "./pages/AlbumPage";
 import AdminPage from "./pages/AdminPage";
 import AsistentePage from "./pages/AsistentePage";
 import SalonPage from "./pages/SalonPage";
@@ -40,7 +41,7 @@ const App = () => (
             {/* Rutas del muro (públicas, sin auth) */}
             <Route path="/muro/:token" element={<MuroPage />} />
             <Route path="/subir/:token" element={<UploadPage />} />
-            <Route path="/album/:token" element={<NotFound />} />
+            <Route path="/album/:token" element={<AlbumPage />} />
             
             {/* Ruta de pago exitoso (protegida) */}
             <Route

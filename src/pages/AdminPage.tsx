@@ -12,10 +12,12 @@ import {
   Users, 
   FileText,
   RefreshCw,
-  Loader2
+  Loader2,
+  UserPlus
 } from 'lucide-react';
 import { useAdminData } from '@/hooks/useAdminData';
 import { AdminStats, TenantsTable, UsersTable, LaunchChecklist } from '@/components/admin';
+import TenantAssignment from '@/components/admin/TenantAssignment';
 
 export default function AdminPage() {
   const { stats, tenants, users, isLoading, refetch } = useAdminData();
@@ -49,7 +51,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-4">
+          <TabsList className="grid w-full max-w-2xl grid-cols-5">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -61,6 +63,10 @@ export default function AdminPage() {
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Usuarios</span>
+            </TabsTrigger>
+            <TabsTrigger value="assign" className="gap-2">
+              <UserPlus className="w-4 h-4" />
+              <span className="hidden sm:inline">Asignar</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="gap-2">
               <FileText className="w-4 h-4" />
@@ -85,6 +91,10 @@ export default function AdminPage() {
 
           <TabsContent value="users">
             <UsersTable users={users} isLoading={isLoading} />
+          </TabsContent>
+
+          <TabsContent value="assign">
+            <TenantAssignment />
           </TabsContent>
 
           <TabsContent value="reports">
