@@ -177,8 +177,8 @@ serve(async (req) => {
               pasarela_pago: 'mercadopago_ar',
               payment_id: payment.id.toString(),
             })
-            .select('id')
-            .single();
+              .select('id')
+              .single();
 
           if (eventoError) {
             console.error('Error creating event:', eventoError);
@@ -190,6 +190,24 @@ serve(async (req) => {
               .from('pagos')
               .update({ evento_id: evento.id })
               .eq('id', existingPayment.id);
+
+            // Send QR codes email automatically
+            console.log('Triggering email send for event:', evento.id);
+            try {
+              const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-event-qr-emails`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabaseServiceKey}`,
+                },
+                body: JSON.stringify({ evento_id: evento.id }),
+              });
+              const emailResult = await emailResponse.json();
+              console.log('Email send result:', emailResult);
+            } catch (emailError) {
+              console.error('Failed to send QR emails:', emailError);
+              // Don't fail the webhook if email fails
+            }
           }
         }
       }
