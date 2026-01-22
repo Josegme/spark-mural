@@ -28,6 +28,7 @@ export function CreateEventWizard() {
     isSubmitting,
     createdEvent,
     navigate,
+    getActiveGateway,
   } = useCreateEvent();
 
   // Si el evento fue creado, mostrar pantalla de éxito
@@ -85,6 +86,7 @@ export function CreateEventWizard() {
             onBack={prevStep}
             isSubmitting={isSubmitting}
             calculatePrice={calculatePrice}
+            activeGateway={getActiveGateway()}
           />
         );
       default:

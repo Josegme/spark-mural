@@ -1,5 +1,6 @@
 /**
  * PICKEVENT - Hook para crear eventos con pago integrado
+ * Soporta múltiples pasarelas: Mercado Pago (AR/BR/PY) y Stripe (NZ/ES/AU/US/GB)
  */
 
 import { useState } from 'react';
@@ -8,8 +9,46 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateQRToken } from '@/lib/utils';
 import { CreateEventData } from '@/lib/validations/event';
-import { EVENT_PRICES } from '@/lib/constants';
+import { EVENT_PRICES, PAYMENT_GATEWAYS } from '@/lib/constants';
 import { toast } from 'sonner';
+
+// Países que usan Stripe
+const STRIPE_COUNTRIES = ['NZ', 'ES', 'AU', 'US', 'GB', 'DE', 'FR', 'IT'];
+// Países que usan Mercado Pago
+const MP_COUNTRIES = ['AR', 'BR', 'PY', 'MX', 'CL', 'CO', 'UY', 'PE'];
+
+export type PaymentGateway = 'mercadopago' | 'stripe';
+
+export function getPaymentGateway(countryCode: string): PaymentGateway {
+  if (STRIPE_COUNTRIES.includes(countryCode.toUpperCase())) {
+    return 'stripe';
+  }
+  return 'mercadopago';
+}
+
+export function getCountryFromProfile(pais: string | null | undefined): string {
+  if (!pais) return 'AR'; // Default to Argentina
+  
+  // Map common country names to codes
+  const countryMap: Record<string, string> = {
+    'argentina': 'AR',
+    'brasil': 'BR',
+    'brazil': 'BR',
+    'paraguay': 'PY',
+    'new zealand': 'NZ',
+    'nueva zelanda': 'NZ',
+    'españa': 'ES',
+    'spain': 'ES',
+    'australia': 'AU',
+    'united states': 'US',
+    'estados unidos': 'US',
+    'united kingdom': 'GB',
+    'reino unido': 'GB',
+  };
+  
+  const normalized = pais.toLowerCase().trim();
+  return countryMap[normalized] || pais.toUpperCase().substring(0, 2);
+}
 
 export interface WizardFormData extends CreateEventData {
   aceptaTerminos: boolean;
@@ -73,7 +112,107 @@ export function useCreateEvent() {
     return formData.es_premium ? EVENT_PRICES.premium.precio : EVENT_PRICES.basico.precio;
   };
 
+  // Detectar qué pasarela usar según el país del usuario
+  const getActiveGateway = (): PaymentGateway => {
+    const countryCode = getCountryFromProfile(profile?.pais);
+    return getPaymentGateway(countryCode);
+  };
+
   // Iniciar proceso de pago con Mercado Pago
+  const initiatePaymentMP = async (): Promise<boolean> => {
+    const precio = calculatePrice();
+
+    const { data, error } = await supabase.functions.invoke('create-payment-preference', {
+      body: {
+        nombre_evento: formData.nombre,
+        tipo_evento: formData.tipo,
+        es_premium: formData.es_premium,
+        precio: precio,
+        cliente_email: profile!.email,
+        cliente_nombre: profile!.nombre,
+        evento_data: {
+          tipo: formData.tipo,
+          fecha_evento: formData.fecha_evento,
+          hora_inicio: formData.hora_inicio,
+          duracion_horas: formData.duracion_horas,
+          tema_ia: formData.es_premium ? formData.tema_ia : null,
+          estilo_ia: formData.es_premium ? formData.estilo_ia : null,
+          logo_url: formData.logo_url,
+          color_banner: formData.color_banner,
+          limite_subidas_por_invitado: formData.limite_subidas_por_invitado,
+          moderacion_activa: formData.moderacion_activa,
+        },
+      },
+    });
+
+    if (error) {
+      console.error('Error creating MP payment preference:', error);
+      toast.error('Error al iniciar el pago con Mercado Pago.');
+      return false;
+    }
+
+    if (!data?.init_point && !data?.sandbox_init_point) {
+      console.error('No MP payment URL received:', data);
+      toast.error('Error al conectar con Mercado Pago');
+      return false;
+    }
+
+    const checkoutUrl = data.sandbox_init_point || data.init_point;
+    toast.success('Redirigiendo a Mercado Pago...');
+    
+    setTimeout(() => {
+      window.location.href = checkoutUrl;
+    }, 500);
+
+    return true;
+  };
+
+  // Iniciar proceso de pago con Stripe
+  const initiatePaymentStripe = async (): Promise<boolean> => {
+    const precio = calculatePrice();
+    const countryCode = getCountryFromProfile(profile?.pais);
+
+    const { data, error } = await supabase.functions.invoke('create-stripe-payment', {
+      body: {
+        evento_nombre: formData.nombre,
+        evento_tipo: formData.tipo,
+        fecha_evento: formData.fecha_evento,
+        hora_inicio: formData.hora_inicio,
+        duracion_horas: formData.duracion_horas,
+        es_premium: formData.es_premium,
+        precio: precio,
+        moneda: 'nzd', // Default, will be overridden by country
+        pais: countryCode,
+        estilo_ia: formData.es_premium ? formData.estilo_ia : undefined,
+        tema_ia: formData.es_premium ? formData.tema_ia : undefined,
+        color_banner: formData.color_banner,
+        cliente_email: profile!.email,
+        cliente_nombre: profile!.nombre,
+      },
+    });
+
+    if (error) {
+      console.error('Error creating Stripe payment:', error);
+      toast.error('Error al iniciar el pago con Stripe.');
+      return false;
+    }
+
+    if (!data?.url) {
+      console.error('No Stripe checkout URL received:', data);
+      toast.error('Error al conectar con Stripe');
+      return false;
+    }
+
+    toast.success('Redirigiendo a Stripe...');
+    
+    setTimeout(() => {
+      window.location.href = data.url;
+    }, 500);
+
+    return true;
+  };
+
+  // Iniciar proceso de pago (detecta automáticamente la pasarela)
   const initiatePayment = async (): Promise<boolean> => {
     if (!user || !profile) {
       toast.error('Debés iniciar sesión para crear un evento');
@@ -83,7 +222,6 @@ export function useCreateEvent() {
     setIsSubmitting(true);
 
     try {
-      // Get current session for auth token
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.access_token) {
@@ -91,56 +229,14 @@ export function useCreateEvent() {
         return false;
       }
 
-      const precio = calculatePrice();
+      const gateway = getActiveGateway();
+      console.log('Using payment gateway:', gateway, 'for country:', profile.pais);
 
-      // Call edge function to create payment preference
-      const { data, error } = await supabase.functions.invoke('create-payment-preference', {
-        body: {
-          nombre_evento: formData.nombre,
-          tipo_evento: formData.tipo,
-          es_premium: formData.es_premium,
-          precio: precio,
-          cliente_email: profile.email,
-          cliente_nombre: profile.nombre,
-          evento_data: {
-            tipo: formData.tipo,
-            fecha_evento: formData.fecha_evento,
-            hora_inicio: formData.hora_inicio,
-            duracion_horas: formData.duracion_horas,
-            tema_ia: formData.es_premium ? formData.tema_ia : null,
-            estilo_ia: formData.es_premium ? formData.estilo_ia : null,
-            logo_url: formData.logo_url,
-            color_banner: formData.color_banner,
-            limite_subidas_por_invitado: formData.limite_subidas_por_invitado,
-            moderacion_activa: formData.moderacion_activa,
-          },
-        },
-      });
-
-      if (error) {
-        console.error('Error creating payment preference:', error);
-        toast.error('Error al iniciar el pago. Intentá de nuevo.');
-        return false;
+      if (gateway === 'stripe') {
+        return await initiatePaymentStripe();
+      } else {
+        return await initiatePaymentMP();
       }
-
-      if (!data?.init_point && !data?.sandbox_init_point) {
-        console.error('No payment URL received:', data);
-        toast.error('Error al conectar con Mercado Pago');
-        return false;
-      }
-
-      // Redirect to Mercado Pago checkout
-      // Use sandbox_init_point for testing, init_point for production
-      const checkoutUrl = data.sandbox_init_point || data.init_point;
-      
-      toast.success('Redirigiendo a Mercado Pago...');
-      
-      // Small delay so user sees the toast
-      setTimeout(() => {
-        window.location.href = checkoutUrl;
-      }, 500);
-
-      return true;
 
     } catch (error) {
       console.error('Error initiating payment:', error);
@@ -232,5 +328,6 @@ export function useCreateEvent() {
     createdEvent,
     resetWizard,
     navigate,
+    getActiveGateway,
   };
 }
