@@ -103,9 +103,9 @@ serve(async (req) => {
         name: body.cliente_nombre,
       },
       back_urls: {
-        success: `${origin}/dashboard?payment=success&ref=${externalReference}`,
+        success: `${origin}/pago-exitoso?payment=success&ref=${externalReference}`,
         failure: `${origin}/crear-evento?payment=failure`,
-        pending: `${origin}/dashboard?payment=pending&ref=${externalReference}`,
+        pending: `${origin}/pago-exitoso?payment=pending&ref=${externalReference}`,
       },
       auto_return: 'approved',
       external_reference: externalReference,

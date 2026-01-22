@@ -15,6 +15,7 @@ import UploadPage from "./pages/UploadPage";
 import AdminPage from "./pages/AdminPage";
 import AsistentePage from "./pages/AsistentePage";
 import SalonPage from "./pages/SalonPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,16 @@ const App = () => (
             <Route path="/muro/:token" element={<MuroPage />} />
             <Route path="/subir/:token" element={<UploadPage />} />
             <Route path="/album/:token" element={<NotFound />} />
+            
+            {/* Ruta de pago exitoso (protegida) */}
+            <Route
+              path="/pago-exitoso"
+              element={
+                <ProtectedRoute>
+                  <PaymentSuccessPage />
+                </ProtectedRoute>
+              }
+            />
             
             {/* Rutas protegidas - Cliente */}
             <Route
