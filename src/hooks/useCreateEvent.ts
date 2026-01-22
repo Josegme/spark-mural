@@ -1,5 +1,5 @@
 /**
- * PICKEVENT - Hook para crear eventos
+ * PICKEVENT - Hook para crear eventos con pago integrado
  */
 
 import { useState } from 'react';
@@ -33,7 +33,7 @@ const initialFormData: WizardFormData = {
 
 export function useCreateEvent() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<WizardFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,7 +73,86 @@ export function useCreateEvent() {
     return formData.es_premium ? EVENT_PRICES.premium.precio : EVENT_PRICES.basico.precio;
   };
 
-  const createEvent = async (): Promise<boolean> => {
+  // Iniciar proceso de pago con Mercado Pago
+  const initiatePayment = async (): Promise<boolean> => {
+    if (!user || !profile) {
+      toast.error('Debés iniciar sesión para crear un evento');
+      return false;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Get current session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        toast.error('Sesión expirada. Por favor, volvé a iniciar sesión.');
+        return false;
+      }
+
+      const precio = calculatePrice();
+
+      // Call edge function to create payment preference
+      const { data, error } = await supabase.functions.invoke('create-payment-preference', {
+        body: {
+          nombre_evento: formData.nombre,
+          tipo_evento: formData.tipo,
+          es_premium: formData.es_premium,
+          precio: precio,
+          cliente_email: profile.email,
+          cliente_nombre: profile.nombre,
+          evento_data: {
+            tipo: formData.tipo,
+            fecha_evento: formData.fecha_evento,
+            hora_inicio: formData.hora_inicio,
+            duracion_horas: formData.duracion_horas,
+            tema_ia: formData.es_premium ? formData.tema_ia : null,
+            estilo_ia: formData.es_premium ? formData.estilo_ia : null,
+            logo_url: formData.logo_url,
+            color_banner: formData.color_banner,
+            limite_subidas_por_invitado: formData.limite_subidas_por_invitado,
+            moderacion_activa: formData.moderacion_activa,
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Error creating payment preference:', error);
+        toast.error('Error al iniciar el pago. Intentá de nuevo.');
+        return false;
+      }
+
+      if (!data?.init_point && !data?.sandbox_init_point) {
+        console.error('No payment URL received:', data);
+        toast.error('Error al conectar con Mercado Pago');
+        return false;
+      }
+
+      // Redirect to Mercado Pago checkout
+      // Use sandbox_init_point for testing, init_point for production
+      const checkoutUrl = data.sandbox_init_point || data.init_point;
+      
+      toast.success('Redirigiendo a Mercado Pago...');
+      
+      // Small delay so user sees the toast
+      setTimeout(() => {
+        window.location.href = checkoutUrl;
+      }, 500);
+
+      return true;
+
+    } catch (error) {
+      console.error('Error initiating payment:', error);
+      toast.error('Error inesperado. Intentá de nuevo.');
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Crear evento directamente (sin pago - para flujos especiales)
+  const createEventDirectly = async (): Promise<boolean> => {
     if (!user) {
       toast.error('Debés iniciar sesión para crear un evento');
       return false;
@@ -82,7 +161,6 @@ export function useCreateEvent() {
     setIsSubmitting(true);
 
     try {
-      // Generar tokens únicos para QR
       const qr_pantalla_token = generateQRToken();
       const qr_invitados_token = generateQRToken();
       const qr_descarga_token = generateQRToken();
@@ -148,7 +226,8 @@ export function useCreateEvent() {
     prevStep,
     goToStep,
     calculatePrice,
-    createEvent,
+    initiatePayment,
+    createEventDirectly,
     isSubmitting,
     createdEvent,
     resetWizard,

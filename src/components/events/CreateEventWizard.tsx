@@ -24,7 +24,7 @@ export function CreateEventWizard() {
     nextStep,
     prevStep,
     calculatePrice,
-    createEvent,
+    initiatePayment,
     isSubmitting,
     createdEvent,
     navigate,
@@ -81,7 +81,7 @@ export function CreateEventWizard() {
         return (
           <StepPayment
             formData={formData}
-            onSubmit={createEvent}
+            onSubmit={initiatePayment}
             onBack={prevStep}
             isSubmitting={isSubmitting}
             calculatePrice={calculatePrice}
