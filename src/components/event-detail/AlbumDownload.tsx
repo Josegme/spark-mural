@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import type { EventDetails, EventContent } from '@/hooks/useEventDetails';
 
 interface AlbumDownloadProps {
@@ -42,7 +41,7 @@ export function AlbumDownload({ event, content }: AlbumDownloadProps) {
     : null;
   const isExpired = albumExpiry && albumExpiry < new Date();
 
-  // Descarga ZIP usando la edge function
+  // Descarga ZIP usando fetch directo (para obtener el blob correctamente)
   const handleDownloadZip = async () => {
     if (photos.length === 0 && videos.length === 0) {
       toast.error('No hay contenido para descargar');
@@ -52,19 +51,35 @@ export function AlbumDownload({ event, content }: AlbumDownloadProps) {
     setDownloadingZip(true);
 
     try {
-      const response = await supabase.functions.invoke('download-album-zip', {
-        body: {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      // Usar fetch directo para obtener el blob correctamente
+      const response = await fetch(`${supabaseUrl}/functions/v1/download-album-zip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+          'apikey': supabaseKey,
+        },
+        body: JSON.stringify({
           token: event.qr_descarga_token,
           include_ia: includeIA && event.es_premium,
-        },
+        }),
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Error al generar el ZIP');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Error ${response.status}`);
       }
 
-      // La respuesta es un blob del ZIP
-      const blob = new Blob([response.data], { type: 'application/zip' });
+      // Obtener el blob directamente de la respuesta
+      const blob = await response.blob();
+      
+      if (blob.size === 0) {
+        throw new Error('El archivo ZIP está vacío');
+      }
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

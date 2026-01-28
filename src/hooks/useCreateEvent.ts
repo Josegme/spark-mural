@@ -359,6 +359,10 @@ export function useCreateEvent() {
       const qr_invitados_token = generateQRToken();
       const qr_descarga_token = generateQRToken();
 
+      // Determine tenant_id: if user is salon, use their tenant_id
+      const userRole = getUserFlowRole();
+      const tenantId = (userRole === 'salon' && profile?.tenant_id) ? profile.tenant_id : null;
+
       const eventData = {
         cliente_user_id: user.id,
         nombre: formData.nombre,
@@ -379,6 +383,8 @@ export function useCreateEvent() {
         qr_invitados_token,
         qr_descarga_token,
         estado: 'programado' as const,
+        // Associate with salon's tenant if applicable
+        tenant_id: tenantId,
       };
 
       const { data, error } = await supabase

@@ -3,6 +3,7 @@
  * Muestra estado del plan, próximo pago y alertas
  */
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,9 +12,13 @@ import {
   Calendar,
   CheckCircle2,
   AlertCircle,
-  Clock
+  Clock,
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
 import { formatPrice, formatDate } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { SalonSubscription as SalonSubscriptionType, SalonStats } from '@/hooks/useSalonData';
 
 interface SalonSubscriptionProps {
@@ -23,6 +28,28 @@ interface SalonSubscriptionProps {
 }
 
 export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscriptionProps) {
+  const [isPayingSubscription, setIsPayingSubscription] = useState(false);
+
+  const handlePaySubscription = async () => {
+    if (!suscripcion) return;
+    
+    setIsPayingSubscription(true);
+    
+    try {
+      // TODO: Implement subscription payment flow with Mercado Pago
+      // For now, show a message that they should contact support
+      toast.info(
+        'Para renovar tu suscripción, contactá a tu ejecutivo de cuenta o escribinos a soporte@pickevent.com',
+        { duration: 6000 }
+      );
+    } catch (error) {
+      console.error('Error initiating subscription payment:', error);
+      toast.error('Error al iniciar el pago');
+    } finally {
+      setIsPayingSubscription(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="animate-pulse">
@@ -50,8 +77,10 @@ export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscr
           <p className="text-sm text-muted-foreground mb-4">
             No tenés una suscripción activa. Contactá con soporte para activar tu plan.
           </p>
-          <Button variant="outline" disabled>
-            Contactar Soporte
+          <Button variant="outline" asChild>
+            <a href="mailto:soporte@pickevent.com">
+              Contactar Soporte
+            </a>
           </Button>
         </CardContent>
       </Card>
@@ -143,6 +172,27 @@ export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscr
             <span className="font-bold">{suscripcion.limite_eventos_mes}/mes</span>
           </div>
         </div>
+
+        {/* Botón de Pago */}
+        {(stats.alertaCritica || stats.alertaVencimiento) && (
+          <Button 
+            className="w-full" 
+            onClick={handlePaySubscription}
+            disabled={isPayingSubscription}
+          >
+            {isPayingSubscription ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Procesando...
+              </>
+            ) : (
+              <>
+                <ExternalLink className="w-4 h-4 mr-2" />
+                {stats.alertaCritica ? 'Renovar Suscripción' : 'Pagar Ahora'}
+              </>
+            )}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
