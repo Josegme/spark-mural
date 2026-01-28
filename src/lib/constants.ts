@@ -51,11 +51,12 @@ export const EVENT_TYPES = {
 export const EVENT_STATUS = {
   programado: { label: 'Programado', icon: '⏱️', color: 'info' },
   activo: { label: 'En Vivo', icon: '🔴', color: 'success' },
+  pausado: { label: 'Pausado', icon: '⏸️', color: 'warning' },
   finalizado: { label: 'Finalizado', icon: '✅', color: 'muted' },
   cancelado: { label: 'Cancelado', icon: '❌', color: 'destructive' },
 } as const;
 
-// Estilos de IA disponibles
+// Estilos de IA disponibles (incluyendo los nuevos)
 export const IA_STYLES = {
   caricatura: { 
     label: 'Caricatura', 
@@ -86,6 +87,31 @@ export const IA_STYLES = {
     label: 'Fantasía', 
     description: 'Arte fantástico, mágico y etéreo',
     icon: '🧚'
+  },
+  anime: { 
+    label: 'Anime', 
+    description: 'Estilo japonés con ojos grandes y colores vibrantes',
+    icon: '🌸'
+  },
+  vintage: { 
+    label: 'Vintage', 
+    description: 'Filtro retro con tonos sepia y grano de película',
+    icon: '📷'
+  },
+  acuarela: { 
+    label: 'Acuarela', 
+    description: 'Pintura artística con colores fluidos y bordes suaves',
+    icon: '🖌️'
+  },
+  neon: { 
+    label: 'Neón', 
+    description: 'Efectos brillantes con colores fluorescentes',
+    icon: '💜'
+  },
+  minimalista: { 
+    label: 'Minimalista', 
+    description: 'Formas simples, paleta limitada y diseño limpio',
+    icon: '⬜'
   },
 } as const;
 

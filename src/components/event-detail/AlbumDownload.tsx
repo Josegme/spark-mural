@@ -1,5 +1,5 @@
 /**
- * Panel de descarga del álbum
+ * Panel de descarga del álbum con opción de ZIP
  */
 
 import { useState } from 'react';
@@ -7,17 +7,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Download, 
   Image, 
   Video, 
   FileArchive, 
   Clock,
-  CheckCircle,
-  ExternalLink
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { EventDetails, EventContent } from '@/hooks/useEventDetails';
 
 interface AlbumDownloadProps {
@@ -26,25 +28,66 @@ interface AlbumDownloadProps {
 }
 
 export function AlbumDownload({ event, content }: AlbumDownloadProps) {
-  const { toast } = useToast();
   const [downloading, setDownloading] = useState(false);
+  const [downloadingZip, setDownloadingZip] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [includeIA, setIncludeIA] = useState(true);
 
   const photos = content.filter(c => c.tipo === 'foto' && c.aprobado);
   const videos = content.filter(c => c.tipo === 'video' && c.aprobado);
+  const photosWithIA = photos.filter(p => p.url_ia);
 
   const albumExpiry = event.album_disponible_hasta 
     ? new Date(event.album_disponible_hasta)
     : null;
   const isExpired = albumExpiry && albumExpiry < new Date();
 
+  // Descarga ZIP usando la edge function
+  const handleDownloadZip = async () => {
+    if (photos.length === 0 && videos.length === 0) {
+      toast.error('No hay contenido para descargar');
+      return;
+    }
+
+    setDownloadingZip(true);
+
+    try {
+      const response = await supabase.functions.invoke('download-album-zip', {
+        body: {
+          token: event.qr_descarga_token,
+          include_ia: includeIA && event.es_premium,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Error al generar el ZIP');
+      }
+
+      // La respuesta es un blob del ZIP
+      const blob = new Blob([response.data], { type: 'application/zip' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `PickEvent_${event.nombre.replace(/[^a-zA-Z0-9]/g, '_')}_Album.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('¡Álbum descargado correctamente!');
+    } catch (error: unknown) {
+      console.error('Error downloading ZIP:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(`Error: ${errorMessage}`);
+    } finally {
+      setDownloadingZip(false);
+    }
+  };
+
+  // Descarga individual (método anterior)
   const handleDownloadAll = async () => {
     if (photos.length === 0 && videos.length === 0) {
-      toast({
-        title: 'Sin contenido',
-        description: 'No hay fotos o videos para descargar',
-        variant: 'destructive',
-      });
+      toast.error('No hay fotos o videos para descargar');
       return;
     }
 
@@ -52,17 +95,14 @@ export function AlbumDownload({ event, content }: AlbumDownloadProps) {
     setProgress(0);
 
     try {
-      // Simular progreso de descarga
       const totalItems = photos.length + videos.length;
       let downloaded = 0;
 
       for (const item of [...photos, ...videos]) {
         if (item.url_original) {
-          // Descargar cada archivo
           const response = await fetch(item.url_original);
           const blob = await response.blob();
           
-          // Crear link de descarga
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
@@ -75,21 +115,13 @@ export function AlbumDownload({ event, content }: AlbumDownloadProps) {
           downloaded++;
           setProgress(Math.round((downloaded / totalItems) * 100));
           
-          // Pequeña pausa entre descargas
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       }
 
-      toast({
-        title: '¡Descarga completa!',
-        description: `Se descargaron ${downloaded} archivos`,
-      });
+      toast.success(`Se descargaron ${downloaded} archivos`);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Hubo un problema al descargar los archivos',
-        variant: 'destructive',
-      });
+      toast.error('Hubo un problema al descargar los archivos');
     } finally {
       setDownloading(false);
       setProgress(0);
@@ -117,12 +149,12 @@ export function AlbumDownload({ event, content }: AlbumDownloadProps) {
             )}
           </div>
           <CardDescription>
-            Descargá todo el contenido de tu evento
+            Descargá todo el contenido de tu evento en un archivo ZIP
           </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Resumen de contenido */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             <Card className="bg-muted/50">
               <CardContent className="flex items-center gap-3 py-4">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -145,7 +177,38 @@ export function AlbumDownload({ event, content }: AlbumDownloadProps) {
                 </div>
               </CardContent>
             </Card>
+            {event.es_premium && (
+              <Card className="bg-muted/50">
+                <CardContent className="flex items-center gap-3 py-4">
+                  <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-display font-bold">{photosWithIA.length}</p>
+                    <p className="text-sm text-muted-foreground">Fotos IA</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
+
+          {/* Opción de incluir IA */}
+          {event.es_premium && photosWithIA.length > 0 && (
+            <div className="flex items-center space-x-2 mb-4 p-3 rounded-lg bg-muted/50">
+              <Checkbox 
+                id="include-ia" 
+                checked={includeIA}
+                onCheckedChange={(checked) => setIncludeIA(checked === true)}
+              />
+              <label 
+                htmlFor="include-ia" 
+                className="text-sm font-medium cursor-pointer flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 text-warning" />
+                Incluir fotos transformadas por IA ({photosWithIA.length})
+              </label>
+            </div>
+          )}
 
           {/* Progreso de descarga */}
           {downloading && (
@@ -158,75 +221,42 @@ export function AlbumDownload({ event, content }: AlbumDownloadProps) {
             </div>
           )}
 
-          {/* Botón de descarga */}
-          <Button 
-            className="w-full" 
-            size="lg"
-            onClick={handleDownloadAll}
-            disabled={downloading || isExpired || (photos.length === 0 && videos.length === 0)}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            {downloading ? 'Descargando...' : 'Descargar Todo'}
-          </Button>
+          {/* Botones de descarga */}
+          <div className="space-y-3">
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={handleDownloadZip}
+              disabled={downloadingZip || downloading || isExpired || (photos.length === 0 && videos.length === 0)}
+            >
+              {downloadingZip ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generando ZIP...
+                </>
+              ) : (
+                <>
+                  <FileArchive className="w-4 h-4 mr-2" />
+                  Descargar Álbum Completo (ZIP)
+                </>
+              )}
+            </Button>
+
+            <Button 
+              variant="outline"
+              className="w-full" 
+              onClick={handleDownloadAll}
+              disabled={downloading || downloadingZip || isExpired || (photos.length === 0 && videos.length === 0)}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {downloading ? 'Descargando...' : 'Descargar Archivos Individuales'}
+            </Button>
+          </div>
 
           {isExpired && (
-            <p className="text-sm text-destructive text-center mt-2">
+            <p className="text-sm text-destructive text-center mt-4">
               El período de descarga ha expirado
             </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Opciones adicionales */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Opciones de Descarga</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button 
-            variant="outline" 
-            className="w-full justify-start"
-            disabled={photos.length === 0 || downloading}
-            onClick={() => {
-              // Solo fotos
-              toast({
-                title: 'Próximamente',
-                description: 'Esta función estará disponible pronto',
-              });
-            }}
-          >
-            <Image className="w-4 h-4 mr-2" />
-            Solo Fotos ({photos.length})
-          </Button>
-          <Button 
-            variant="outline" 
-            className="w-full justify-start"
-            disabled={videos.length === 0 || downloading}
-            onClick={() => {
-              toast({
-                title: 'Próximamente',
-                description: 'Esta función estará disponible pronto',
-              });
-            }}
-          >
-            <Video className="w-4 h-4 mr-2" />
-            Solo Videos ({videos.length})
-          </Button>
-          {event.es_premium && (
-            <Button 
-              variant="outline" 
-              className="w-full justify-start"
-              disabled={downloading}
-              onClick={() => {
-                toast({
-                  title: 'Próximamente',
-                  description: 'Esta función estará disponible pronto',
-                });
-              }}
-            >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Solo con Transformación IA
-            </Button>
           )}
         </CardContent>
       </Card>

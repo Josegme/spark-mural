@@ -25,7 +25,7 @@ export const stepBasicInfoSchema = z.object({
 export const stepPersonalizationSchema = z.object({
   es_premium: z.boolean(),
   tema_ia: z.string().max(200, 'El tema no puede exceder 200 caracteres').optional(),
-  estilo_ia: z.enum(['caricatura', 'comico', 'cinematografico', 'futurista', 'realista', 'fantasia']).optional(),
+  estilo_ia: z.enum(['caricatura', 'comico', 'cinematografico', 'futurista', 'realista', 'fantasia', 'anime', 'vintage', 'acuarela', 'neon', 'minimalista']).optional(),
   logo_url: z.string().url('URL inválida').optional().or(z.literal('')),
   color_banner: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Color inválido').optional(),
 });
