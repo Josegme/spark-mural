@@ -635,7 +635,12 @@ export type Database = {
     }
     Enums: {
       content_type: "foto" | "video" | "mensaje"
-      event_status: "programado" | "activo" | "finalizado" | "cancelado"
+      event_status:
+        | "programado"
+        | "activo"
+        | "pausado"
+        | "finalizado"
+        | "cancelado"
       event_type:
         | "cumpleanos"
         | "casamiento"
@@ -792,7 +797,13 @@ export const Constants = {
   public: {
     Enums: {
       content_type: ["foto", "video", "mensaje"],
-      event_status: ["programado", "activo", "finalizado", "cancelado"],
+      event_status: [
+        "programado",
+        "activo",
+        "pausado",
+        "finalizado",
+        "cancelado",
+      ],
       event_type: [
         "cumpleanos",
         "casamiento",

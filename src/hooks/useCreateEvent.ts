@@ -1,6 +1,7 @@
 /**
  * PICKEVENT - Hook para crear eventos con pago integrado
  * Soporta múltiples pasarelas: Mercado Pago (AR/BR/PY) y Stripe (NZ/ES/AU/US/GB)
+ * Incluye: evento promocional (sin pago) y copiar link de pago
  */
 
 import { useState } from 'react';
@@ -72,7 +73,7 @@ const initialFormData: WizardFormData = {
 
 export function useCreateEvent() {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, isSuperAdmin } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<WizardFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,6 +83,10 @@ export function useCreateEvent() {
     qr_invitados_token: string;
     qr_descarga_token: string;
   } | null>(null);
+  
+  // Payment link state for "Copy Link" feature
+  const [paymentLink, setPaymentLink] = useState<string | null>(null);
+  const [isPaymentLinkGenerated, setIsPaymentLinkGenerated] = useState(false);
 
   const totalSteps = 4;
   const stepTitles = ['Información', 'Personalización', 'Configuración', 'Pago'];
@@ -116,6 +121,82 @@ export function useCreateEvent() {
   const getActiveGateway = (): PaymentGateway => {
     const countryCode = getCountryFromProfile(profile?.pais);
     return getPaymentGateway(countryCode);
+  };
+
+  // Generate payment link without redirecting (for copy feature)
+  const generatePaymentLink = async (): Promise<string | null> => {
+    if (!user || !profile) {
+      toast.error('Debés iniciar sesión para generar el link de pago');
+      return null;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const precio = calculatePrice();
+
+      const { data, error } = await supabase.functions.invoke('create-payment-preference', {
+        body: {
+          nombre_evento: formData.nombre,
+          tipo_evento: formData.tipo,
+          es_premium: formData.es_premium,
+          precio: precio,
+          cliente_email: profile.email,
+          cliente_nombre: profile.nombre,
+          evento_data: {
+            tipo: formData.tipo,
+            fecha_evento: formData.fecha_evento,
+            hora_inicio: formData.hora_inicio,
+            duracion_horas: formData.duracion_horas,
+            tema_ia: formData.es_premium ? formData.tema_ia : null,
+            estilo_ia: formData.es_premium ? formData.estilo_ia : null,
+            logo_url: formData.logo_url,
+            color_banner: formData.color_banner,
+            limite_subidas_por_invitado: formData.limite_subidas_por_invitado,
+            moderacion_activa: formData.moderacion_activa,
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Error creating MP payment preference:', error);
+        toast.error('Error al generar el link de pago');
+        return null;
+      }
+
+      const checkoutUrl = data.sandbox_init_point || data.init_point;
+      setPaymentLink(checkoutUrl);
+      setIsPaymentLinkGenerated(true);
+      return checkoutUrl;
+    } catch (error) {
+      console.error('Error generating payment link:', error);
+      toast.error('Error inesperado. Intentá de nuevo.');
+      return null;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Copy payment link to clipboard
+  const copyPaymentLink = async (): Promise<boolean> => {
+    let link = paymentLink;
+    
+    // Generate link if not already generated
+    if (!link) {
+      link = await generatePaymentLink();
+    }
+    
+    if (!link) return false;
+
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success('Link copiado - podés compartirlo por WhatsApp');
+      return true;
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      toast.error('Error al copiar el link');
+      return false;
+    }
   };
 
   // Iniciar proceso de pago con Mercado Pago
@@ -158,6 +239,7 @@ export function useCreateEvent() {
     }
 
     const checkoutUrl = data.sandbox_init_point || data.init_point;
+    setPaymentLink(checkoutUrl);
     toast.success('Redirigiendo a Mercado Pago...');
     
     setTimeout(() => {
@@ -247,8 +329,8 @@ export function useCreateEvent() {
     }
   };
 
-  // Crear evento directamente (sin pago - para flujos especiales)
-  const createEventDirectly = async (): Promise<boolean> => {
+  // Crear evento directamente (sin pago - para flujos especiales o promocionales)
+  const createEventDirectly = async (isPromotional: boolean = false): Promise<boolean> => {
     if (!user) {
       toast.error('Debés iniciar sesión para crear un evento');
       return false;
@@ -275,7 +357,8 @@ export function useCreateEvent() {
         color_banner: formData.color_banner || '#4c1d95',
         limite_subidas_por_invitado: formData.limite_subidas_por_invitado || null,
         moderacion_activa: formData.moderacion_activa,
-        precio_pagado: calculatePrice(),
+        // If promotional, price is 0; otherwise calculate normally
+        precio_pagado: isPromotional ? 0 : calculatePrice(),
         qr_pantalla_token,
         qr_invitados_token,
         qr_descarga_token,
@@ -295,7 +378,10 @@ export function useCreateEvent() {
       }
 
       setCreatedEvent(data);
-      toast.success('¡Evento creado exitosamente!');
+      toast.success(isPromotional 
+        ? '¡Evento promocional creado exitosamente!' 
+        : '¡Evento creado exitosamente!'
+      );
       return true;
     } catch (error) {
       console.error('Error creating event:', error);
@@ -310,6 +396,8 @@ export function useCreateEvent() {
     setCurrentStep(0);
     setFormData(initialFormData);
     setCreatedEvent(null);
+    setPaymentLink(null);
+    setIsPaymentLinkGenerated(false);
   };
 
   return {
@@ -329,5 +417,11 @@ export function useCreateEvent() {
     resetWizard,
     navigate,
     getActiveGateway,
+    // New exports for promotional events and copy link
+    isSuperAdmin: isSuperAdmin(),
+    paymentLink,
+    isPaymentLinkGenerated,
+    copyPaymentLink,
+    generatePaymentLink,
   };
 }
