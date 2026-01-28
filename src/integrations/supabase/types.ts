@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      comisiones_config: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          mp_application_id: string | null
+          mp_marketplace_id: string | null
+          porcentaje_asistente: number
+          porcentaje_superadmin: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          mp_application_id?: string | null
+          mp_marketplace_id?: string | null
+          porcentaje_asistente?: number
+          porcentaje_superadmin?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          mp_application_id?: string | null
+          mp_marketplace_id?: string | null
+          porcentaje_asistente?: number
+          porcentaje_superadmin?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comisiones_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contenido: {
         Row: {
           aprobado: boolean
@@ -182,6 +226,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "eventos_cliente_user_id_fkey"
+            columns: ["cliente_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "eventos_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -258,6 +309,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "logs_auditoria_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notificaciones: {
@@ -294,6 +352,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notificaciones_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -622,18 +687,115 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      pagos_summary: {
+        Row: {
+          created_at: string | null
+          estado: Database["public"]["Enums"]["payment_status"] | null
+          evento_id: string | null
+          id: string | null
+          pasarela: Database["public"]["Enums"]["payment_gateway"] | null
+          tipo: Database["public"]["Enums"]["payment_type"] | null
+        }
+        Insert: {
+          created_at?: string | null
+          estado?: Database["public"]["Enums"]["payment_status"] | null
+          evento_id?: string | null
+          id?: string | null
+          pasarela?: Database["public"]["Enums"]["payment_gateway"] | null
+          tipo?: Database["public"]["Enums"]["payment_type"] | null
+        }
+        Update: {
+          created_at?: string | null
+          estado?: Database["public"]["Enums"]["payment_status"] | null
+          evento_id?: string | null
+          id?: string | null
+          pasarela?: Database["public"]["Enums"]["payment_gateway"] | null
+          tipo?: Database["public"]["Enums"]["payment_type"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          id: string | null
+          nombre: string | null
+          pais: string | null
+          rol: Database["public"]["Enums"]["user_role"] | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string | null
+          nombre?: string | null
+          pais?: string | null
+          rol?: Database["public"]["Enums"]["user_role"] | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          id?: string | null
+          nombre?: string | null
+          pais?: string | null
+          rol?: Database["public"]["Enums"]["user_role"] | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      app_role: "super_admin" | "asistente" | "salon" | "cliente"
       content_type: "foto" | "video" | "mensaje"
       event_status:
         | "programado"
@@ -656,6 +818,11 @@ export type Database = {
         | "futurista"
         | "realista"
         | "fantasia"
+        | "anime"
+        | "vintage"
+        | "acuarela"
+        | "neon"
+        | "minimalista"
       payment_gateway:
         | "mercadopago_ar"
         | "mercadopago_br"
@@ -796,6 +963,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["super_admin", "asistente", "salon", "cliente"],
       content_type: ["foto", "video", "mensaje"],
       event_status: [
         "programado",
@@ -820,6 +988,11 @@ export const Constants = {
         "futurista",
         "realista",
         "fantasia",
+        "anime",
+        "vintage",
+        "acuarela",
+        "neon",
+        "minimalista",
       ],
       payment_gateway: [
         "mercadopago_ar",

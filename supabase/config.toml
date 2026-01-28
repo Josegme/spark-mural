@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.transform-photo-ai]
+verify_jwt = false
+
+[functions.download-album-zip]
+verify_jwt = false
