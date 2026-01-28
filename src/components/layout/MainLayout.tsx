@@ -6,6 +6,8 @@
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { Shield } from 'lucide-react';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -28,6 +30,10 @@ export function MainLayout({
 }
 
 function Header() {
+  const { user, profile, isSuperAdmin } = useAuth();
+  const isLoggedIn = !!user;
+  const showAdminButton = isSuperAdmin();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -60,12 +66,34 @@ function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" asChild>
-            <Link to="/login">Iniciar Sesión</Link>
-          </Button>
-          <Button className="btn-hero text-sm px-4 py-2" asChild>
-            <Link to="/crear-evento">Crear Evento</Link>
-          </Button>
+          {showAdminButton && (
+            <Button variant="outline" size="sm" asChild className="gap-2 border-accent text-accent hover:bg-accent/10">
+              <Link to="/admin">
+                <Shield className="w-4 h-4" />
+                Panel Admin
+              </Link>
+            </Button>
+          )}
+          
+          {isLoggedIn ? (
+            <>
+              <Button variant="ghost" asChild>
+                <Link to="/dashboard">Mi Dashboard</Link>
+              </Button>
+              <Button className="btn-hero text-sm px-4 py-2" asChild>
+                <Link to="/crear-evento">Crear Evento</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" asChild>
+                <Link to="/login">Iniciar Sesión</Link>
+              </Button>
+              <Button className="btn-hero text-sm px-4 py-2" asChild>
+                <Link to="/crear-evento">Crear Evento</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>

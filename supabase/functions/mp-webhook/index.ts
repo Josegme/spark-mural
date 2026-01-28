@@ -45,7 +45,10 @@ serve(async (req) => {
     const paymentId = id || body?.data?.id;
     const action = topic || body?.action || body?.type;
 
-    console.log('Webhook received:', { action, paymentId, body });
+    console.log('=== MP WEBHOOK RECEIVED ===');
+    console.log('Action:', action);
+    console.log('Payment ID:', paymentId);
+    console.log('Body:', JSON.stringify(body, null, 2));
 
     // Only process payment notifications
     if (action !== 'payment' && action !== 'payment.created' && action !== 'payment.updated') {
@@ -65,7 +68,7 @@ serve(async (req) => {
     }
 
     // Get payment details from Mercado Pago
-    console.log('Fetching payment details for:', paymentId);
+    console.log('Fetching payment details from MP for payment_id:', paymentId);
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
       headers: {
         'Authorization': `Bearer ${mpAccessToken}`,
@@ -81,12 +84,13 @@ serve(async (req) => {
     }
 
     const payment = await mpResponse.json();
-    console.log('Payment details:', {
-      id: payment.id,
-      status: payment.status,
-      external_reference: payment.external_reference,
-      metadata: payment.metadata,
-    });
+    console.log('=== MP PAYMENT DETAILS ===');
+    console.log('Payment ID:', payment.id);
+    console.log('Status:', payment.status);
+    console.log('External Reference:', payment.external_reference);
+    console.log('Preference ID:', payment.preference_id);
+    console.log('Transaction Amount:', payment.transaction_amount);
+    console.log('Metadata:', JSON.stringify(payment.metadata, null, 2));
 
     // Map MP status to our status
     const statusMap: Record<string, string> = {
@@ -99,21 +103,96 @@ serve(async (req) => {
     };
 
     const nuevoEstado = statusMap[payment.status] || 'pendiente';
+    console.log('Mapped status:', payment.status, '->', nuevoEstado);
 
-    // Find existing payment record by preference_id or external_reference
-    const { data: existingPayment, error: findError } = await supabase
-      .from('pagos')
-      .select('*')
-      .or(`payment_id_externo.eq.${payment.preference_id},metadata->>external_reference.eq.${payment.external_reference}`)
-      .single();
+    // IMPROVED: Find existing payment record using multiple strategies
+    // Strategy 1: Try to find by preference_id (stored in payment_id_externo when created)
+    // Strategy 2: Try to find by external_reference in metadata
+    // Strategy 3: Try to find pending payments by user_id from external_reference
+    
+    let existingPayment = null;
+    let findError = null;
 
-    if (findError && findError.code !== 'PGRST116') {
+    // Strategy 1: By preference_id
+    if (payment.preference_id) {
+      console.log('Strategy 1: Looking for payment with preference_id:', payment.preference_id);
+      const result = await supabase
+        .from('pagos')
+        .select('*')
+        .eq('payment_id_externo', payment.preference_id)
+        .maybeSingle();
+      
+      if (result.data) {
+        console.log('Found payment by preference_id:', result.data.id);
+        existingPayment = result.data;
+      } else if (result.error && result.error.code !== 'PGRST116') {
+        findError = result.error;
+      }
+    }
+
+    // Strategy 2: By external_reference in metadata
+    if (!existingPayment && payment.external_reference) {
+      console.log('Strategy 2: Looking for payment with external_reference in metadata:', payment.external_reference);
+      const result = await supabase
+        .from('pagos')
+        .select('*')
+        .eq('estado', 'pendiente')
+        .maybeSingle();
+      
+      // Filter in memory for external_reference match
+      if (result.data && result.data.metadata?.external_reference === payment.external_reference) {
+        console.log('Found payment by external_reference match:', result.data.id);
+        existingPayment = result.data;
+      }
+    }
+
+    // Strategy 3: Get all pending payments and find by external_reference or user_id
+    if (!existingPayment && payment.external_reference) {
+      console.log('Strategy 3: Searching all pending payments for external_reference match');
+      const { data: pendingPayments, error: pendingError } = await supabase
+        .from('pagos')
+        .select('*')
+        .eq('estado', 'pendiente')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (!pendingError && pendingPayments) {
+        console.log('Found', pendingPayments.length, 'pending payments to check');
+        
+        for (const pago of pendingPayments) {
+          const metadata = pago.metadata as any;
+          
+          // Check if external_reference matches
+          if (metadata?.external_reference === payment.external_reference) {
+            console.log('Match found by external_reference:', pago.id);
+            existingPayment = pago;
+            break;
+          }
+          
+          // Also check if user_id from external_reference matches
+          // External reference format: evt_{user_id}_{timestamp}
+          if (payment.external_reference && metadata?.user_id) {
+            const refParts = payment.external_reference.split('_');
+            if (refParts.length >= 2 && refParts[1] === metadata.user_id) {
+              console.log('Match found by user_id from external_reference:', pago.id);
+              existingPayment = pago;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (findError) {
       console.error('Error finding payment:', findError);
     }
 
     // Update or insert payment record
     if (existingPayment) {
-      console.log('Updating existing payment:', existingPayment.id);
+      console.log('=== UPDATING EXISTING PAYMENT ===');
+      console.log('Payment DB ID:', existingPayment.id);
+      console.log('Current status:', existingPayment.estado);
+      console.log('New status:', nuevoEstado);
       
       const { error: updateError } = await supabase
         .from('pagos')
@@ -121,10 +200,11 @@ serve(async (req) => {
           estado: nuevoEstado,
           payment_id_externo: payment.id.toString(),
           metadata: {
-            ...existingPayment.metadata,
+            ...((existingPayment.metadata as any) || {}),
             mp_payment_id: payment.id,
             mp_status: payment.status,
             mp_status_detail: payment.status_detail,
+            mp_preference_id: payment.preference_id,
             updated_at: new Date().toISOString(),
           },
         })
@@ -132,37 +212,45 @@ serve(async (req) => {
 
       if (updateError) {
         console.error('Error updating payment:', updateError);
+      } else {
+        console.log('Payment updated successfully');
       }
 
       // If payment approved and no event exists yet, create it
-      if (nuevoEstado === 'aprobado' && !existingPayment.evento_id && payment.metadata?.evento_data) {
-        console.log('Creating event after approved payment');
+      const metadata = existingPayment.metadata as any;
+      if (nuevoEstado === 'aprobado' && !existingPayment.evento_id && metadata?.evento_data) {
+        console.log('=== CREATING EVENT AFTER APPROVED PAYMENT ===');
         
         let eventoData;
         try {
-          eventoData = typeof payment.metadata.evento_data === 'string' 
-            ? JSON.parse(payment.metadata.evento_data)
-            : payment.metadata.evento_data;
+          eventoData = typeof metadata.evento_data === 'string' 
+            ? JSON.parse(metadata.evento_data)
+            : metadata.evento_data;
         } catch (e) {
           console.error('Failed to parse evento_data:', e);
           eventoData = null;
         }
 
-        if (eventoData && payment.metadata?.user_id) {
+        console.log('Event data:', JSON.stringify(eventoData, null, 2));
+        console.log('User ID:', metadata?.user_id);
+
+        if (eventoData && metadata?.user_id) {
           const qr_pantalla_token = generateQRToken();
           const qr_invitados_token = generateQRToken();
           const qr_descarga_token = generateQRToken();
 
+          console.log('Generated QR tokens:', { qr_pantalla_token, qr_invitados_token, qr_descarga_token });
+
           const { data: evento, error: eventoError } = await supabase
             .from('eventos')
             .insert({
-              cliente_user_id: payment.metadata.user_id,
-              nombre: existingPayment.metadata?.nombre_evento || 'Nuevo Evento',
+              cliente_user_id: metadata.user_id,
+              nombre: metadata?.nombre_evento || 'Nuevo Evento',
               tipo: eventoData.tipo || 'cumpleanos',
               fecha_evento: eventoData.fecha_evento,
               hora_inicio: eventoData.hora_inicio || '20:00',
               duracion_horas: eventoData.duracion_horas || 6,
-              es_premium: payment.metadata?.es_premium || false,
+              es_premium: metadata?.es_premium || false,
               tema_ia: eventoData.tema_ia || null,
               estilo_ia: eventoData.estilo_ia || null,
               logo_url: eventoData.logo_url || null,
@@ -177,19 +265,25 @@ serve(async (req) => {
               pasarela_pago: 'mercadopago_ar',
               payment_id: payment.id.toString(),
             })
-              .select('id')
-              .single();
+            .select('id')
+            .single();
 
           if (eventoError) {
             console.error('Error creating event:', eventoError);
           } else {
-            console.log('Event created:', evento.id);
+            console.log('Event created successfully:', evento.id);
             
             // Link payment to event
-            await supabase
+            const { error: linkError } = await supabase
               .from('pagos')
               .update({ evento_id: evento.id })
               .eq('id', existingPayment.id);
+            
+            if (linkError) {
+              console.error('Error linking payment to event:', linkError);
+            } else {
+              console.log('Payment linked to event successfully');
+            }
 
             // Send QR codes email automatically
             console.log('Triggering email send for event:', evento.id);
@@ -209,10 +303,12 @@ serve(async (req) => {
               // Don't fail the webhook if email fails
             }
           }
+        } else {
+          console.log('Missing evento_data or user_id, cannot create event');
         }
       }
     } else {
-      console.log('Creating new payment record for:', payment.id);
+      console.log('=== NO EXISTING PAYMENT FOUND - Creating new record ===');
       
       // Create new payment record
       const { error: insertError } = await supabase
@@ -227,6 +323,7 @@ serve(async (req) => {
             mp_payment_id: payment.id,
             mp_status: payment.status,
             mp_status_detail: payment.status_detail,
+            mp_preference_id: payment.preference_id,
             external_reference: payment.external_reference,
             ...payment.metadata,
           },
@@ -234,10 +331,12 @@ serve(async (req) => {
 
       if (insertError) {
         console.error('Error inserting payment:', insertError);
+      } else {
+        console.log('New payment record created');
       }
     }
 
-    console.log('Webhook processed successfully');
+    console.log('=== WEBHOOK PROCESSED SUCCESSFULLY ===');
     return new Response(
       JSON.stringify({ received: true, status: nuevoEstado }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

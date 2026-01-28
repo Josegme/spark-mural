@@ -1,11 +1,13 @@
 /**
  * PICKEVENT - Paso 4: Pago y Confirmación
  * Muestra automáticamente Stripe o Mercado Pago según el país
+ * Incluye: evento promocional (solo Super Admin) y copiar link de pago
  */
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronLeft, CreditCard, Check, Calendar, Clock, Timer, Sparkles, QrCode } from 'lucide-react';
+import { ChevronLeft, CreditCard, Check, Calendar, Clock, Timer, Sparkles, QrCode, Copy, Gift, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -22,9 +24,28 @@ interface StepPaymentProps {
   isSubmitting: boolean;
   calculatePrice: () => number;
   activeGateway?: PaymentGateway;
+  // New props for promotional events and copy link
+  isSuperAdmin?: boolean;
+  onCreatePromotional?: () => Promise<boolean>;
+  onCopyPaymentLink?: () => Promise<boolean>;
+  paymentLink?: string | null;
 }
 
-export function StepPayment({ formData, onSubmit, onBack, isSubmitting, calculatePrice, activeGateway = 'mercadopago' }: StepPaymentProps) {
+export function StepPayment({ 
+  formData, 
+  onSubmit, 
+  onBack, 
+  isSubmitting, 
+  calculatePrice, 
+  activeGateway = 'mercadopago',
+  isSuperAdmin = false,
+  onCreatePromotional,
+  onCopyPaymentLink,
+  paymentLink,
+}: StepPaymentProps) {
+  const [isPromotionalMode, setIsPromotionalMode] = useState(false);
+  const [isCopyingLink, setIsCopyingLink] = useState(false);
+
   const form = useForm<StepPaymentData>({
     resolver: zodResolver(stepPaymentSchema),
     defaultValues: {
@@ -33,8 +54,23 @@ export function StepPayment({ formData, onSubmit, onBack, isSubmitting, calculat
   });
 
   const handleSubmit = async (values: StepPaymentData) => {
-    if (values.aceptaTerminos) {
+    if (!values.aceptaTerminos) return;
+    
+    if (isPromotionalMode && onCreatePromotional) {
+      await onCreatePromotional();
+    } else {
       await onSubmit();
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!onCopyPaymentLink) return;
+    
+    setIsCopyingLink(true);
+    try {
+      await onCopyPaymentLink();
+    } finally {
+      setIsCopyingLink(false);
     }
   };
 
@@ -141,29 +177,64 @@ export function StepPayment({ formData, onSubmit, onBack, isSubmitting, calculat
           </div>
         </div>
 
+        {/* Super Admin: Promotional Event Option */}
+        {isSuperAdmin && onCreatePromotional && (
+          <div className="p-4 rounded-xl bg-accent/10 border border-accent/30">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="promotional"
+                checked={isPromotionalMode}
+                onCheckedChange={(checked) => setIsPromotionalMode(!!checked)}
+              />
+              <label htmlFor="promotional" className="flex-1 cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-accent" />
+                  <span className="font-medium text-foreground">
+                    Crear como Evento Promocional
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  El evento se crea sin cobro (demo/promoción). Solo visible para Super Admin.
+                </p>
+              </label>
+            </div>
+          </div>
+        )}
+
         {/* Total */}
         <div className={cn(
           'p-6 rounded-2xl border-2',
-          formData.es_premium ? 'border-accent bg-gradient-to-r from-accent/5 to-primary/5' : 'border-primary bg-primary/5'
+          isPromotionalMode 
+            ? 'border-accent bg-accent/5' 
+            : formData.es_premium 
+              ? 'border-accent bg-gradient-to-r from-accent/5 to-primary/5' 
+              : 'border-primary bg-primary/5'
         )}>
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-muted-foreground text-sm">Total a pagar</span>
+              <span className="text-muted-foreground text-sm">
+                {isPromotionalMode ? 'Evento promocional' : 'Total a pagar'}
+              </span>
               <div className="text-3xl font-bold text-foreground font-display">
-                {formatPrice(precio)}
+                {isPromotionalMode ? '$0' : formatPrice(precio)}
               </div>
+              {isPromotionalMode && (
+                <span className="text-xs text-accent">Sin cargo - Promocional</span>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <CreditCard className="w-6 h-6 text-muted-foreground" />
-              <div className="text-right">
-                <span className="text-sm text-muted-foreground block">
-                  {activeGateway === 'stripe' ? 'Stripe' : 'Mercado Pago'}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {activeGateway === 'stripe' ? 'Tarjeta de crédito/débito' : 'Tarjeta / Transferencia'}
-                </span>
+            {!isPromotionalMode && (
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-6 h-6 text-muted-foreground" />
+                <div className="text-right">
+                  <span className="text-sm text-muted-foreground block">
+                    {activeGateway === 'stripe' ? 'Stripe' : 'Mercado Pago'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {activeGateway === 'stripe' ? 'Tarjeta de crédito/débito' : 'Tarjeta / Transferencia'}
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -197,36 +268,70 @@ export function StepPayment({ formData, onSubmit, onBack, isSubmitting, calculat
         />
 
         {/* Botones navegación */}
-        <div className="flex justify-between pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={onBack}
-            className="gap-2"
-            disabled={isSubmitting}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Atrás
-          </Button>
-          <Button
-            type="submit"
-            size="lg"
-            className="min-w-[200px] bg-gradient-primary hover:opacity-90"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <span className="animate-spin mr-2">⏳</span>
-                Procesando...
-              </>
-            ) : (
-              <>
-                <CreditCard className="w-4 h-4 mr-2" />
-                Confirmar y Pagar
-              </>
-            )}
-          </Button>
+        <div className="flex flex-col gap-3 pt-4">
+          <div className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={onBack}
+              className="gap-2"
+              disabled={isSubmitting || isCopyingLink}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Atrás
+            </Button>
+            
+            <div className="flex gap-2">
+              {/* Copy Payment Link Button - Only for non-promotional */}
+              {!isPromotionalMode && onCopyPaymentLink && activeGateway === 'mercadopago' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={handleCopyLink}
+                  disabled={isSubmitting || isCopyingLink}
+                  className="gap-2"
+                >
+                  {isCopyingLink ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                  Copiar Link
+                </Button>
+              )}
+
+              <Button
+                type="submit"
+                size="lg"
+                className={cn(
+                  "min-w-[200px]",
+                  isPromotionalMode 
+                    ? "bg-accent hover:bg-accent/90" 
+                    : "bg-gradient-primary hover:opacity-90"
+                )}
+                disabled={isSubmitting || isCopyingLink}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Procesando...
+                  </>
+                ) : isPromotionalMode ? (
+                  <>
+                    <Gift className="w-4 h-4 mr-2" />
+                    Crear Evento Promocional
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Confirmar y Pagar
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
       </form>
     </Form>

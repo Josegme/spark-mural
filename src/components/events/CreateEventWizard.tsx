@@ -25,10 +25,14 @@ export function CreateEventWizard() {
     prevStep,
     calculatePrice,
     initiatePayment,
+    createEventDirectly,
     isSubmitting,
     createdEvent,
     navigate,
     getActiveGateway,
+    isSuperAdmin,
+    paymentLink,
+    copyPaymentLink,
   } = useCreateEvent();
 
   // Si el evento fue creado, mostrar pantalla de éxito
@@ -87,6 +91,10 @@ export function CreateEventWizard() {
             isSubmitting={isSubmitting}
             calculatePrice={calculatePrice}
             activeGateway={getActiveGateway()}
+            isSuperAdmin={isSuperAdmin}
+            onCreatePromotional={() => createEventDirectly(true)}
+            onCopyPaymentLink={copyPaymentLink}
+            paymentLink={paymentLink}
           />
         );
       default:
