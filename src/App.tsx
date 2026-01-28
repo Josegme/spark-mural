@@ -20,6 +20,7 @@ import AsistentePage from "./pages/AsistentePage";
 import SalonPage from "./pages/SalonPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import TestingGuidePage from "./pages/TestingGuidePage";
+import TechnicalReportPage from "./pages/TechnicalReportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -142,6 +143,9 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            
+            {/* Technical Report - Público para compartir */}
+            <Route path="/technical-report" element={<TechnicalReportPage />} />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
