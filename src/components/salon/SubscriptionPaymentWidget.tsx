@@ -38,10 +38,8 @@ export function SubscriptionPaymentWidget({
 }: SubscriptionPaymentWidgetProps) {
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Solo mostrar si hay alerta o si la suscripción está vencida
-  const shouldShow = stats.alertaCritica || stats.alertaVencimiento || !stats.suscripcionActiva;
-
-  if (isLoading || !shouldShow) {
+  // Siempre mostrar el widget de pago (el usuario pidió que esté siempre visible)
+  if (isLoading) {
     return null;
   }
 
@@ -101,28 +99,42 @@ export function SubscriptionPaymentWidget({
     }
   };
 
+  // Determinar estado visual
+  const isUrgent = stats.alertaCritica || !stats.suscripcionActiva;
+  const isWarning = stats.alertaVencimiento || stats.alertaLimite;
+
   return (
-    <Card className={`border-2 ${stats.alertaCritica ? 'border-destructive bg-destructive/5' : 'border-primary bg-gradient-to-br from-primary/10 to-primary/5'}`}>
+    <Card className={`border-2 ${isUrgent ? 'border-destructive bg-destructive/5' : isWarning ? 'border-warning bg-warning/5' : 'border-primary bg-gradient-to-br from-primary/10 to-primary/5'}`}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {stats.alertaCritica ? (
+            {isUrgent ? (
               <AlertCircle className="w-5 h-5 text-destructive" />
             ) : (
               <Sparkles className="w-5 h-5 text-primary" />
             )}
             <CardTitle className="text-lg">
-              {stats.alertaCritica ? '¡Renovar Suscripción!' : 'Mantené tu Plan Activo'}
+              {isUrgent ? '¡Renovar Suscripción!' : 'Tu Plan Mensual'}
             </CardTitle>
           </div>
-          <Badge variant={stats.alertaCritica ? "destructive" : "secondary"}>
-            {stats.alertaCritica ? 'Vencida' : `${stats.diasHastaVencimiento} días`}
-          </Badge>
+          {stats.suscripcionActiva && !isUrgent && (
+            <Badge variant="secondary" className="bg-success/10 text-success border-success/20">
+              Activo - {stats.diasHastaVencimiento} días
+            </Badge>
+          )}
+          {isUrgent && (
+            <Badge variant="destructive">Vencida</Badge>
+          )}
+          {isWarning && !isUrgent && (
+            <Badge variant="secondary" className="bg-warning/10 text-warning border-warning/20">
+              {stats.diasHastaVencimiento} días restantes
+            </Badge>
+          )}
         </div>
         <CardDescription>
-          {stats.alertaCritica 
+          {isUrgent 
             ? 'Tu suscripción ha vencido. Renovála ahora para seguir creando eventos.'
-            : 'Tu suscripción está por vencer. Asegurá tu acceso renovando ahora.'
+            : `Usaste ${stats.eventosEsteMes} de ${stats.limiteEventosMes} eventos este mes.`
           }
         </CardDescription>
       </CardHeader>
@@ -141,6 +153,17 @@ export function SubscriptionPaymentWidget({
           <div className="text-right">
             <p className="text-2xl font-bold text-primary">{formatPrice(PLAN_PRICE)}</p>
             <p className="text-xs text-muted-foreground">/mes</p>
+          </div>
+        </div>
+
+        {/* Cuota de eventos */}
+        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Eventos usados este mes</span>
+          </div>
+          <div className={`text-lg font-bold ${stats.alertaLimite ? 'text-warning' : 'text-foreground'}`}>
+            {stats.eventosEsteMes} / {stats.limiteEventosMes}
           </div>
         </div>
 
@@ -175,7 +198,7 @@ export function SubscriptionPaymentWidget({
           ) : (
             <>
               <ExternalLink className="w-5 h-5 mr-2" />
-              {stats.alertaCritica ? 'Renovar Ahora' : 'Pagar Suscripción'}
+              {isUrgent ? 'Renovar Ahora' : 'Pagar Suscripción'}
             </>
           )}
         </Button>
