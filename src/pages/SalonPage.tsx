@@ -3,7 +3,7 @@
  * Panel completo para gestión de eventos y suscripción
  */
 
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -24,14 +24,19 @@ import {
   SalonEventos,
   SalonEventCards,
   SalonQuickActions,
-  CreateSalonEventModal,
   SubscriptionPaymentWidget
 } from '@/components/salon';
 
 export default function SalonPage() {
+  const navigate = useNavigate();
   const { profile, signOut } = useAuth();
   const { stats, eventos, eventosCalendario, suscripcion, tenantInfo, isLoading, refetch } = useSalonData();
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  const handleCreateEvent = () => {
+    if (stats.puedeCrearEvento) {
+      navigate('/crear-evento');
+    }
+  };
 
   return (
     <MainLayout showFooter={false}>
@@ -66,7 +71,7 @@ export default function SalonPage() {
             </Button>
             <Button 
               className="btn-hero text-sm px-4 py-2" 
-              onClick={() => setCreateModalOpen(true)}
+              onClick={handleCreateEvent}
               disabled={!stats.puedeCrearEvento}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -105,7 +110,7 @@ export default function SalonPage() {
                 eventos={eventos}
                 isLoading={isLoading}
                 puedeCrear={stats.puedeCrearEvento}
-                onCreateEvent={() => setCreateModalOpen(true)}
+                onCreateEvent={handleCreateEvent}
               />
 
               {/* Quick Actions */}
@@ -129,7 +134,7 @@ export default function SalonPage() {
               eventos={eventos} 
               isLoading={isLoading}
               puedeCrear={stats.puedeCrearEvento}
-              onCreateEvent={() => setCreateModalOpen(true)}
+              onCreateEvent={handleCreateEvent}
             />
           </TabsContent>
 
@@ -144,18 +149,6 @@ export default function SalonPage() {
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Modal para crear evento */}
-      <CreateSalonEventModal
-        open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
-        tenantInfo={tenantInfo}
-        stats={stats}
-        onSuccess={() => {
-          refetch();
-          setCreateModalOpen(false);
-        }}
-      />
     </MainLayout>
   );
 }
