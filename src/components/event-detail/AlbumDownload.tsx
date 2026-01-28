@@ -2,7 +2,7 @@
  * Panel de descarga del álbum con opción de ZIP
  */
 
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +26,8 @@ interface AlbumDownloadProps {
   content: EventContent[];
 }
 
-export function AlbumDownload({ event, content }: AlbumDownloadProps) {
+export const AlbumDownload = forwardRef<HTMLDivElement, AlbumDownloadProps>(
+  function AlbumDownload({ event, content }, ref) {
   const [downloading, setDownloading] = useState(false);
   const [downloadingZip, setDownloadingZip] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -277,4 +278,4 @@ export function AlbumDownload({ event, content }: AlbumDownloadProps) {
       </Card>
     </div>
   );
-}
+});

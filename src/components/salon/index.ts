@@ -9,3 +9,4 @@ export { SalonCalendar } from './SalonCalendar';
 export { SalonEventos } from './SalonEventos';
 export { CreateSalonEventModal } from './CreateSalonEventModal';
 export { PlanSelector } from './PlanSelector';
+export { SubscriptionPaymentWidget } from './SubscriptionPaymentWidget';

@@ -24,7 +24,8 @@ import {
   SalonSubscription,
   SalonCalendar,
   SalonEventos,
-  CreateSalonEventModal
+  CreateSalonEventModal,
+  SubscriptionPaymentWidget
 } from '@/components/salon';
 
 export default function SalonPage() {
@@ -96,19 +97,29 @@ export default function SalonPage() {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <SalonStats 
-                  stats={stats} 
-                  isLoading={isLoading} 
-                />
-              </div>
-              <div>
-                <SalonSubscription 
-                  suscripcion={suscripcion} 
-                  stats={stats}
-                  isLoading={isLoading} 
-                />
+            <div className="space-y-6">
+              {/* Widget de Renovación de Suscripción - Prominente */}
+              <SubscriptionPaymentWidget 
+                suscripcion={suscripcion}
+                stats={stats}
+                tenantInfo={tenantInfo}
+                isLoading={isLoading}
+              />
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <SalonStats 
+                    stats={stats} 
+                    isLoading={isLoading} 
+                  />
+                </div>
+                <div>
+                  <SalonSubscription 
+                    suscripcion={suscripcion} 
+                    stats={stats}
+                    isLoading={isLoading} 
+                  />
+                </div>
               </div>
             </div>
           </TabsContent>
