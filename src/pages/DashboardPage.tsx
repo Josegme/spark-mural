@@ -3,8 +3,8 @@
  * Panel principal para usuarios autenticados
  */
 
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { MainLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
@@ -20,9 +20,21 @@ import type { UserEvent } from '@/hooks/useUserEvents';
 
 export default function DashboardPage() {
   const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const { events, stats, isLoading } = useUserEvents();
   const [selectedEvent, setSelectedEvent] = useState<UserEvent | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+
+  // Redirigir a la página correcta según el rol
+  useEffect(() => {
+    if (profile?.rol === 'salon') {
+      navigate('/salon', { replace: true });
+    } else if (profile?.rol === 'asistente') {
+      navigate('/asistente', { replace: true });
+    } else if (profile?.rol === 'super_admin') {
+      navigate('/admin', { replace: true });
+    }
+  }, [profile?.rol, navigate]);
 
   const handleViewQR = (event: UserEvent) => {
     setSelectedEvent(event);
