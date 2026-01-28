@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, 
   Calendar,
-  CalendarDays,
   CreditCard,
   Plus,
   RefreshCw,
@@ -22,8 +21,9 @@ import { useSalonData } from '@/hooks/useSalonData';
 import { 
   SalonStats,
   SalonSubscription,
-  SalonCalendar,
   SalonEventos,
+  SalonEventCards,
+  SalonQuickActions,
   CreateSalonEventModal,
   SubscriptionPaymentWidget
 } from '@/components/salon';
@@ -40,10 +40,10 @@ export default function SalonPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold">
-              🏟️ {tenantInfo?.nombre || profile?.nombre || 'Mi Salón'}
+              👋 Hola, {tenantInfo?.nombre || profile?.nombre || 'Mi Salón'}
             </h1>
             <p className="text-muted-foreground">
-              Panel de gestión de eventos
+              Gestioná tus eventos desde acá
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -77,7 +77,7 @@ export default function SalonPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-4">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -86,10 +86,6 @@ export default function SalonPage() {
               <Calendar className="w-4 h-4" />
               <span className="hidden sm:inline">Eventos</span>
             </TabsTrigger>
-            <TabsTrigger value="calendario" className="gap-2">
-              <CalendarDays className="w-4 h-4" />
-              <span className="hidden sm:inline">Calendario</span>
-            </TabsTrigger>
             <TabsTrigger value="suscripcion" className="gap-2">
               <CreditCard className="w-4 h-4" />
               <span className="hidden sm:inline">Plan</span>
@@ -97,30 +93,34 @@ export default function SalonPage() {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <div className="space-y-6">
-              {/* Widget de Renovación de Suscripción - Prominente */}
+            <div className="space-y-8">
+              {/* Stats Cards */}
+              <SalonStats 
+                stats={stats} 
+                isLoading={isLoading} 
+              />
+
+              {/* Event Cards (estilo dashboard) */}
+              <SalonEventCards 
+                eventos={eventos}
+                isLoading={isLoading}
+                puedeCrear={stats.puedeCrearEvento}
+                onCreateEvent={() => setCreateModalOpen(true)}
+              />
+
+              {/* Quick Actions */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-display font-semibold">Acciones Rápidas</h2>
+                <SalonQuickActions hasEvents={eventos.length > 0} />
+              </div>
+
+              {/* Subscription Widget - al final */}
               <SubscriptionPaymentWidget 
                 suscripcion={suscripcion}
                 stats={stats}
                 tenantInfo={tenantInfo}
                 isLoading={isLoading}
               />
-              
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <SalonStats 
-                    stats={stats} 
-                    isLoading={isLoading} 
-                  />
-                </div>
-                <div>
-                  <SalonSubscription 
-                    suscripcion={suscripcion} 
-                    stats={stats}
-                    isLoading={isLoading} 
-                  />
-                </div>
-              </div>
             </div>
           </TabsContent>
 
@@ -130,13 +130,6 @@ export default function SalonPage() {
               isLoading={isLoading}
               puedeCrear={stats.puedeCrearEvento}
               onCreateEvent={() => setCreateModalOpen(true)}
-            />
-          </TabsContent>
-
-          <TabsContent value="calendario">
-            <SalonCalendar 
-              eventos={eventosCalendario} 
-              isLoading={isLoading}
             />
           </TabsContent>
 
