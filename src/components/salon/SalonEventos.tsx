@@ -116,15 +116,6 @@ export function SalonEventos({ eventos, isLoading, puedeCrear, onCreateEvent }: 
               <option value="finalizado">Finalizados</option>
             </select>
 
-            {/* Botón crear */}
-            <Button 
-              onClick={onCreateEvent}
-              disabled={!puedeCrear}
-              className="btn-hero"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Crear Evento
-            </Button>
           </div>
         </div>
       </CardHeader>
