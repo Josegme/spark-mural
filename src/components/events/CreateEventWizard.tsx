@@ -1,6 +1,6 @@
 /**
  * PICKEVENT - Create Event Wizard
- * Wizard de 4 pasos para crear eventos
+ * Wizard de 4 pasos para crear eventos con flujos diferenciados por rol
  */
 
 import { useCreateEvent } from '@/hooks/useCreateEvent';
@@ -10,9 +10,12 @@ import {
   StepBasicInfo,
   StepPersonalization,
   StepConfiguration,
-  StepPayment,
+  StepPaymentClient,
+  StepPaymentSalon,
+  StepPaymentAdmin,
   EventCreatedSuccess,
 } from './wizard';
+import { useSalonData } from '@/hooks/useSalonData';
 
 export function CreateEventWizard() {
   const {
@@ -30,10 +33,15 @@ export function CreateEventWizard() {
     createdEvent,
     navigate,
     getActiveGateway,
+    getUserFlowRole,
     isSuperAdmin,
     paymentLink,
-    copyPaymentLink,
+    generatePaymentLinkForClient,
   } = useCreateEvent();
+
+  // Get salon data for quota validation (only used for salon role)
+  const userFlowRole = getUserFlowRole();
+  const { stats: salonStats, tenantInfo } = useSalonData();
 
   // Si el evento fue creado, mostrar pantalla de éxito
   if (createdEvent) {
@@ -46,6 +54,60 @@ export function CreateEventWizard() {
       />
     );
   }
+
+  // Render del paso 4 según el rol
+  const renderPaymentStep = () => {
+    const activeGateway = getActiveGateway();
+
+    switch (userFlowRole) {
+      case 'salon':
+        return (
+          <StepPaymentSalon
+            formData={formData}
+            onSubmit={async (clienteEmail) => {
+              return await createEventDirectly(false, clienteEmail);
+            }}
+            onBack={prevStep}
+            isSubmitting={isSubmitting}
+            eventosDisponibles={salonStats ? salonStats.limiteEventosMes - salonStats.eventosEsteMes : 0}
+            limiteEventosMes={salonStats?.limiteEventosMes || 0}
+            puedeCrearEvento={salonStats?.puedeCrearEvento ?? false}
+            suscripcionVencida={salonStats?.alertaCritica}
+          />
+        );
+
+      case 'admin':
+      case 'asistente':
+        return (
+          <StepPaymentAdmin
+            formData={formData}
+            onGeneratePaymentLink={generatePaymentLinkForClient}
+            onCreatePromotional={async (clienteEmail) => {
+              return await createEventDirectly(true, clienteEmail);
+            }}
+            onBack={prevStep}
+            isSubmitting={isSubmitting}
+            calculatePrice={calculatePrice}
+            activeGateway={activeGateway}
+            paymentLink={paymentLink}
+            isAsistente={userFlowRole === 'asistente'}
+          />
+        );
+
+      case 'cliente':
+      default:
+        return (
+          <StepPaymentClient
+            formData={formData}
+            onSubmit={initiatePayment}
+            onBack={prevStep}
+            isSubmitting={isSubmitting}
+            calculatePrice={calculatePrice}
+            activeGateway={activeGateway}
+          />
+        );
+    }
+  };
 
   // Render del paso actual
   const renderStep = () => {
@@ -83,20 +145,7 @@ export function CreateEventWizard() {
           />
         );
       case 3:
-        return (
-          <StepPayment
-            formData={formData}
-            onSubmit={initiatePayment}
-            onBack={prevStep}
-            isSubmitting={isSubmitting}
-            calculatePrice={calculatePrice}
-            activeGateway={getActiveGateway()}
-            isSuperAdmin={isSuperAdmin}
-            onCreatePromotional={() => createEventDirectly(true)}
-            onCopyPaymentLink={copyPaymentLink}
-            paymentLink={paymentLink}
-          />
-        );
+        return renderPaymentStep();
       default:
         return null;
     }
