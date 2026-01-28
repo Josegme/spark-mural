@@ -1,7 +1,7 @@
 /**
  * PICKEVENT - Hook para crear eventos con pago integrado
  * Soporta múltiples pasarelas: Mercado Pago (AR/BR/PY) y Stripe (NZ/ES/AU/US/GB)
- * Incluye: evento promocional (sin pago) y copiar link de pago
+ * Incluye: flujos por rol (Cliente, Salón, Admin, Asistente)
  */
 
 import { useState } from 'react';
@@ -10,15 +10,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateQRToken } from '@/lib/utils';
 import { CreateEventData } from '@/lib/validations/event';
-import { EVENT_PRICES, PAYMENT_GATEWAYS } from '@/lib/constants';
+import { EVENT_PRICES } from '@/lib/constants';
 import { toast } from 'sonner';
 
 // Países que usan Stripe
 const STRIPE_COUNTRIES = ['NZ', 'ES', 'AU', 'US', 'GB', 'DE', 'FR', 'IT'];
-// Países que usan Mercado Pago
-const MP_COUNTRIES = ['AR', 'BR', 'PY', 'MX', 'CL', 'CO', 'UY', 'PE'];
 
 export type PaymentGateway = 'mercadopago' | 'stripe';
+export type UserFlowRole = 'cliente' | 'salon' | 'admin' | 'asistente';
 
 export function getPaymentGateway(countryCode: string): PaymentGateway {
   if (STRIPE_COUNTRIES.includes(countryCode.toUpperCase())) {
@@ -90,6 +89,23 @@ export function useCreateEvent() {
 
   const totalSteps = 4;
   const stepTitles = ['Información', 'Personalización', 'Configuración', 'Pago'];
+
+  // Detectar qué flujo de UI usar según el rol
+  const getUserFlowRole = (): UserFlowRole => {
+    if (!profile?.rol) return 'cliente';
+    
+    switch (profile.rol) {
+      case 'super_admin':
+        return 'admin';
+      case 'asistente':
+        return 'asistente';
+      case 'salon':
+        return 'salon';
+      case 'cliente':
+      default:
+        return 'cliente';
+    }
+  };
 
   const updateFormData = (data: Partial<WizardFormData>) => {
     setFormData(prev => ({ ...prev, ...data }));
@@ -330,7 +346,7 @@ export function useCreateEvent() {
   };
 
   // Crear evento directamente (sin pago - para flujos especiales o promocionales)
-  const createEventDirectly = async (isPromotional: boolean = false): Promise<boolean> => {
+  const createEventDirectly = async (isPromotional: boolean = false, clienteEmail?: string): Promise<boolean> => {
     if (!user) {
       toast.error('Debés iniciar sesión para crear un evento');
       return false;
@@ -377,6 +393,22 @@ export function useCreateEvent() {
         return false;
       }
 
+      // If clienteEmail is provided and different from current user, send QR emails
+      if (clienteEmail && clienteEmail !== profile?.email) {
+        try {
+          await supabase.functions.invoke('send-event-qr-emails', {
+            body: {
+              evento_id: data.id,
+              cliente_email: clienteEmail,
+              cliente_nombre: 'Cliente',
+            },
+          });
+        } catch (emailError) {
+          console.error('Error sending QR emails:', emailError);
+          // Don't fail the event creation if email fails
+        }
+      }
+
       setCreatedEvent(data);
       toast.success(isPromotional 
         ? '¡Evento promocional creado exitosamente!' 
@@ -387,6 +419,70 @@ export function useCreateEvent() {
       console.error('Error creating event:', error);
       toast.error('Error inesperado. Intentá de nuevo.');
       return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Generate payment link for external sharing (Admin/Asistente flow)
+  const generatePaymentLinkForClient = async (clienteEmail: string): Promise<string | null> => {
+    if (!user) {
+      toast.error('Debés iniciar sesión para generar el link');
+      return null;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const precio = calculatePrice();
+
+      const { data, error } = await supabase.functions.invoke('create-payment-preference', {
+        body: {
+          nombre_evento: formData.nombre,
+          tipo_evento: formData.tipo,
+          es_premium: formData.es_premium,
+          precio: precio,
+          cliente_email: clienteEmail,
+          cliente_nombre: 'Cliente',
+          evento_data: {
+            tipo: formData.tipo,
+            fecha_evento: formData.fecha_evento,
+            hora_inicio: formData.hora_inicio,
+            duracion_horas: formData.duracion_horas,
+            tema_ia: formData.es_premium ? formData.tema_ia : null,
+            estilo_ia: formData.es_premium ? formData.estilo_ia : null,
+            logo_url: formData.logo_url,
+            color_banner: formData.color_banner,
+            limite_subidas_por_invitado: formData.limite_subidas_por_invitado,
+            moderacion_activa: formData.moderacion_activa,
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Error creating payment preference:', error);
+        toast.error('Error al generar el link de pago');
+        return null;
+      }
+
+      const checkoutUrl = data.sandbox_init_point || data.init_point;
+      setPaymentLink(checkoutUrl);
+      setIsPaymentLinkGenerated(true);
+      toast.success('¡Link de pago generado! Copialo y compartilo con el cliente.');
+      
+      // Auto-copy to clipboard
+      try {
+        await navigator.clipboard.writeText(checkoutUrl);
+        toast.success('Link copiado al portapapeles');
+      } catch (e) {
+        // Clipboard copy failed silently
+      }
+      
+      return checkoutUrl;
+    } catch (error) {
+      console.error('Error generating payment link:', error);
+      toast.error('Error inesperado. Intentá de nuevo.');
+      return null;
     } finally {
       setIsSubmitting(false);
     }
@@ -417,11 +513,13 @@ export function useCreateEvent() {
     resetWizard,
     navigate,
     getActiveGateway,
+    getUserFlowRole,
     // New exports for promotional events and copy link
     isSuperAdmin: isSuperAdmin(),
     paymentLink,
     isPaymentLinkGenerated,
     copyPaymentLink,
     generatePaymentLink,
+    generatePaymentLinkForClient,
   };
 }
