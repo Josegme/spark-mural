@@ -101,6 +101,9 @@ serve(async (req) => {
     console.log('Calling Lovable AI Gateway with style:', body.estilo);
 
     // Llamar a Lovable AI Gateway para generar la imagen
+    // Usamos google/gemini-2.5-flash-image con el prompt de edición
+    const editPrompt = `Edit this image: ${fullPrompt}. Generate a new version of the image transformed with the specified artistic style. The output should be a single transformed image.`;
+    
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -114,14 +117,14 @@ serve(async (req) => {
             role: "user",
             content: [
               {
-                type: "text",
-                text: fullPrompt
-              },
-              {
                 type: "image_url",
                 image_url: {
                   url: contenido.url_original
                 }
+              },
+              {
+                type: "text",
+                text: editPrompt
               }
             ]
           }
