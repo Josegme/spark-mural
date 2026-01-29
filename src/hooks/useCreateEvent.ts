@@ -399,6 +399,30 @@ export function useCreateEvent() {
         return false;
       }
 
+      // If promotional event by asistente, decrement courtesy counter
+      if (isPromotional && userRole === 'asistente' && tenantId) {
+        try {
+          // Fetch current courtesy count and decrement
+          const { data: tenantData } = await supabase
+            .from('tenants')
+            .select('eventos_cortesia_disponibles')
+            .eq('id', tenantId)
+            .single();
+          
+          if (tenantData && tenantData.eventos_cortesia_disponibles > 0) {
+            await supabase
+              .from('tenants')
+              .update({ 
+                eventos_cortesia_disponibles: tenantData.eventos_cortesia_disponibles - 1 
+              })
+              .eq('id', tenantId);
+          }
+        } catch (courtesyError) {
+          console.error('Error updating courtesy counter:', courtesyError);
+          // Don't fail the event creation if this fails
+        }
+      }
+
       // If clienteEmail is provided and different from current user, send QR emails
       if (clienteEmail && clienteEmail !== profile?.email) {
         try {

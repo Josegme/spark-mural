@@ -241,6 +241,23 @@ serve(async (req) => {
 
           console.log('Generated QR tokens:', { qr_pantalla_token, qr_invitados_token, qr_descarga_token });
 
+          // Get user's tenant_id if they're an asistente
+          let tenantId = null;
+          try {
+            const { data: userProfile } = await supabase
+              .from('profiles')
+              .select('tenant_id, rol')
+              .eq('id', metadata.user_id)
+              .single();
+            
+            if (userProfile?.rol === 'asistente' && userProfile?.tenant_id) {
+              tenantId = userProfile.tenant_id;
+              console.log('User is asistente with tenant_id:', tenantId);
+            }
+          } catch (e) {
+            console.log('Could not fetch user profile for tenant lookup');
+          }
+
           const { data: evento, error: eventoError } = await supabase
             .from('eventos')
             .insert({
@@ -264,6 +281,7 @@ serve(async (req) => {
               estado: 'programado',
               pasarela_pago: 'mercadopago_ar',
               payment_id: payment.id.toString(),
+              tenant_id: tenantId,
             })
             .select('id')
             .single();
@@ -283,6 +301,53 @@ serve(async (req) => {
               console.error('Error linking payment to event:', linkError);
             } else {
               console.log('Payment linked to event successfully');
+            }
+
+            // If tenant exists (asistente flow), increment sales counter and check for courtesy unlock
+            if (tenantId) {
+              console.log('=== UPDATING ASISTENTE SALES COUNTER ===');
+              try {
+                // Get current tenant data
+                const { data: tenantData, error: tenantError } = await supabase
+                  .from('tenants')
+                  .select('eventos_vendidos_total, eventos_cortesia_disponibles')
+                  .eq('id', tenantId)
+                  .single();
+
+                if (!tenantError && tenantData) {
+                  const currentSales = tenantData.eventos_vendidos_total || 0;
+                  const newSales = currentSales + 1;
+                  
+                  // Check if we've hit a 30-sale milestone
+                  const oldMilestones = Math.floor(currentSales / 30);
+                  const newMilestones = Math.floor(newSales / 30);
+                  const unlockedNewCourtesy = newMilestones > oldMilestones;
+                  
+                  const updateData: any = {
+                    eventos_vendidos_total: newSales,
+                  };
+                  
+                  // If reached new milestone, add 2 courtesy events
+                  if (unlockedNewCourtesy) {
+                    const currentCourtesy = tenantData.eventos_cortesia_disponibles || 0;
+                    updateData.eventos_cortesia_disponibles = currentCourtesy + 2;
+                    console.log('🎉 Milestone reached! Unlocking 2 courtesy events. New total:', updateData.eventos_cortesia_disponibles);
+                  }
+                  
+                  const { error: updateTenantError } = await supabase
+                    .from('tenants')
+                    .update(updateData)
+                    .eq('id', tenantId);
+                  
+                  if (updateTenantError) {
+                    console.error('Error updating tenant sales counter:', updateTenantError);
+                  } else {
+                    console.log('Tenant sales counter updated successfully. New total:', newSales);
+                  }
+                }
+              } catch (tenantUpdateError) {
+                console.error('Failed to update tenant sales counter:', tenantUpdateError);
+              }
             }
 
             // Send QR codes email automatically

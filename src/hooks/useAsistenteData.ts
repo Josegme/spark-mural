@@ -61,6 +61,8 @@ export interface AsistenteTenantInfo {
   comision_superadmin: number;
   estado: string;
   limite_eventos_mes: number;
+  eventos_cortesia_disponibles: number;
+  eventos_vendidos_total: number;
 }
 
 export interface AsistenteStats {
@@ -90,7 +92,7 @@ export function useAsistenteData() {
 
       const { data, error } = await supabase
         .from('tenants')
-        .select('id, nombre, email, pais, comision_asistente, comision_superadmin, estado, limite_eventos_mes')
+        .select('id, nombre, email, pais, comision_asistente, comision_superadmin, estado, limite_eventos_mes, eventos_cortesia_disponibles, eventos_vendidos_total')
         .eq('id', tenantId)
         .eq('tipo', 'asistente')
         .single();
@@ -103,7 +105,9 @@ export function useAsistenteData() {
         ...data,
         comision_asistente: data.comision_asistente ?? 50,
         comision_superadmin: data.comision_superadmin ?? 50,
-        limite_eventos_mes: data.limite_eventos_mes ?? 20,
+        limite_eventos_mes: data.limite_eventos_mes ?? 30,
+        eventos_cortesia_disponibles: data.eventos_cortesia_disponibles ?? 2,
+        eventos_vendidos_total: data.eventos_vendidos_total ?? 0,
       };
     },
     enabled: !!tenantId,

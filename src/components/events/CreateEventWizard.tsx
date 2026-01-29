@@ -16,6 +16,7 @@ import {
   EventCreatedSuccess,
 } from './wizard';
 import { useSalonData } from '@/hooks/useSalonData';
+import { useAsistenteData } from '@/hooks/useAsistenteData';
 
 export function CreateEventWizard() {
   const {
@@ -41,7 +42,8 @@ export function CreateEventWizard() {
 
   // Get salon data for quota validation (only used for salon role)
   const userFlowRole = getUserFlowRole();
-  const { stats: salonStats, tenantInfo } = useSalonData();
+  const { stats: salonStats, tenantInfo: salonTenantInfo } = useSalonData();
+  const { stats: asistenteStats, tenantInfo: asistenteTenantInfo } = useAsistenteData();
 
   // Si el evento fue creado, mostrar pantalla de éxito
   if (createdEvent) {
@@ -91,6 +93,9 @@ export function CreateEventWizard() {
             activeGateway={activeGateway}
             paymentLink={paymentLink}
             isAsistente={userFlowRole === 'asistente'}
+            // Pass courtesy data for assistants
+            eventosVendidosTotal={asistenteTenantInfo?.eventos_vendidos_total ?? 0}
+            eventosCortesiaDisponibles={asistenteTenantInfo?.eventos_cortesia_disponibles ?? 2}
           />
         );
 
