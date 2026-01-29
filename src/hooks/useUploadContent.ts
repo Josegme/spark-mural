@@ -3,7 +3,7 @@
  * Maneja uploads de fotos, videos y mensajes
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { generateDeviceId, validateFileSize, validateFileExtension } from '@/lib/utils';
 import { APP_CONFIG, ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants';
@@ -83,10 +83,12 @@ export function useUploadContent(token: string): UseUploadContentReturn {
     return data;
   }, [token, deviceId]);
 
-  // Inicializar
-  useState(() => {
-    fetchEvent();
-  });
+  // Inicializar - usar useEffect para cargar datos
+  useEffect(() => {
+    if (token) {
+      fetchEvent();
+    }
+  }, [token, fetchEvent]);
 
   // Calcular uploads restantes
   const uploadsRemaining = event?.limite_subidas_por_invitado 

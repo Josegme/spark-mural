@@ -1,5 +1,6 @@
 /**
  * PICKEVENT - Tarjetas de eventos del Asistente (estilo dashboard)
+ * Con soporte para eventos pendientes de pago (bloqueados)
  */
 
 import { Link } from 'react-router-dom';
@@ -14,10 +15,15 @@ import {
   Plus,
   Sparkles,
   PartyPopper,
-  User
+  User,
+  Lock,
+  Copy,
+  ExternalLink,
+  AlertCircle
 } from 'lucide-react';
 import { formatDate, formatTime, formatPrice } from '@/lib/utils';
 import { EVENT_STATUS } from '@/lib/constants';
+import { toast } from 'sonner';
 import type { AsistenteEvent } from '@/hooks/useAsistenteData';
 
 interface AsistenteEventCardsProps {
@@ -44,12 +50,22 @@ export function AsistenteEventCards({ eventos, isLoading, puedeCrear, onCreateEv
     );
   }
 
-  const getEstadoVariant = (estado: string) => {
+  const getEstadoVariant = (estado: string, pagoPendiente: boolean) => {
+    if (pagoPendiente) return 'destructive';
     switch (estado) {
       case 'activo': return 'default';
       case 'programado': return 'secondary';
       case 'finalizado': return 'outline';
       default: return 'outline';
+    }
+  };
+
+  const handleCopyLink = async (link: string) => {
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success('¡Link copiado! Compartilo con el cliente');
+    } catch {
+      toast.error('Error al copiar el link');
     }
   };
 
@@ -92,15 +108,18 @@ export function AsistenteEventCards({ eventos, isLoading, puedeCrear, onCreateEv
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {eventosRecientes.map((evento) => {
             const estadoInfo = EVENT_STATUS[evento.estado as keyof typeof EVENT_STATUS];
+            const isPagoPendiente = evento.pago_estado === 'pendiente';
+            const isBlocked = isPagoPendiente;
             
             return (
               <Card 
                 key={evento.id} 
-                className="hover:border-primary/50 transition-colors"
+                className={`transition-colors ${isBlocked ? 'border-destructive/50 bg-destructive/5' : 'hover:border-primary/50'}`}
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
+                      {isBlocked && <Lock className="w-4 h-4 text-destructive flex-shrink-0" />}
                       <CardTitle className="text-lg font-semibold line-clamp-1">
                         {evento.nombre}
                       </CardTitle>
@@ -110,8 +129,8 @@ export function AsistenteEventCards({ eventos, isLoading, puedeCrear, onCreateEv
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Badge variant={getEstadoVariant(evento.estado)}>
-                      {estadoInfo?.label || evento.estado}
+                    <Badge variant={getEstadoVariant(evento.estado, isPagoPendiente)}>
+                      {isPagoPendiente ? '⏳ Pago Pendiente' : (estadoInfo?.label || evento.estado)}
                     </Badge>
                     <span className="text-primary font-medium">
                       {formatPrice(evento.precio_pagado)}
@@ -137,24 +156,65 @@ export function AsistenteEventCards({ eventos, isLoading, puedeCrear, onCreateEv
                     </div>
                   </div>
                   
-                  {/* Contenido */}
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Image className="w-4 h-4 text-primary" />
-                      <span className="text-primary font-medium">{evento.total_fotos}</span>
+                  {/* Contenido - solo si no está bloqueado */}
+                  {!isBlocked && (
+                    <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-1">
+                        <Image className="w-4 h-4 text-primary" />
+                        <span className="text-primary font-medium">{evento.total_fotos}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageSquare className="w-4 h-4 text-primary" />
+                        <span className="text-primary font-medium">{evento.total_mensajes}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <MessageSquare className="w-4 h-4 text-primary" />
-                      <span className="text-primary font-medium">{evento.total_mensajes}</span>
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="pt-2">
-                    <Button variant="outline" size="sm" className="w-full" asChild>
-                      <Link to={`/evento/${evento.id}`}>
-                        Ver Detalles
-                      </Link>
-                    </Button>
+                  {/* Mensaje de bloqueo */}
+                  {isBlocked && (
+                    <div className="p-2 rounded-lg bg-destructive/10 border border-destructive/20">
+                      <div className="flex items-center gap-2 text-xs text-destructive">
+                        <AlertCircle className="w-3 h-3" />
+                        <span>Acceso bloqueado hasta confirmar pago</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-2 space-y-2">
+                    {/* Si está bloqueado, mostrar acciones de link */}
+                    {isBlocked && evento.payment_link ? (
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="default"
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleCopyLink(evento.payment_link!)}
+                        >
+                          <Copy className="w-4 h-4 mr-1" />
+                          Copiar Link
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <a href={evento.payment_link} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </Button>
+                      </div>
+                    ) : isBlocked ? (
+                      <Button variant="outline" size="sm" className="w-full" disabled>
+                        <Lock className="w-4 h-4 mr-2" />
+                        Esperando pago
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" className="w-full" asChild>
+                        <Link to={`/evento/${evento.id}`}>
+                          Ver Detalles
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

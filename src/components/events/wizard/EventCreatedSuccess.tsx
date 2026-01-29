@@ -2,6 +2,7 @@
  * PICKEVENT - Pantalla de éxito al crear evento
  */
 
+import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { CheckCircle, Copy, ExternalLink, QrCode, Monitor, Users, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,57 +30,63 @@ interface QRCardProps {
   getUrl: (token: string) => string;
 }
 
-function QRCard({ title, description, token, icon, colorClass, getUrl }: QRCardProps) {
-  const url = getUrl(token);
+const QRCard = React.forwardRef<HTMLDivElement, QRCardProps>(
+  ({ title, description, token, icon, colorClass, getUrl }, ref) => {
+    const url = getUrl(token);
 
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success('URL copiada al portapapeles');
-    } catch {
-      toast.error('No se pudo copiar');
-    }
-  };
+    const copyToClipboard = async () => {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success('URL copiada al portapapeles');
+      } catch {
+        toast.error('No se pudo copiar');
+      }
+    };
 
-  return (
-    <div className={cn(
-      'p-4 rounded-xl border-2 transition-all duration-300 hover:shadow-lg',
-      colorClass
-    )}>
-      <div className="flex items-start gap-3">
-        <div className="p-2 rounded-lg bg-background/50">
-          {icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-foreground">{title}</h4>
-          <p className="text-sm text-muted-foreground">{description}</p>
-          
-          <div className="mt-3 flex items-center gap-2">
-            <code className="text-xs bg-background/50 px-2 py-1 rounded truncate flex-1 block">
-              .../{token}
-            </code>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 flex-shrink-0"
-              onClick={copyToClipboard}
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 flex-shrink-0"
-              onClick={() => window.open(url, '_blank')}
-            >
-              <ExternalLink className="w-4 h-4" />
-            </Button>
+    return (
+      <div 
+        ref={ref}
+        className={cn(
+          'p-4 rounded-xl border-2 transition-all duration-300 hover:shadow-lg',
+          colorClass
+        )}
+      >
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-background/50">
+            {icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-foreground">{title}</h4>
+            <p className="text-sm text-muted-foreground">{description}</p>
+            
+            <div className="mt-3 flex items-center gap-2">
+              <code className="text-xs bg-background/50 px-2 py-1 rounded truncate flex-1 block">
+                .../{token}
+              </code>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 flex-shrink-0"
+                onClick={copyToClipboard}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 flex-shrink-0"
+                onClick={() => window.open(url, '_blank')}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+);
+QRCard.displayName = 'QRCard';
 
 export function EventCreatedSuccess({ event, eventName, onGoToDashboard, onViewMuro }: EventCreatedSuccessProps) {
   const [showContent, setShowContent] = useState(false);

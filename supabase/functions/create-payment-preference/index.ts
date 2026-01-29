@@ -146,7 +146,7 @@ serve(async (req) => {
 
     console.log('MP preference created:', { id: mpData.id, init_point: mpData.init_point });
 
-    // Store pending payment in database
+    // Store pending payment in database with checkout URL for recovery
     const { error: pagoError } = await supabase
       .from('pagos')
       .insert({
@@ -162,6 +162,9 @@ serve(async (req) => {
           evento_data: body.evento_data,
           nombre_evento: body.nombre_evento,
           es_premium: body.es_premium,
+          // Store checkout URLs for later recovery
+          init_point: mpData.init_point,
+          sandbox_init_point: mpData.sandbox_init_point,
         },
       });
 
