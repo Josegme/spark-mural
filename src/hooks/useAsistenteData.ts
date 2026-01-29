@@ -60,6 +60,7 @@ export interface AsistenteTenantInfo {
   comision_asistente: number;
   comision_superadmin: number;
   estado: string;
+  limite_eventos_mes: number;
 }
 
 export interface AsistenteStats {
@@ -72,6 +73,9 @@ export interface AsistenteStats {
   comisionMes: number;
   pendienteRendir: number;
   totalClientes: number;
+  limiteEventosMes: number;
+  eventosUsados: number;
+  puedeCrearEvento: boolean;
 }
 
 export function useAsistenteData() {
@@ -86,7 +90,7 @@ export function useAsistenteData() {
 
       const { data, error } = await supabase
         .from('tenants')
-        .select('id, nombre, email, pais, comision_asistente, comision_superadmin, estado')
+        .select('id, nombre, email, pais, comision_asistente, comision_superadmin, estado, limite_eventos_mes')
         .eq('id', tenantId)
         .eq('tipo', 'asistente')
         .single();
@@ -95,7 +99,12 @@ export function useAsistenteData() {
         console.error('Error fetching tenant:', error);
         return null;
       }
-      return data;
+      return {
+        ...data,
+        comision_asistente: data.comision_asistente ?? 50,
+        comision_superadmin: data.comision_superadmin ?? 50,
+        limite_eventos_mes: data.limite_eventos_mes ?? 20,
+      };
     },
     enabled: !!tenantId,
   });
@@ -216,26 +225,30 @@ export function useAsistenteData() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // Eventos del mes
+    // Eventos del mes (creados este mes)
     const eventosEsteMes = eventos.filter(e => 
       new Date(e.created_at) >= startOfMonth
     );
+
+    // Límite y uso
+    const limiteEventosMes = tenant?.limite_eventos_mes ?? 20;
+    const eventosUsados = eventos.length; // Total de eventos creados por el asistente
 
     // Facturación
     const facturacionTotal = eventos.reduce((sum, e) => sum + e.precio_pagado, 0);
     const facturacionMes = eventosEsteMes.reduce((sum, e) => sum + e.precio_pagado, 0);
 
     // Comisiones (porcentaje del asistente)
-    const comisionPorcentaje = tenant?.comision_asistente || 70;
+    const comisionPorcentaje = tenant?.comision_asistente ?? 50;
     const comisionTotal = Math.round(facturacionTotal * (comisionPorcentaje / 100));
     const comisionMes = Math.round(facturacionMes * (comisionPorcentaje / 100));
 
-    // Pendiente a rendir (30% para super admin)
+    // Pendiente a rendir (% para super admin)
     const rendido = rendiciones
       .filter(r => r.estado === 'verificado')
       .reduce((sum, r) => sum + r.monto_a_rendir, 0);
     
-    const superadminPorcentaje = tenant?.comision_superadmin || 30;
+    const superadminPorcentaje = tenant?.comision_superadmin ?? 50;
     const totalARendir = Math.round(facturacionTotal * (superadminPorcentaje / 100));
     const pendienteRendir = totalARendir - rendido;
 
@@ -249,6 +262,9 @@ export function useAsistenteData() {
       comisionMes,
       pendienteRendir: Math.max(0, pendienteRendir),
       totalClientes: clientes.length,
+      limiteEventosMes,
+      eventosUsados,
+      puedeCrearEvento: eventosUsados < limiteEventosMes && tenant?.estado === 'activo',
     };
   };
 
