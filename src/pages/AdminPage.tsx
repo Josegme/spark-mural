@@ -13,13 +13,16 @@ import {
   FileText,
   RefreshCw,
   Loader2,
-  UserPlus
+  UserPlus,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useAdminData } from '@/hooks/useAdminData';
 import { AdminStats, TenantsTable, UsersTable, LaunchChecklist } from '@/components/admin';
 import TenantAssignment from '@/components/admin/TenantAssignment';
 
 export default function AdminPage() {
+  const { signOut } = useAuth();
   const { stats, tenants, users, isLoading, refetch } = useAdminData();
 
   return (
@@ -35,18 +38,24 @@ export default function AdminPage() {
               Gestión global del sistema PICKEVENT
             </p>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={() => refetch()}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4 mr-2" />
-            )}
-            Actualizar
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => refetch()}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              Actualizar
+            </Button>
+            <Button variant="outline" onClick={signOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Cerrar Sesión
+            </Button>
+          </div>
         </div>
 
         {/* Tabs */}
