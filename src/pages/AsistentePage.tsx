@@ -1,9 +1,10 @@
 /**
  * PICKEVENT - Dashboard del Asistente
  * Panel completo para gestión de eventos, clientes y comisiones
+ * Adaptado al estilo del Dashboard del Salón
  */
 
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -20,17 +21,24 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useAsistenteData } from '@/hooks/useAsistenteData';
 import { 
-  AsistenteStats,
+  AsistenteStatsCards,
+  AsistenteEventCards,
+  AsistenteQuickActions,
   AsistenteEventos,
   AsistenteClientes,
   AsistenteRendiciones,
-  CreateEventForClientModal
 } from '@/components/asistente';
 
 export default function AsistentePage() {
+  const navigate = useNavigate();
   const { profile, signOut } = useAuth();
   const { stats, eventos, clientes, rendiciones, tenantInfo, isLoading, refetch } = useAsistenteData();
-  const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  const handleCreateEvent = () => {
+    if (stats.puedeCrearEvento) {
+      navigate('/crear-evento');
+    }
+  };
 
   return (
     <MainLayout showFooter={false}>
@@ -65,7 +73,8 @@ export default function AsistentePage() {
             </Button>
             <Button 
               className="btn-hero text-sm px-4 py-2" 
-              onClick={() => setCreateModalOpen(true)}
+              onClick={handleCreateEvent}
+              disabled={!stats.puedeCrearEvento}
             >
               <Plus className="w-4 h-4 mr-2" />
               Crear Evento
@@ -94,22 +103,40 @@ export default function AsistentePage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard">
-            <AsistenteStats 
-              stats={stats} 
-              tenantInfo={tenantInfo}
-              isLoading={isLoading} 
+          {/* TAB: Dashboard */}
+          <TabsContent value="dashboard" className="space-y-6">
+            {/* Stats Cards con cuota */}
+            <AsistenteStatsCards 
+              stats={stats}
+              limiteEventosMes={stats.limiteEventosMes}
+              eventosUsados={stats.eventosUsados}
+              isLoading={isLoading}
+            />
+
+            {/* Event Cards */}
+            <AsistenteEventCards
+              eventos={eventos}
+              isLoading={isLoading}
+              puedeCrear={stats.puedeCrearEvento}
+              onCreateEvent={handleCreateEvent}
+            />
+
+            {/* Quick Actions */}
+            <AsistenteQuickActions
+              hasEvents={eventos.length > 0}
             />
           </TabsContent>
 
+          {/* TAB: Eventos (tabla completa) */}
           <TabsContent value="eventos">
             <AsistenteEventos 
               eventos={eventos} 
               isLoading={isLoading}
-              onCreateEvent={() => setCreateModalOpen(true)}
+              onCreateEvent={handleCreateEvent}
             />
           </TabsContent>
 
+          {/* TAB: Clientes */}
           <TabsContent value="clientes">
             <AsistenteClientes 
               clientes={clientes} 
@@ -117,6 +144,7 @@ export default function AsistentePage() {
             />
           </TabsContent>
 
+          {/* TAB: Rendiciones */}
           <TabsContent value="rendiciones">
             <AsistenteRendiciones 
               rendiciones={rendiciones}
@@ -127,17 +155,6 @@ export default function AsistentePage() {
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Modal para crear evento para cliente */}
-      <CreateEventForClientModal
-        open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
-        tenantInfo={tenantInfo}
-        onSuccess={() => {
-          refetch();
-          setCreateModalOpen(false);
-        }}
-      />
     </MainLayout>
   );
 }
