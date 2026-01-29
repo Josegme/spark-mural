@@ -637,6 +637,8 @@ export type Database = {
           created_at: string
           email: string
           estado: Database["public"]["Enums"]["tenant_status"]
+          eventos_cortesia_disponibles: number
+          eventos_vendidos_total: number
           fecha_vencimiento: string | null
           id: string
           limite_eventos_mes: number | null
@@ -655,6 +657,8 @@ export type Database = {
           created_at?: string
           email: string
           estado?: Database["public"]["Enums"]["tenant_status"]
+          eventos_cortesia_disponibles?: number
+          eventos_vendidos_total?: number
           fecha_vencimiento?: string | null
           id?: string
           limite_eventos_mes?: number | null
@@ -673,6 +677,8 @@ export type Database = {
           created_at?: string
           email?: string
           estado?: Database["public"]["Enums"]["tenant_status"]
+          eventos_cortesia_disponibles?: number
+          eventos_vendidos_total?: number
           fecha_vencimiento?: string | null
           id?: string
           limite_eventos_mes?: number | null

@@ -1,13 +1,15 @@
 /**
  * PICKEVENT - Paso 4: Pago para Admin/Asistente
  * Opciones: Generar link de pago O crear evento promocional
+ * Con validación de cortesías: 2 cada 30 vendidos
  */
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ChevronLeft, Check, Calendar, Clock, Timer, Sparkles, QrCode, Loader2, Mail, Copy, Gift, Link, CreditCard, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, Check, Calendar, Clock, Timer, Sparkles, QrCode, Loader2, Mail, Copy, Gift, Link, ExternalLink, AlertTriangle, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -17,6 +19,7 @@ import { WizardFormData, PaymentGateway } from '@/hooks/useCreateEvent';
 import { EVENT_TYPES, EVENT_PRICES } from '@/lib/constants';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const adminPaymentSchema = z.object({
   clienteEmail: z.string().email('Email inválido').min(1, 'Ingresá el email del cliente'),
@@ -38,6 +41,9 @@ interface StepPaymentAdminProps {
   activeGateway?: PaymentGateway;
   paymentLink?: string | null;
   isAsistente?: boolean;
+  // New props for courtesy validation
+  eventosVendidosTotal?: number;
+  eventosCortesiaDisponibles?: number;
 }
 
 export function StepPaymentAdmin({ 
@@ -50,9 +56,13 @@ export function StepPaymentAdmin({
   activeGateway = 'mercadopago',
   paymentLink,
   isAsistente = false,
+  eventosVendidosTotal = 0,
+  eventosCortesiaDisponibles = 2,
 }: StepPaymentAdminProps) {
+  const navigate = useNavigate();
   const [generatedLink, setGeneratedLink] = useState<string | null>(paymentLink || null);
   const [isCopying, setIsCopying] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const form = useForm<AdminPaymentData>({
     resolver: zodResolver(adminPaymentSchema),
@@ -65,10 +75,18 @@ export function StepPaymentAdmin({
 
   const paymentMode = form.watch('paymentMode');
 
+  // Calculate courtesy eligibility
+  const puedeUsarCortesia = eventosCortesiaDisponibles > 0;
+  const proximaCortesiaEn = 30 - (eventosVendidosTotal % 30);
+
   const handleSubmit = async (values: AdminPaymentData) => {
     if (!values.aceptaTerminos) return;
     
     if (values.paymentMode === 'promotional') {
+      if (!puedeUsarCortesia) {
+        toast.error(`No tenés cortesías disponibles. Vendé ${proximaCortesiaEn} eventos más para desbloquear 2.`);
+        return;
+      }
       await onCreatePromotional(values.clienteEmail);
     } else {
       const link = await onGeneratePaymentLink(values.clienteEmail);
@@ -84,9 +102,17 @@ export function StepPaymentAdmin({
     setIsCopying(true);
     try {
       await navigator.clipboard.writeText(generatedLink);
+      setLinkCopied(true);
+      toast.success('¡Link copiado! Compartilo por WhatsApp o email');
+    } catch (err) {
+      toast.error('Error al copiar el link');
     } finally {
       setIsCopying(false);
     }
+  };
+
+  const handleGoToDashboard = () => {
+    navigate(isAsistente ? '/asistente' : '/dashboard');
   };
 
   const precio = calculatePrice();
@@ -119,6 +145,7 @@ export function StepPaymentAdmin({
                 <Input
                   type="email"
                   placeholder="cliente@email.com"
+                  disabled={!!generatedLink}
                   {...field}
                 />
               </FormControl>
@@ -142,6 +169,7 @@ export function StepPaymentAdmin({
                   onValueChange={field.onChange}
                   defaultValue={field.value}
                   className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  disabled={!!generatedLink}
                 >
                   <label
                     htmlFor="mode-link"
@@ -149,7 +177,8 @@ export function StepPaymentAdmin({
                       "flex flex-col items-start p-4 rounded-xl border-2 cursor-pointer transition-all",
                       paymentMode === 'link' 
                         ? 'border-primary bg-primary/5' 
-                        : 'border-muted hover:border-muted-foreground/30'
+                        : 'border-muted hover:border-muted-foreground/30',
+                      generatedLink && 'opacity-60 cursor-not-allowed'
                     )}
                   >
                     <RadioGroupItem value="link" id="mode-link" className="sr-only" />
@@ -176,10 +205,12 @@ export function StepPaymentAdmin({
                   <label
                     htmlFor="mode-promotional"
                     className={cn(
-                      "flex flex-col items-start p-4 rounded-xl border-2 cursor-pointer transition-all",
+                      "flex flex-col items-start p-4 rounded-xl border-2 cursor-pointer transition-all relative",
                       paymentMode === 'promotional' 
                         ? 'border-accent bg-accent/5' 
-                        : 'border-muted hover:border-muted-foreground/30'
+                        : 'border-muted hover:border-muted-foreground/30',
+                      !puedeUsarCortesia && 'opacity-60',
+                      generatedLink && 'opacity-60 cursor-not-allowed'
                     )}
                   >
                     <RadioGroupItem value="promotional" id="mode-promotional" className="sr-only" />
@@ -201,6 +232,15 @@ export function StepPaymentAdmin({
                     <div className="mt-2 text-lg font-bold text-accent">
                       $0 - Gratis
                     </div>
+                    {/* Courtesy counter badge */}
+                    <div className={cn(
+                      "absolute top-2 right-2 text-xs font-medium px-2 py-1 rounded-full",
+                      puedeUsarCortesia 
+                        ? "bg-accent/20 text-accent" 
+                        : "bg-muted text-muted-foreground"
+                    )}>
+                      {eventosCortesiaDisponibles} disponibles
+                    </div>
                   </label>
                 </RadioGroup>
               </FormControl>
@@ -209,7 +249,26 @@ export function StepPaymentAdmin({
           )}
         />
 
-        {/* Link generado */}
+        {/* Warning for no courtesy available */}
+        {paymentMode === 'promotional' && !puedeUsarCortesia && (
+          <div className="p-4 rounded-xl bg-warning/10 border border-warning/30">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-warning mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-foreground">
+                  No tenés cortesías disponibles
+                </p>
+                <p className="text-muted-foreground mt-1">
+                  Vendé {proximaCortesiaEn} evento{proximaCortesiaEn !== 1 ? 's' : ''} más para desbloquear 2 nuevas cortesías.
+                  <br />
+                  <span className="text-xs">Eventos vendidos: {eventosVendidosTotal} | Cada 30 ventas = 2 cortesías</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Link generado - Estado completado */}
         {generatedLink && paymentMode === 'link' && (
           <div className="p-4 rounded-xl bg-success/10 border border-success/30">
             <div className="flex items-start gap-3">
@@ -246,6 +305,24 @@ export function StepPaymentAdmin({
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   Compartí este link por WhatsApp o email. El evento se creará automáticamente cuando el cliente pague.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Post-link completion message */}
+        {linkCopied && (
+          <div className="p-4 rounded-xl bg-info/10 border border-info/20">
+            <div className="flex items-start gap-3">
+              <Check className="w-5 h-5 text-info mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-foreground">
+                  ¡Listo! Ya podés salir de esta pantalla
+                </p>
+                <p className="text-muted-foreground mt-1">
+                  El evento se creará automáticamente cuando el cliente complete el pago. 
+                  Recibirás una notificación y el cliente recibirá sus códigos QR por email.
                 </p>
               </div>
             </div>
@@ -347,6 +424,7 @@ export function StepPaymentAdmin({
                 <Checkbox
                   checked={field.value}
                   onCheckedChange={field.onChange}
+                  disabled={!!generatedLink}
                 />
               </FormControl>
               <div className="space-y-1 leading-none">
@@ -372,47 +450,69 @@ export function StepPaymentAdmin({
             type="button"
             variant="outline"
             size="lg"
-            onClick={onBack}
+            onClick={linkCopied ? handleGoToDashboard : onBack}
             className="gap-2"
             disabled={isSubmitting}
           >
-            <ChevronLeft className="w-4 h-4" />
-            Atrás
-          </Button>
-          
-          <Button
-            type="submit"
-            size="lg"
-            className={cn(
-              "min-w-[200px]",
-              paymentMode === 'promotional' 
-                ? "bg-accent hover:bg-accent/90" 
-                : "bg-gradient-primary hover:opacity-90"
-            )}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
+            {linkCopied ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Procesando...
-              </>
-            ) : paymentMode === 'promotional' ? (
-              <>
-                <Gift className="w-4 h-4 mr-2" />
-                Crear Evento Promocional
-              </>
-            ) : generatedLink ? (
-              <>
-                <Copy className="w-4 h-4 mr-2" />
-                Copiar Link
+                <Home className="w-4 h-4" />
+                Volver al Dashboard
               </>
             ) : (
               <>
-                <Link className="w-4 h-4 mr-2" />
-                Generar Link de Pago
+                <ChevronLeft className="w-4 h-4" />
+                Atrás
               </>
             )}
           </Button>
+          
+          {/* Main action button - changes based on state */}
+          {linkCopied ? (
+            <Button
+              type="button"
+              size="lg"
+              className="min-w-[200px] bg-gradient-primary hover:opacity-90"
+              onClick={handleGoToDashboard}
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Listo, volver al Dashboard
+            </Button>
+          ) : (
+            <Button
+              type="submit"
+              size="lg"
+              className={cn(
+                "min-w-[200px]",
+                paymentMode === 'promotional' 
+                  ? "bg-accent hover:bg-accent/90" 
+                  : "bg-gradient-primary hover:opacity-90"
+              )}
+              disabled={isSubmitting || (paymentMode === 'promotional' && !puedeUsarCortesia)}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Procesando...
+                </>
+              ) : paymentMode === 'promotional' ? (
+                <>
+                  <Gift className="w-4 h-4 mr-2" />
+                  Crear Evento Promocional
+                </>
+              ) : generatedLink ? (
+                <>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar Link
+                </>
+              ) : (
+                <>
+                  <Link className="w-4 h-4 mr-2" />
+                  Generar Link de Pago
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </form>
     </Form>
