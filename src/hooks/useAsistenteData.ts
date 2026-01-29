@@ -24,6 +24,12 @@ export interface AsistenteEvent {
   total_videos: number;
   total_mensajes: number;
   created_at: string;
+  qr_pantalla_token?: string;
+  qr_invitados_token?: string;
+  qr_descarga_token?: string;
+  // Payment status
+  pago_estado?: 'pendiente' | 'aprobado' | 'rechazado' | null;
+  payment_link?: string | null;
 }
 
 export interface AsistenteCliente {
@@ -130,24 +136,42 @@ export function useAsistenteData() {
         return [];
       }
 
-      // Obtener info de clientes para cada evento
-      const eventosConClientes = await Promise.all(
+      // Obtener info de clientes y pagos para cada evento
+      const eventosConInfo = await Promise.all(
         (data || []).map(async (evento) => {
+          // Get client info
           const { data: clienteData } = await supabase
             .from('profiles')
             .select('nombre, email')
             .eq('id', evento.cliente_user_id)
-            .single();
+            .maybeSingle();
+
+          // Get payment info for this event
+          const { data: pagoData } = await supabase
+            .from('pagos')
+            .select('estado, metadata')
+            .eq('evento_id', evento.id)
+            .order('created_at', { ascending: false })
+            .maybeSingle();
+
+          // Extract checkout URL from metadata if payment is pending
+          let paymentLink: string | null = null;
+          if (pagoData?.estado === 'pendiente' && pagoData?.metadata) {
+            const metadata = pagoData.metadata as Record<string, unknown>;
+            paymentLink = (metadata.init_point || metadata.checkout_url || null) as string | null;
+          }
 
           return {
             ...evento,
             cliente_nombre: clienteData?.nombre || 'Cliente',
             cliente_email: clienteData?.email || '',
+            pago_estado: pagoData?.estado as 'pendiente' | 'aprobado' | 'rechazado' | null,
+            payment_link: paymentLink,
           };
         })
       );
 
-      return eventosConClientes;
+      return eventosConInfo;
     },
     enabled: !!tenantId,
   });

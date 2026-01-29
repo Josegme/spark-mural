@@ -216,9 +216,89 @@ serve(async (req) => {
         console.log('Payment updated successfully');
       }
 
-      // If payment approved and no event exists yet, create it
+      // If payment approved, handle event creation or update
       const metadata = existingPayment.metadata as any;
-      if (nuevoEstado === 'aprobado' && !existingPayment.evento_id && metadata?.evento_data) {
+      
+      // CASE 1: Event already exists (created by asistente when generating payment link)
+      if (nuevoEstado === 'aprobado' && existingPayment.evento_id) {
+        console.log('=== PAYMENT APPROVED FOR EXISTING EVENT ===');
+        console.log('Event ID:', existingPayment.evento_id);
+        
+        // Get event data to access tenant_id
+        const { data: eventoData, error: eventoError } = await supabase
+          .from('eventos')
+          .select('id, tenant_id, nombre')
+          .eq('id', existingPayment.evento_id)
+          .single();
+        
+        if (eventoError) {
+          console.error('Error fetching event:', eventoError);
+        } else {
+          console.log('Found event:', eventoData.nombre);
+          
+          // If tenant exists (asistente flow), increment sales counter
+          if (eventoData.tenant_id) {
+            console.log('=== UPDATING ASISTENTE SALES COUNTER ===');
+            try {
+              const { data: tenantData, error: tenantError } = await supabase
+                .from('tenants')
+                .select('eventos_vendidos_total, eventos_cortesia_disponibles')
+                .eq('id', eventoData.tenant_id)
+                .single();
+
+              if (!tenantError && tenantData) {
+                const currentSales = tenantData.eventos_vendidos_total || 0;
+                const newSales = currentSales + 1;
+                
+                // Check if we've hit a 30-sale milestone
+                const oldMilestones = Math.floor(currentSales / 30);
+                const newMilestones = Math.floor(newSales / 30);
+                const unlockedNewCourtesy = newMilestones > oldMilestones;
+                
+                const updateData: any = { eventos_vendidos_total: newSales };
+                
+                if (unlockedNewCourtesy) {
+                  const currentCourtesy = tenantData.eventos_cortesia_disponibles || 0;
+                  updateData.eventos_cortesia_disponibles = currentCourtesy + 2;
+                  console.log('🎉 Milestone reached! Unlocking 2 courtesy events.');
+                }
+
+                const { error: updateTenantError } = await supabase
+                  .from('tenants')
+                  .update(updateData)
+                  .eq('id', eventoData.tenant_id);
+                
+                if (updateTenantError) {
+                  console.error('Error updating tenant sales counter:', updateTenantError);
+                } else {
+                  console.log('Tenant sales counter updated. New total:', newSales);
+                }
+              }
+            } catch (tenantUpdateError) {
+              console.error('Failed to update tenant sales counter:', tenantUpdateError);
+            }
+          }
+
+          // Send QR codes email
+          console.log('Triggering email send for existing event:', existingPayment.evento_id);
+          try {
+            const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-event-qr-emails`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({ evento_id: existingPayment.evento_id }),
+            });
+            const emailResult = await emailResponse.json();
+            console.log('Email send result:', emailResult);
+          } catch (emailError) {
+            console.error('Failed to send QR emails:', emailError);
+          }
+        }
+      }
+      // CASE 2: No event exists yet, create it (direct client payment flow)
+      else if (nuevoEstado === 'aprobado' && !existingPayment.evento_id && metadata?.evento_data) {
         console.log('=== CREATING EVENT AFTER APPROVED PAYMENT ===');
         
         let eventoData;
@@ -307,7 +387,6 @@ serve(async (req) => {
             if (tenantId) {
               console.log('=== UPDATING ASISTENTE SALES COUNTER ===');
               try {
-                // Get current tenant data
                 const { data: tenantData, error: tenantError } = await supabase
                   .from('tenants')
                   .select('eventos_vendidos_total, eventos_cortesia_disponibles')
@@ -318,20 +397,16 @@ serve(async (req) => {
                   const currentSales = tenantData.eventos_vendidos_total || 0;
                   const newSales = currentSales + 1;
                   
-                  // Check if we've hit a 30-sale milestone
                   const oldMilestones = Math.floor(currentSales / 30);
                   const newMilestones = Math.floor(newSales / 30);
                   const unlockedNewCourtesy = newMilestones > oldMilestones;
                   
-                  const updateData: any = {
-                    eventos_vendidos_total: newSales,
-                  };
+                  const updateData: any = { eventos_vendidos_total: newSales };
                   
-                  // If reached new milestone, add 2 courtesy events
                   if (unlockedNewCourtesy) {
                     const currentCourtesy = tenantData.eventos_cortesia_disponibles || 0;
                     updateData.eventos_cortesia_disponibles = currentCourtesy + 2;
-                    console.log('🎉 Milestone reached! Unlocking 2 courtesy events. New total:', updateData.eventos_cortesia_disponibles);
+                    console.log('🎉 Milestone reached! Unlocking 2 courtesy events.');
                   }
                   
                   const { error: updateTenantError } = await supabase
@@ -342,7 +417,7 @@ serve(async (req) => {
                   if (updateTenantError) {
                     console.error('Error updating tenant sales counter:', updateTenantError);
                   } else {
-                    console.log('Tenant sales counter updated successfully. New total:', newSales);
+                    console.log('Tenant sales counter updated. New total:', newSales);
                   }
                 }
               } catch (tenantUpdateError) {
@@ -365,7 +440,6 @@ serve(async (req) => {
               console.log('Email send result:', emailResult);
             } catch (emailError) {
               console.error('Failed to send QR emails:', emailError);
-              // Don't fail the webhook if email fails
             }
           }
         } else {
