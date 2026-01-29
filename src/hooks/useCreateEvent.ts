@@ -359,9 +359,9 @@ export function useCreateEvent() {
       const qr_invitados_token = generateQRToken();
       const qr_descarga_token = generateQRToken();
 
-      // Determine tenant_id: if user is salon, use their tenant_id
+      // Determine tenant_id: if user is salon or asistente, use their tenant_id
       const userRole = getUserFlowRole();
-      const tenantId = (userRole === 'salon' && profile?.tenant_id) ? profile.tenant_id : null;
+      const tenantId = ((userRole === 'salon' || userRole === 'asistente') && profile?.tenant_id) ? profile.tenant_id : null;
 
       const eventData = {
         cliente_user_id: user.id,
