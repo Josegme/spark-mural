@@ -10,7 +10,7 @@ import {
   LayoutDashboard, 
   Building2, 
   Users, 
-  FileText,
+  Settings,
   RefreshCw,
   Loader2,
   UserPlus,
@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdminData } from '@/hooks/useAdminData';
 import { AdminStats, TenantsTable, UsersTable, LaunchChecklist } from '@/components/admin';
 import TenantAssignment from '@/components/admin/TenantAssignment';
+import { GlobalConfigPanel } from '@/components/admin/GlobalConfigPanel';
 
 export default function AdminPage() {
   const { signOut } = useAuth();
@@ -77,9 +78,9 @@ export default function AdminPage() {
               <UserPlus className="w-4 h-4" />
               <span className="hidden sm:inline">Asignar</span>
             </TabsTrigger>
-            <TabsTrigger value="reports" className="gap-2">
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Reportes</span>
+            <TabsTrigger value="config" className="gap-2">
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Config</span>
             </TabsTrigger>
           </TabsList>
 
@@ -95,7 +96,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="tenants">
-            <TenantsTable tenants={tenants} isLoading={isLoading} />
+            <TenantsTable tenants={tenants} isLoading={isLoading} onRefresh={refetch} />
           </TabsContent>
 
           <TabsContent value="users">
@@ -106,11 +107,8 @@ export default function AdminPage() {
             <TenantAssignment />
           </TabsContent>
 
-          <TabsContent value="reports">
-            <div className="text-center py-16 text-muted-foreground">
-              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Reportes y rendiciones - Próximamente</p>
-            </div>
+          <TabsContent value="config">
+            <GlobalConfigPanel />
           </TabsContent>
         </Tabs>
       </div>
