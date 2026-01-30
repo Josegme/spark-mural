@@ -12,10 +12,11 @@ interface EnterpriseBannerProps {
 }
 
 export function EnterpriseBanner({ 
-  whatsapp = '+5493764606205', 
+  whatsapp = '5493764606205', 
   mensaje = 'Hola! Quiero información sobre planes empresariales para mi salón/eventos.' 
 }: EnterpriseBannerProps) {
-  const whatsappUrl = `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensaje)}`;
+  // WhatsApp URL format: https://wa.me/number (no + sign, just digits)
+  const whatsappUrl = `https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(mensaje)}`;
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent p-8 md:p-12">
@@ -31,7 +32,7 @@ export function EnterpriseBanner({
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-sm font-medium">
             <Sparkles className="w-4 h-4" />
-            Planes Empresariales
+            Suscripciones a Medida
           </div>
           
           <h3 className="text-2xl md:text-3xl font-display font-bold text-white">

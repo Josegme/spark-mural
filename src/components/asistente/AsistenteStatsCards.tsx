@@ -24,9 +24,10 @@ interface AsistenteStatsCardsProps {
   limiteEventosMes: number;
   eventosUsados: number;
   isLoading: boolean;
+  comisionPorcentaje?: number;
 }
 
-export function AsistenteStatsCards({ stats, limiteEventosMes, eventosUsados, isLoading }: AsistenteStatsCardsProps) {
+export function AsistenteStatsCards({ stats, limiteEventosMes, eventosUsados, isLoading, comisionPorcentaje = 50 }: AsistenteStatsCardsProps) {
   const porcentajeUso = limiteEventosMes > 0 
     ? Math.round((eventosUsados / limiteEventosMes) * 100) 
     : 0;
@@ -117,7 +118,24 @@ export function AsistenteStatsCards({ stats, limiteEventosMes, eventosUsados, is
         </CardContent>
       </Card>
 
-      {/* Métricas Grid */}
+      {/* Mi Comisión Negociada */}
+      <Card className="border-2 border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <DollarSign className="w-5 h-5 text-accent" />
+            Mi Comisión Negociada
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-4xl font-bold text-accent">{comisionPorcentaje}%</span>
+            <span className="text-muted-foreground text-sm">de cada venta</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Esta es tu comisión acordada con el Super Admin. El {100 - comisionPorcentaje}% restante se rinde.
+          </p>
+        </CardContent>
+      </Card>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
