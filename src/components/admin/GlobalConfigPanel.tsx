@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useGlobalConfig } from '@/hooks/useGlobalConfig';
-import { Settings, DollarSign, Percent, Users, Save, Loader2 } from 'lucide-react';
+import { Settings, DollarSign, Percent, Users, Save, Loader2, Building2 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 
 export function GlobalConfigPanel() {
@@ -18,6 +18,7 @@ export function GlobalConfigPanel() {
   
   // Estados locales para edición
   const [preciosEventos, setPreciosEventos] = useState({ basico: 0, premium: 0 });
+  const [preciosSuscripciones, setPreciosSuscripciones] = useState({ starter: 150000, profesional: 250000, ilimitado: 500000 });
   const [comisiones, setComisiones] = useState({ asistente: 50, superadmin: 50 });
   const [limites, setLimites] = useState({ 
     eventos_mes_asistente: 30, 
@@ -29,6 +30,7 @@ export function GlobalConfigPanel() {
   useEffect(() => {
     if (config) {
       setPreciosEventos(config.precios_eventos || { basico: 10000, premium: 25000 });
+      setPreciosSuscripciones(config.precios_suscripciones || { starter: 150000, profesional: 250000, ilimitado: 500000 });
       setComisiones(config.comisiones_default || { asistente: 50, superadmin: 50 });
       setLimites(config.limites_default || { 
         eventos_mes_asistente: 30, 
@@ -40,6 +42,10 @@ export function GlobalConfigPanel() {
 
   const handleSavePrecios = () => {
     updateConfig('precios_eventos', preciosEventos);
+  };
+
+  const handleSavePreciosSuscripciones = () => {
+    updateConfig('precios_suscripciones', preciosSuscripciones);
   };
 
   const handleSaveComisiones = () => {
@@ -119,7 +125,71 @@ export function GlobalConfigPanel() {
             size="sm"
           >
             {isUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Guardar Precios
+            Guardar Precios Eventos
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Precios de Suscripciones para Salones */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Building2 className="w-5 h-5 text-accent" />
+            Precios de Suscripciones
+          </CardTitle>
+          <CardDescription>
+            Precios sugeridos para suscripciones de salones (modificables por acuerdo)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="precio-starter">Plan Starter (ARS)</Label>
+              <Input
+                id="precio-starter"
+                type="number"
+                value={preciosSuscripciones.starter}
+                onChange={(e) => setPreciosSuscripciones(prev => ({ ...prev, starter: parseInt(e.target.value) || 0 }))}
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                {formatPrice(preciosSuscripciones.starter)}/mes
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="precio-profesional">Plan Profesional (ARS)</Label>
+              <Input
+                id="precio-profesional"
+                type="number"
+                value={preciosSuscripciones.profesional}
+                onChange={(e) => setPreciosSuscripciones(prev => ({ ...prev, profesional: parseInt(e.target.value) || 0 }))}
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                {formatPrice(preciosSuscripciones.profesional)}/mes
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="precio-ilimitado">Plan Ilimitado (ARS)</Label>
+              <Input
+                id="precio-ilimitado"
+                type="number"
+                value={preciosSuscripciones.ilimitado}
+                onChange={(e) => setPreciosSuscripciones(prev => ({ ...prev, ilimitado: parseInt(e.target.value) || 0 }))}
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                {formatPrice(preciosSuscripciones.ilimitado)}/mes
+              </p>
+            </div>
+          </div>
+          <Button 
+            onClick={handleSavePreciosSuscripciones} 
+            disabled={isUpdating}
+            size="sm"
+          >
+            {isUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            Guardar Precios Suscripciones
           </Button>
         </CardContent>
       </Card>

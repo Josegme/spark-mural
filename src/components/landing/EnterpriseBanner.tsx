@@ -15,8 +15,9 @@ export function EnterpriseBanner({
   whatsapp = '5493764606205', 
   mensaje = 'Hola! Quiero información sobre planes empresariales para mi salón/eventos.' 
 }: EnterpriseBannerProps) {
-  // WhatsApp URL format: https://wa.me/number (no + sign, just digits)
-  const whatsappUrl = `https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(mensaje)}`;
+  // WhatsApp URL format: https://wa.me/number (digits only, no + or spaces)
+  const cleanNumber = whatsapp.replace(/[^0-9]/g, '');
+  const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(mensaje)}`;
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent p-8 md:p-12">
@@ -47,7 +48,7 @@ export function EnterpriseBanner({
           <ul className="space-y-2 text-white/80">
             <li className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
-              Suscripciones mensuales o anuales
+              Suscripciones empresariales o personalizadas
             </li>
             <li className="flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
