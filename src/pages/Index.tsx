@@ -7,7 +7,8 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MainLayout } from '@/components/layout';
-import { EVENT_PRICES, EVENT_TYPES } from '@/lib/constants';
+import { EVENT_TYPES } from '@/lib/constants';
+import { usePublicPrices } from '@/hooks/usePublicPrices';
 import { formatPrice } from '@/lib/utils';
 import { Check, Sparkles, QrCode, Tv, Download, Camera, MessageSquare, Heart } from 'lucide-react';
 import { EnterpriseBanner } from '@/components/landing/EnterpriseBanner';
@@ -217,6 +218,8 @@ function FeaturesSection() {
 }
 
 function PlansSection() {
+  const { prices, isLoading } = usePublicPrices();
+
   return (
     <section id="planes" className="py-20 bg-muted/30">
       <div className="container">
@@ -233,16 +236,22 @@ function PlansSection() {
           {/* Plan Básico */}
           <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-lg">
             <CardHeader className="pb-4">
-              <CardTitle className="font-display text-2xl">{EVENT_PRICES.basico.nombre}</CardTitle>
-              <CardDescription>{EVENT_PRICES.basico.descripcion}</CardDescription>
+              <CardTitle className="font-display text-2xl">{prices.basico.nombre}</CardTitle>
+              <CardDescription>{prices.basico.descripcion}</CardDescription>
               <div className="pt-4">
-                <span className="text-4xl font-display font-bold">{formatPrice(EVENT_PRICES.basico.precio)}</span>
-                <span className="text-muted-foreground ml-2">por evento</span>
+                {isLoading ? (
+                  <div className="h-10 w-32 bg-muted animate-pulse rounded" />
+                ) : (
+                  <>
+                    <span className="text-4xl font-display font-bold">{formatPrice(prices.basico.precio)}</span>
+                    <span className="text-muted-foreground ml-2">por evento</span>
+                  </>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <ul className="space-y-3">
-                {EVENT_PRICES.basico.features.map((feature) => (
+                {prices.basico.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-success shrink-0 mt-0.5" />
                     <span className="text-sm">{feature}</span>
@@ -261,16 +270,22 @@ function PlansSection() {
               ⭐ Recomendado
             </div>
             <CardHeader className="pb-4">
-              <CardTitle className="font-display text-2xl">{EVENT_PRICES.premium.nombre}</CardTitle>
-              <CardDescription>{EVENT_PRICES.premium.descripcion}</CardDescription>
+              <CardTitle className="font-display text-2xl">{prices.premium.nombre}</CardTitle>
+              <CardDescription>{prices.premium.descripcion}</CardDescription>
               <div className="pt-4">
-                <span className="text-4xl font-display font-bold text-gradient-primary">{formatPrice(EVENT_PRICES.premium.precio)}</span>
-                <span className="text-muted-foreground ml-2">por evento</span>
+                {isLoading ? (
+                  <div className="h-10 w-32 bg-muted animate-pulse rounded" />
+                ) : (
+                  <>
+                    <span className="text-4xl font-display font-bold text-gradient-primary">{formatPrice(prices.premium.precio)}</span>
+                    <span className="text-muted-foreground ml-2">por evento</span>
+                  </>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <ul className="space-y-3">
-                {EVENT_PRICES.premium.features.map((feature) => (
+                {prices.premium.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-3">
                     <Check className="w-5 h-5 text-success shrink-0 mt-0.5" />
                     <span className="text-sm">{feature}</span>
@@ -285,7 +300,7 @@ function PlansSection() {
         </div>
 
         {/* Enterprise Banner */}
-        <div className="mt-16">
+        <div id="banner-empresarial" className="mt-16">
           <EnterpriseBanner />
         </div>
       </div>
