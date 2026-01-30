@@ -92,11 +92,11 @@ export default function AuthPage() {
           </CardContent>
         </Card>
 
-        {/* Acceso empresarial */}
+        {/* Acceso empresarial - Redirige al banner del home */}
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
             ¿Sos asistente o salón?{' '}
-            <Link to="/login?tipo=empresa" className="text-primary hover:underline">
+            <Link to="/#planes" className="text-primary hover:underline">
               Acceso Empresarial
             </Link>
           </p>

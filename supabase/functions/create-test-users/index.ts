@@ -9,10 +9,11 @@ interface TestUser {
   email: string
   password: string
   nombre: string
-  rol: 'asistente' | 'salon' | 'cliente'
+  rol: 'asistente' | 'salon' | 'cliente' | 'super_admin'
 }
 
-const testUsers: TestUser[] = [
+// Usuarios de prueba predefinidos
+const defaultTestUsers: TestUser[] = [
   {
     email: 'asistente@pickevent.test',
     password: 'Asistente123!',
@@ -50,10 +51,27 @@ Deno.serve(async (req) => {
       }
     })
 
-    const results: { email: string; success: boolean; error?: string; userId?: string }[] = []
+    // Verificar si vienen usuarios personalizados en el body
+    let usersToCreate: TestUser[] = defaultTestUsers
+    let isCustomRequest = false
 
-    for (const user of testUsers) {
-      console.log(`Creating user: ${user.email}`)
+    try {
+      const body = await req.json()
+      if (body.users && Array.isArray(body.users) && body.users.length > 0) {
+        usersToCreate = body.users
+        isCustomRequest = true
+        console.log('Creating custom users:', usersToCreate.length)
+      }
+    } catch {
+      // No body, usar usuarios por defecto
+      console.log('Using default test users')
+    }
+
+    const results: { email: string; success: boolean; error?: string; id?: string }[] = []
+    const created: { email: string; id: string }[] = []
+
+    for (const user of usersToCreate) {
+      console.log(`Processing user: ${user.email}`)
 
       // Create user using Admin API
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -83,9 +101,13 @@ Deno.serve(async (req) => {
             results.push({
               email: user.email,
               success: !updateError,
-              error: updateError?.message,
-              userId: existingUser.id
+              error: updateError ? updateError.message : 'User already existed, role updated',
+              id: existingUser.id
             })
+            
+            if (!updateError) {
+              created.push({ email: user.email, id: existingUser.id })
+            }
             continue
           }
         }
@@ -114,17 +136,20 @@ Deno.serve(async (req) => {
         results.push({
           email: user.email,
           success: true,
-          userId: authData.user.id
+          id: authData.user.id
         })
+        
+        created.push({ email: user.email, id: authData.user.id })
       }
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Test users processed',
+        message: isCustomRequest ? 'Custom users processed' : 'Test users processed',
         results,
-        credentials: testUsers.map(u => ({
+        created, // Para acceso fácil a los IDs creados
+        credentials: isCustomRequest ? undefined : usersToCreate.map(u => ({
           email: u.email,
           password: u.password,
           rol: u.rol
