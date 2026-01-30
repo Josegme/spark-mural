@@ -14,13 +14,15 @@ import {
   RefreshCw,
   Loader2,
   UserPlus,
-  LogOut
+  LogOut,
+  CalendarDays
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminData } from '@/hooks/useAdminData';
 import { AdminStats, TenantsTable, UsersTable, LaunchChecklist } from '@/components/admin';
 import TenantAssignment from '@/components/admin/TenantAssignment';
 import { GlobalConfigPanel } from '@/components/admin/GlobalConfigPanel';
+import { AdminEventsList } from '@/components/admin/AdminEventsList';
 
 export default function AdminPage() {
   const { signOut } = useAuth();
@@ -61,10 +63,14 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-5">
+          <TabsList className="grid w-full max-w-3xl grid-cols-6">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="eventos" className="gap-2">
+              <CalendarDays className="w-4 h-4" />
+              <span className="hidden sm:inline">Eventos</span>
             </TabsTrigger>
             <TabsTrigger value="tenants" className="gap-2">
               <Building2 className="w-4 h-4" />
@@ -93,6 +99,10 @@ export default function AdminPage() {
                 <LaunchChecklist />
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="eventos">
+            <AdminEventsList />
           </TabsContent>
 
           <TabsContent value="tenants">
