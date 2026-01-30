@@ -105,12 +105,13 @@ export default function AsistentePage() {
 
           {/* TAB: Dashboard */}
           <TabsContent value="dashboard" className="space-y-6">
-            {/* Stats Cards con cuota */}
+            {/* Stats Cards con cuota y comisión */}
             <AsistenteStatsCards 
               stats={stats}
               limiteEventosMes={stats.limiteEventosMes}
               eventosUsados={stats.eventosUsados}
               isLoading={isLoading}
+              comisionPorcentaje={tenantInfo?.comision_asistente ?? 50}
             />
 
             {/* Event Cards */}

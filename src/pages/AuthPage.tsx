@@ -92,13 +92,20 @@ export default function AuthPage() {
           </CardContent>
         </Card>
 
-        {/* Acceso empresarial - Redirige al banner del home */}
+        {/* Acceso empresarial - Redirige al banner empresarial del home */}
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
             ¿Sos asistente o salón?{' '}
-            <Link to="/#planes" className="text-primary hover:underline">
+            <a 
+              href="/#banner-empresarial" 
+              className="text-primary hover:underline"
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/#banner-empresarial';
+              }}
+            >
               Acceso Empresarial
-            </Link>
+            </a>
           </p>
         </div>
       </div>
