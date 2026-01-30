@@ -58,6 +58,33 @@ export type Database = {
           },
         ]
       }
+      configuracion_global: {
+        Row: {
+          clave: string
+          descripcion: string | null
+          id: string
+          updated_at: string | null
+          updated_by: string | null
+          valor: Json
+        }
+        Insert: {
+          clave: string
+          descripcion?: string | null
+          id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          valor: Json
+        }
+        Update: {
+          clave?: string
+          descripcion?: string | null
+          id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          valor?: Json
+        }
+        Relationships: []
+      }
       contenido: {
         Row: {
           aprobado: boolean
@@ -635,61 +662,85 @@ export type Database = {
           comision_asistente: number | null
           comision_superadmin: number | null
           created_at: string
+          duracion_suscripcion_meses: number | null
           email: string
           estado: Database["public"]["Enums"]["tenant_status"]
           eventos_cortesia_disponibles: number
+          eventos_ilimitados: boolean | null
           eventos_vendidos_total: number
           fecha_vencimiento: string | null
           id: string
           limite_eventos_mes: number | null
           nombre: string
+          notas_trato: string | null
           pais: string
           plan_id: string | null
+          precio_evento_basico: number | null
+          precio_evento_premium: number | null
           precio_mensual: number | null
+          puede_modificar_precios: boolean | null
           tipo: Database["public"]["Enums"]["tenant_type"]
           ubicacion_lat: number | null
           ubicacion_lng: number | null
           updated_at: string
+          usuario_asignado_id: string | null
+          whatsapp_contacto: string | null
         }
         Insert: {
           comision_asistente?: number | null
           comision_superadmin?: number | null
           created_at?: string
+          duracion_suscripcion_meses?: number | null
           email: string
           estado?: Database["public"]["Enums"]["tenant_status"]
           eventos_cortesia_disponibles?: number
+          eventos_ilimitados?: boolean | null
           eventos_vendidos_total?: number
           fecha_vencimiento?: string | null
           id?: string
           limite_eventos_mes?: number | null
           nombre: string
+          notas_trato?: string | null
           pais?: string
           plan_id?: string | null
+          precio_evento_basico?: number | null
+          precio_evento_premium?: number | null
           precio_mensual?: number | null
+          puede_modificar_precios?: boolean | null
           tipo: Database["public"]["Enums"]["tenant_type"]
           ubicacion_lat?: number | null
           ubicacion_lng?: number | null
           updated_at?: string
+          usuario_asignado_id?: string | null
+          whatsapp_contacto?: string | null
         }
         Update: {
           comision_asistente?: number | null
           comision_superadmin?: number | null
           created_at?: string
+          duracion_suscripcion_meses?: number | null
           email?: string
           estado?: Database["public"]["Enums"]["tenant_status"]
           eventos_cortesia_disponibles?: number
+          eventos_ilimitados?: boolean | null
           eventos_vendidos_total?: number
           fecha_vencimiento?: string | null
           id?: string
           limite_eventos_mes?: number | null
           nombre?: string
+          notas_trato?: string | null
           pais?: string
           plan_id?: string | null
+          precio_evento_basico?: number | null
+          precio_evento_premium?: number | null
           precio_mensual?: number | null
+          puede_modificar_precios?: boolean | null
           tipo?: Database["public"]["Enums"]["tenant_type"]
           ubicacion_lat?: number | null
           ubicacion_lng?: number | null
           updated_at?: string
+          usuario_asignado_id?: string | null
+          whatsapp_contacto?: string | null
         }
         Relationships: []
       }
@@ -786,6 +837,7 @@ export type Database = {
       }
     }
     Functions: {
+      get_global_config: { Args: { config_key: string }; Returns: Json }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]

@@ -10,6 +10,7 @@ import { MainLayout } from '@/components/layout';
 import { EVENT_PRICES, EVENT_TYPES } from '@/lib/constants';
 import { formatPrice } from '@/lib/utils';
 import { Check, Sparkles, QrCode, Tv, Download, Camera, MessageSquare, Heart } from 'lucide-react';
+import { EnterpriseBanner } from '@/components/landing/EnterpriseBanner';
 
 export default function Index() {
   return (
@@ -283,13 +284,9 @@ function PlansSection() {
           </Card>
         </div>
 
-        <div className="text-center mt-12">
-          <p className="text-muted-foreground mb-4">
-            ¿Organizás eventos frecuentemente o tenés un salón?
-          </p>
-          <Button variant="link" className="text-primary" asChild>
-            <Link to="/para-salones">Ver Planes Empresariales →</Link>
-          </Button>
+        {/* Enterprise Banner */}
+        <div className="mt-16">
+          <EnterpriseBanner />
         </div>
       </div>
     </section>

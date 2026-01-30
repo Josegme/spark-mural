@@ -30,6 +30,13 @@ export interface Tenant {
   precio_mensual: number | null;
   fecha_vencimiento: string | null;
   created_at: string;
+  // Campos extendidos
+  puede_modificar_precios?: boolean;
+  eventos_ilimitados?: boolean;
+  precio_evento_basico?: number | null;
+  precio_evento_premium?: number | null;
+  usuario_asignado_id?: string | null;
+  notas_trato?: string | null;
 }
 
 export interface AdminUser {
