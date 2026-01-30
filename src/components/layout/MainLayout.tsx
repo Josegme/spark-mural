@@ -30,9 +30,17 @@ export function MainLayout({
 }
 
 function Header() {
-  const { user, profile, isSuperAdmin } = useAuth();
+  const { user, profile, isSuperAdmin, isRole } = useAuth();
   const isLoggedIn = !!user;
   const showAdminButton = isSuperAdmin();
+  
+  // Determinar URL del dashboard según rol
+  const getDashboardUrl = () => {
+    if (isSuperAdmin()) return '/admin';
+    if (isRole('asistente')) return '/asistente';
+    if (isRole('salon')) return '/salon';
+    return '/dashboard';
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -78,7 +86,7 @@ function Header() {
           {isLoggedIn ? (
             <>
               <Button variant="ghost" asChild>
-                <Link to="/dashboard">Mi Dashboard</Link>
+                <Link to={getDashboardUrl()}>Mi Dashboard</Link>
               </Button>
               <Button className="btn-hero text-sm px-4 py-2" asChild>
                 <Link to="/crear-evento">Crear Evento</Link>
