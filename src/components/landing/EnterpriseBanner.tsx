@@ -12,7 +12,7 @@ interface EnterpriseBannerProps {
 }
 
 export function EnterpriseBanner({ 
-  whatsapp = '3764606205', 
+  whatsapp = '+5493764606205', 
   mensaje = 'Hola! Quiero información sobre planes empresariales para mi salón/eventos.' 
 }: EnterpriseBannerProps) {
   const whatsappUrl = `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensaje)}`;
