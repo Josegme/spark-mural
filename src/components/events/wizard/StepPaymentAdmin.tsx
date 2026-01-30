@@ -15,15 +15,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { WizardFormData, PaymentGateway } from '@/hooks/useCreateEvent';
 import { EVENT_TYPES, EVENT_PRICES } from '@/lib/constants';
-import { formatPrice, formatDate } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { formatPrice, formatDate, cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const adminPaymentSchema = z.object({
   clienteEmail: z.string().email('Email inválido').min(1, 'Ingresá el email del cliente'),
   paymentMode: z.enum(['link', 'promotional']),
+  precioPersonalizado: z.number().min(0).optional(),
   aceptaTerminos: z.boolean().refine(val => val === true, {
     message: 'Debés aceptar los términos y condiciones',
   }),
@@ -60,9 +62,12 @@ export function StepPaymentAdmin({
   eventosCortesiaDisponibles = 2,
 }: StepPaymentAdminProps) {
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
   const [generatedLink, setGeneratedLink] = useState<string | null>(paymentLink || null);
   const [isCopying, setIsCopying] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [usePrecioPersonalizado, setUsePrecioPersonalizado] = useState(false);
+  const [precioPersonalizado, setPrecioPersonalizado] = useState<number>(calculatePrice());
 
   const form = useForm<AdminPaymentData>({
     resolver: zodResolver(adminPaymentSchema),
@@ -75,9 +80,13 @@ export function StepPaymentAdmin({
 
   const paymentMode = form.watch('paymentMode');
 
-  // Calculate courtesy eligibility
-  const puedeUsarCortesia = eventosCortesiaDisponibles > 0;
+  // Super Admin tiene cortesías ilimitadas, Asistentes usan el sistema de cuotas
+  const esSuperAdmin = isSuperAdmin();
+  const puedeUsarCortesia = esSuperAdmin || eventosCortesiaDisponibles > 0;
   const proximaCortesiaEn = 30 - (eventosVendidosTotal % 30);
+
+  // Precio a usar: personalizado para Super Admin o el calculado para Asistentes
+  const precioFinal = esSuperAdmin && usePrecioPersonalizado ? precioPersonalizado : calculatePrice();
 
   const handleSubmit = async (values: AdminPaymentData) => {
     if (!values.aceptaTerminos) return;
@@ -112,10 +121,11 @@ export function StepPaymentAdmin({
   };
 
   const handleGoToDashboard = () => {
-    navigate(isAsistente ? '/asistente' : '/dashboard');
+    // Super Admin va a /admin, Asistente va a /asistente
+    navigate(esSuperAdmin ? '/admin' : (isAsistente ? '/asistente' : '/dashboard'));
   };
 
-  const precio = calculatePrice();
+  const precio = precioFinal; // Usar el precio final (personalizado o calculado)
   const eventType = EVENT_TYPES[formData.tipo as keyof typeof EVENT_TYPES];
   const planDetails = formData.es_premium ? EVENT_PRICES.premium : EVENT_PRICES.basico;
 
@@ -239,7 +249,7 @@ export function StepPaymentAdmin({
                         ? "bg-accent/20 text-accent" 
                         : "bg-muted text-muted-foreground"
                     )}>
-                      {eventosCortesiaDisponibles} disponibles
+                      {esSuperAdmin ? '∞ ilimitadas' : `${eventosCortesiaDisponibles} disponibles`}
                     </div>
                   </label>
                 </RadioGroup>
@@ -249,8 +259,42 @@ export function StepPaymentAdmin({
           )}
         />
 
-        {/* Warning for no courtesy available */}
-        {paymentMode === 'promotional' && !puedeUsarCortesia && (
+        {/* Precio personalizado para Super Admin */}
+        {esSuperAdmin && paymentMode === 'link' && (
+          <div className="p-4 rounded-xl border bg-muted/30">
+            <div className="flex items-center gap-3 mb-3">
+              <Checkbox
+                id="usePrecioPersonalizado"
+                checked={usePrecioPersonalizado}
+                onCheckedChange={(checked) => setUsePrecioPersonalizado(checked === true)}
+                disabled={!!generatedLink}
+              />
+              <Label htmlFor="usePrecioPersonalizado" className="font-medium cursor-pointer">
+                Usar precio personalizado
+              </Label>
+            </div>
+            {usePrecioPersonalizado && (
+              <div className="flex items-center gap-3">
+                <span className="text-muted-foreground">$</span>
+                <Input
+                  type="number"
+                  min={0}
+                  step={1000}
+                  value={precioPersonalizado}
+                  onChange={(e) => setPrecioPersonalizado(Number(e.target.value))}
+                  className="w-40"
+                  disabled={!!generatedLink}
+                />
+                <span className="text-sm text-muted-foreground">
+                  (Precio sugerido: {formatPrice(calculatePrice())})
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Warning for no courtesy available - Solo para Asistentes */}
+        {paymentMode === 'promotional' && !puedeUsarCortesia && !esSuperAdmin && (
           <div className="p-4 rounded-xl bg-warning/10 border border-warning/30">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-warning mt-0.5" />
