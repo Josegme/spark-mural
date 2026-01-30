@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 
 // Esquemas de validación
 const loginSchema = z.object({
@@ -52,6 +52,17 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
       <div className="w-full max-w-md">
+        {/* Flecha para volver al Home */}
+        <div className="mb-4">
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm">Volver al inicio</span>
+          </Link>
+        </div>
+
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
@@ -96,16 +107,23 @@ export default function AuthPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
             ¿Sos asistente o salón?{' '}
-            <a 
-              href="/#banner-empresarial" 
+            <Link 
+              to="/#banner-empresarial" 
               className="text-primary hover:underline"
               onClick={(e) => {
                 e.preventDefault();
-                window.location.href = '/#banner-empresarial';
+                // Navigate to home and then scroll to banner
+                navigate('/');
+                setTimeout(() => {
+                  const banner = document.getElementById('banner-empresarial');
+                  if (banner) {
+                    banner.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }, 100);
               }}
             >
               Acceso Empresarial
-            </a>
+            </Link>
           </p>
         </div>
       </div>
