@@ -79,17 +79,27 @@ export function useSubscriptionPrices() {
   const pricesQuery = useQuery({
     queryKey: ['subscription-prices'],
     queryFn: async (): Promise<SubscriptionPlan[]> => {
-      // Intentar leer de configuración global
-      const { data, error } = await supabase
-        .from('configuracion_global')
-        .select('clave, valor')
-        .eq('clave', 'precios_suscripciones')
-        .maybeSingle();
+      // Leer configuración global desde función (más robusto para cualquier rol)
+      // y fallback a lectura directa.
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_global_config', {
+        config_key: 'precios_suscripciones',
+      });
+
+      const { data: tableData, error: tableError } = rpcData
+        ? { data: null, error: null }
+        : await supabase
+            .from('configuracion_global')
+            .select('clave, valor')
+            .eq('clave', 'precios_suscripciones')
+            .maybeSingle();
 
       // Si hay error o no hay datos, usar valores por defecto
       let prices = DEFAULT_PRICES;
-      if (!error && data) {
-        const dynamicPrices = data.valor as unknown as SubscriptionPrices;
+      const effectiveError = rpcError || tableError;
+      const rawValue = (rpcData ?? tableData?.valor) as unknown;
+
+      if (!effectiveError && rawValue) {
+        const dynamicPrices = rawValue as SubscriptionPrices;
         prices = {
           starter: dynamicPrices?.starter || DEFAULT_PRICES.starter,
           profesional: dynamicPrices?.profesional || DEFAULT_PRICES.profesional,
@@ -113,8 +123,12 @@ export function useSubscriptionPrices() {
         },
       ];
     },
-    staleTime: 30 * 1000, // Cache por 30 segundos para mayor reactividad
-    refetchOnWindowFocus: true, // Refrescar al volver a la ventana
+    // Queremos que el salón vea cambios del Super Admin sin “hard refresh”
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchInterval: 15 * 1000,
+    refetchIntervalInBackground: false,
   });
 
   return {
