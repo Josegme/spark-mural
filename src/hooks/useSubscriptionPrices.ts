@@ -22,10 +22,10 @@ export interface SubscriptionPrices {
   ilimitado: number;
 }
 
-// Valores por defecto si falla la lectura
+// Valores por defecto si falla la lectura (sincronizados con Super Admin)
 const DEFAULT_PRICES: SubscriptionPrices = {
-  starter: 150000,
-  profesional: 250000,
+  starter: 270000,
+  profesional: 350000,
   ilimitado: 500000,
 };
 
@@ -113,7 +113,8 @@ export function useSubscriptionPrices() {
         },
       ];
     },
-    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+    staleTime: 30 * 1000, // Cache por 30 segundos para mayor reactividad
+    refetchOnWindowFocus: true, // Refrescar al volver a la ventana
   });
 
   return {
