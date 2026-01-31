@@ -11,9 +11,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { stepPaymentSchema, StepPaymentData } from '@/lib/validations/event';
 import { WizardFormData, PaymentGateway } from '@/hooks/useCreateEvent';
-import { EVENT_TYPES, EVENT_PRICES } from '@/lib/constants';
-import { formatPrice, formatDate } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { EVENT_TYPES } from '@/lib/constants';
+import { usePublicPrices } from '@/hooks/usePublicPrices';
+import { formatPrice, formatDate, cn } from '@/lib/utils';
 
 interface StepPaymentClientProps {
   formData: WizardFormData;
@@ -32,6 +32,8 @@ export function StepPaymentClient({
   calculatePrice, 
   activeGateway = 'mercadopago',
 }: StepPaymentClientProps) {
+  const { prices } = usePublicPrices();
+  
   const form = useForm<StepPaymentData>({
     resolver: zodResolver(stepPaymentSchema),
     defaultValues: {
@@ -46,7 +48,7 @@ export function StepPaymentClient({
 
   const precio = calculatePrice();
   const eventType = EVENT_TYPES[formData.tipo as keyof typeof EVENT_TYPES];
-  const planDetails = formData.es_premium ? EVENT_PRICES.premium : EVENT_PRICES.basico;
+  const planDetails = formData.es_premium ? prices.premium : prices.basico;
 
   return (
     <Form {...form}>
