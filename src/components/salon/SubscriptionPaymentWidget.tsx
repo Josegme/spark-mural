@@ -50,7 +50,10 @@ export function SubscriptionPaymentWidget({
     return null;
   }
 
-  const handlePaySubscription = async (planId: string, precio: number) => {
+  // IMPORTANTE: El frontend solo envía plan_id
+  // El backend calcula el precio desde configuracion_global
+  // Esto garantiza una única fuente de verdad para precios
+  const handlePaySubscription = async (planId: string) => {
     if (!tenantInfo) {
       toast.error('Error: No se encontró información del salón');
       return;
@@ -68,6 +71,7 @@ export function SubscriptionPaymentWidget({
       const successUrl = `${baseUrl}/salon?payment=success`;
       const failureUrl = `${baseUrl}/salon?payment=failure`;
 
+      // Solo enviamos plan_id - el backend resuelve el precio vigente
       const response = await fetch(`${supabaseUrl}/functions/v1/create-salon-subscription-payment`, {
         method: 'POST',
         headers: {
@@ -80,7 +84,6 @@ export function SubscriptionPaymentWidget({
           salon_email: tenantInfo.email,
           salon_nombre: tenantInfo.nombre,
           plan_id: planId,
-          precio: precio,
           success_url: successUrl,
           failure_url: failureUrl,
         }),
@@ -212,7 +215,7 @@ export function SubscriptionPaymentWidget({
                     className={`w-full ${plan.popular ? '' : ''}`}
                     variant={plan.popular ? 'default' : 'outline'}
                     disabled={isProcessing}
-                    onClick={() => handlePaySubscription(plan.id, plan.precio)}
+                    onClick={() => handlePaySubscription(plan.id)}
                   >
                     {isProcessing && isSelected ? (
                       <>
