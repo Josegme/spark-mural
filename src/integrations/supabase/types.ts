@@ -795,7 +795,7 @@ export type Database = {
           estado_ia?: Database["public"]["Enums"]["ia_status"] | null
           evento_id?: string | null
           id?: string | null
-          invitado_nombre?: string | null
+          invitado_nombre?: never
           likes_count?: number | null
           mensaje_texto?: string | null
           moderado?: boolean | null
@@ -809,7 +809,7 @@ export type Database = {
           estado_ia?: Database["public"]["Enums"]["ia_status"] | null
           evento_id?: string | null
           id?: string | null
-          invitado_nombre?: string | null
+          invitado_nombre?: never
           likes_count?: number | null
           mensaje_texto?: string | null
           moderado?: boolean | null
@@ -897,6 +897,10 @@ export type Database = {
       }
     }
     Functions: {
+      evento_has_valid_token: {
+        Args: { _evento_id: string; _token: string }
+        Returns: boolean
+      }
       get_global_config: { Args: { config_key: string }; Returns: Json }
       get_user_role: {
         Args: { _user_id: string }
