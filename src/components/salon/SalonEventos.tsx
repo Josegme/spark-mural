@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +37,9 @@ import {
 } from 'lucide-react';
 import { formatDate, formatTime } from '@/lib/utils';
 import { EVENT_TYPES, EVENT_STATUS } from '@/lib/constants';
+import { QRCodesModal } from '@/components/dashboard/QRCodesModal';
 import type { SalonEvent } from '@/hooks/useSalonData';
+import type { UserEvent } from '@/hooks/useUserEvents';
 
 interface SalonEventosProps {
   eventos: SalonEvent[];
@@ -46,8 +49,11 @@ interface SalonEventosProps {
 }
 
 export function SalonEventos({ eventos, isLoading, puedeCrear, onCreateEvent }: SalonEventosProps) {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState<string>('todos');
+  const [selectedEventForQR, setSelectedEventForQR] = useState<SalonEvent | null>(null);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
 
   // Filtrar eventos
   const eventosFiltrados = eventos.filter(evento => {
@@ -165,7 +171,7 @@ export function SalonEventos({ eventos, isLoading, puedeCrear, onCreateEvent }: 
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{evento.nombre}</span>
                               {evento.es_premium && (
-                                <Sparkles className="w-4 h-4 text-yellow-500" />
+                                <Sparkles className="w-4 h-4 text-warning" />
                               )}
                             </div>
                             <span className="text-sm text-muted-foreground">
@@ -212,11 +218,14 @@ export function SalonEventos({ eventos, isLoading, puedeCrear, onCreateEvent }: 
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => navigate(`/evento/${evento.id}`)}>
                               <Eye className="w-4 h-4 mr-2" />
                               Ver Detalles
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedEventForQR(evento);
+                              setQrModalOpen(true);
+                            }}>
                               <QrCode className="w-4 h-4 mr-2" />
                               Ver QR Codes
                             </DropdownMenuItem>
@@ -231,6 +240,29 @@ export function SalonEventos({ eventos, isLoading, puedeCrear, onCreateEvent }: 
           </div>
         )}
       </CardContent>
+
+      {/* Modal QR Codes */}
+      <QRCodesModal 
+        event={selectedEventForQR ? {
+          id: selectedEventForQR.id,
+          nombre: selectedEventForQR.nombre,
+          tipo: selectedEventForQR.tipo,
+          fecha_evento: selectedEventForQR.fecha_evento,
+          hora_inicio: selectedEventForQR.hora_inicio,
+          duracion_horas: selectedEventForQR.duracion_horas,
+          estado: selectedEventForQR.estado,
+          es_premium: selectedEventForQR.es_premium,
+          total_fotos: selectedEventForQR.total_fotos,
+          total_videos: selectedEventForQR.total_videos,
+          total_mensajes: selectedEventForQR.total_mensajes,
+          qr_pantalla_token: selectedEventForQR.qr_pantalla_token,
+          qr_invitados_token: selectedEventForQR.qr_invitados_token,
+          qr_descarga_token: selectedEventForQR.qr_descarga_token,
+          created_at: selectedEventForQR.created_at,
+        } as UserEvent : null}
+        open={qrModalOpen} 
+        onOpenChange={setQrModalOpen}
+      />
     </Card>
   );
 }

@@ -1,6 +1,6 @@
 /**
  * PICKEVENT - Widget de Pago de Suscripción para Salones
- * Botón prominente para renovar suscripción con Mercado Pago
+ * Muestra los 3 planes con precios dinámicos desde configuración global
  */
 
 import { useState } from 'react';
@@ -14,10 +14,13 @@ import {
   Loader2,
   ExternalLink,
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  Building2,
+  Crown
 } from 'lucide-react';
-import { formatPrice, formatDate } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useSubscriptionPrices } from '@/hooks/useSubscriptionPrices';
 import type { SalonSubscription, SalonStats, SalonTenantInfo } from '@/hooks/useSalonData';
 
 interface SubscriptionPaymentWidgetProps {
@@ -27,8 +30,11 @@ interface SubscriptionPaymentWidgetProps {
   isLoading: boolean;
 }
 
-const PLAN_PRICE = 150000; // $150,000 ARS
-const PLAN_EVENTS_LIMIT = 10;
+const PLAN_ICONS = {
+  starter: Building2,
+  profesional: Sparkles,
+  ilimitado: Crown,
+};
 
 export function SubscriptionPaymentWidget({ 
   suscripcion, 
@@ -37,18 +43,20 @@ export function SubscriptionPaymentWidget({
   isLoading 
 }: SubscriptionPaymentWidgetProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const { plans, isLoading: isPricesLoading } = useSubscriptionPrices();
 
-  // Siempre mostrar el widget de pago (el usuario pidió que esté siempre visible)
-  if (isLoading) {
+  if (isLoading || isPricesLoading) {
     return null;
   }
 
-  const handlePaySubscription = async () => {
+  const handlePaySubscription = async (planId: string, precio: number) => {
     if (!tenantInfo) {
       toast.error('Error: No se encontró información del salón');
       return;
     }
 
+    setSelectedPlanId(planId);
     setIsProcessing(true);
 
     try {
@@ -71,6 +79,8 @@ export function SubscriptionPaymentWidget({
           salon_id: tenantInfo.id,
           salon_email: tenantInfo.email,
           salon_nombre: tenantInfo.nombre,
+          plan_id: planId,
+          precio: precio,
           success_url: successUrl,
           failure_url: failureUrl,
         }),
@@ -84,7 +94,6 @@ export function SubscriptionPaymentWidget({
       const data = await response.json();
 
       if (data.success && data.init_point) {
-        // Redirigir al checkout de Mercado Pago
         toast.success('Redirigiendo a Mercado Pago...');
         window.location.href = data.init_point;
       } else {
@@ -96,6 +105,7 @@ export function SubscriptionPaymentWidget({
       toast.error(`Error: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
+      setSelectedPlanId(null);
     }
   };
 
@@ -139,23 +149,6 @@ export function SubscriptionPaymentWidget({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Plan Info */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="font-semibold">Plan Mensual</p>
-              <p className="text-sm text-muted-foreground">{PLAN_EVENTS_LIMIT} eventos incluidos</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-primary">{formatPrice(PLAN_PRICE)}</p>
-            <p className="text-xs text-muted-foreground">/mes</p>
-          </div>
-        </div>
-
         {/* Cuota de eventos */}
         <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
           <div className="flex items-center gap-2">
@@ -167,41 +160,100 @@ export function SubscriptionPaymentWidget({
           </div>
         </div>
 
-        {/* Benefits */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm">
-            <CheckCircle2 className="w-4 h-4 text-success" />
-            <span>Acceso completo al muro interactivo</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <CheckCircle2 className="w-4 h-4 text-success" />
-            <span>QR codes para cada evento</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <CheckCircle2 className="w-4 h-4 text-success" />
-            <span>Álbum descargable (30 días)</span>
-          </div>
+        {/* Planes disponibles */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {plans.map((plan) => {
+            const PlanIcon = PLAN_ICONS[plan.id as keyof typeof PLAN_ICONS] || CreditCard;
+            const isSelected = selectedPlanId === plan.id;
+            
+            return (
+              <div
+                key={plan.id}
+                className={`relative p-4 rounded-lg border-2 transition-all ${
+                  plan.popular 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                {/* Badge Popular */}
+                {plan.popular && (
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-primary text-primary-foreground text-xs">
+                      Popular
+                    </Badge>
+                  </div>
+                )}
+
+                <div className="text-center space-y-3 pt-2">
+                  {/* Icon */}
+                  <div className="mx-auto w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <PlanIcon className="w-5 h-5" />
+                  </div>
+
+                  {/* Name & Events */}
+                  <div>
+                    <h4 className="font-semibold">{plan.nombre}</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {plan.limite_eventos === -1 ? '∞' : plan.limite_eventos} eventos/mes
+                    </p>
+                  </div>
+
+                  {/* Price */}
+                  <div>
+                    <span className="text-xl font-bold text-primary">
+                      {formatPrice(plan.precio)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">/mes</span>
+                  </div>
+
+                  {/* Button */}
+                  <Button 
+                    size="sm"
+                    className={`w-full ${plan.popular ? '' : ''}`}
+                    variant={plan.popular ? 'default' : 'outline'}
+                    disabled={isProcessing}
+                    onClick={() => handlePaySubscription(plan.id, plan.precio)}
+                  >
+                    {isProcessing && isSelected ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        Elegir
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* CTA Button */}
-        <Button 
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 text-lg"
-          size="lg"
-          onClick={handlePaySubscription}
-          disabled={isProcessing}
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Procesando...
-            </>
-          ) : (
-            <>
-              <ExternalLink className="w-5 h-5 mr-2" />
-              {isUrgent ? 'Renovar Ahora' : 'Pagar Suscripción'}
-            </>
-          )}
-        </Button>
+        {/* Benefits */}
+        <div className="space-y-2 pt-2 border-t">
+          <p className="text-xs font-medium text-muted-foreground">Todos los planes incluyen:</p>
+          <div className="grid grid-cols-2 gap-1">
+            <div className="flex items-center gap-2 text-xs">
+              <CheckCircle2 className="w-3 h-3 text-success" />
+              <span>Muro interactivo</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <CheckCircle2 className="w-3 h-3 text-success" />
+              <span>QR codes por evento</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <CheckCircle2 className="w-3 h-3 text-success" />
+              <span>Álbum descargable</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <CheckCircle2 className="w-3 h-3 text-success" />
+              <span>Soporte técnico</span>
+            </div>
+          </div>
+        </div>
 
         {/* Info */}
         <p className="text-xs text-center text-muted-foreground">
