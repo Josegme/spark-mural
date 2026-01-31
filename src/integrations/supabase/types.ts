@@ -295,6 +295,13 @@ export type Database = {
             referencedRelation: "contenido"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "likes_contenido_id_fkey"
+            columns: ["contenido_id"]
+            isOneToOne: false
+            referencedRelation: "contenido_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       logs_auditoria: {
@@ -767,6 +774,59 @@ export type Database = {
       }
     }
     Views: {
+      contenido_public: {
+        Row: {
+          aprobado: boolean | null
+          created_at: string | null
+          estado_ia: Database["public"]["Enums"]["ia_status"] | null
+          evento_id: string | null
+          id: string | null
+          invitado_nombre: string | null
+          likes_count: number | null
+          mensaje_texto: string | null
+          moderado: boolean | null
+          tipo: Database["public"]["Enums"]["content_type"] | null
+          url_ia: string | null
+          url_original: string | null
+        }
+        Insert: {
+          aprobado?: boolean | null
+          created_at?: string | null
+          estado_ia?: Database["public"]["Enums"]["ia_status"] | null
+          evento_id?: string | null
+          id?: string | null
+          invitado_nombre?: string | null
+          likes_count?: number | null
+          mensaje_texto?: string | null
+          moderado?: boolean | null
+          tipo?: Database["public"]["Enums"]["content_type"] | null
+          url_ia?: string | null
+          url_original?: string | null
+        }
+        Update: {
+          aprobado?: boolean | null
+          created_at?: string | null
+          estado_ia?: Database["public"]["Enums"]["ia_status"] | null
+          evento_id?: string | null
+          id?: string | null
+          invitado_nombre?: string | null
+          likes_count?: number | null
+          mensaje_texto?: string | null
+          moderado?: boolean | null
+          tipo?: Database["public"]["Enums"]["content_type"] | null
+          url_ia?: string | null
+          url_original?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contenido_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pagos_summary: {
         Row: {
           created_at: string | null
