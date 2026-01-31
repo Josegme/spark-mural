@@ -97,6 +97,10 @@ export function useGlobalConfig() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['global-config'] });
+      // También invalidar public-prices para que el home/wizard se actualicen inmediatamente
+      if (variables.key === 'precios_eventos') {
+        queryClient.invalidateQueries({ queryKey: ['public-prices'] });
+      }
       toast({
         title: 'Configuración actualizada',
         description: `Se actualizó ${variables.key} correctamente`,
