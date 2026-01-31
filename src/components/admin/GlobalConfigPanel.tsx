@@ -18,7 +18,7 @@ export function GlobalConfigPanel() {
   
   // Estados locales para edición
   const [preciosEventos, setPreciosEventos] = useState({ basico: 0, premium: 0 });
-  const [preciosSuscripciones, setPreciosSuscripciones] = useState({ starter: 150000, profesional: 250000, ilimitado: 500000 });
+  const [preciosSuscripciones, setPreciosSuscripciones] = useState({ starter: 270000, profesional: 350000, ilimitado: 500000 });
   const [comisiones, setComisiones] = useState({ asistente: 50, superadmin: 50 });
   const [limites, setLimites] = useState({ 
     eventos_mes_asistente: 30, 
@@ -30,7 +30,7 @@ export function GlobalConfigPanel() {
   useEffect(() => {
     if (config) {
       setPreciosEventos(config.precios_eventos || { basico: 10000, premium: 25000 });
-      setPreciosSuscripciones(config.precios_suscripciones || { starter: 150000, profesional: 250000, ilimitado: 500000 });
+      setPreciosSuscripciones(config.precios_suscripciones || { starter: 270000, profesional: 350000, ilimitado: 500000 });
       setComisiones(config.comisiones_default || { asistente: 50, superadmin: 50 });
       setLimites(config.limites_default || { 
         eventos_mes_asistente: 30, 

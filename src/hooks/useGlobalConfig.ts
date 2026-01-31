@@ -62,7 +62,7 @@ export function useGlobalConfig() {
 
       const configObj = {
         precios_eventos: { basico: 10000, premium: 25000 },
-        precios_suscripciones: { starter: 150000, profesional: 250000, ilimitado: 500000 },
+        precios_suscripciones: { starter: 270000, profesional: 350000, ilimitado: 500000 },
         comisiones_default: { asistente: 50, superadmin: 50 },
         limites_default: { eventos_mes_asistente: 30, eventos_mes_salon: 20, cortesias_iniciales: 2 },
         contacto_empresarial: { whatsapp: '3764606205', mensaje: 'Hola! Quiero información sobre planes empresariales.' },
@@ -97,10 +97,15 @@ export function useGlobalConfig() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['global-config'] });
-      // También invalidar public-prices para que el home/wizard se actualicen inmediatamente
+      
+      // Invalidar caches relacionados según el tipo de configuración actualizada
       if (variables.key === 'precios_eventos') {
         queryClient.invalidateQueries({ queryKey: ['public-prices'] });
       }
+      if (variables.key === 'precios_suscripciones') {
+        queryClient.invalidateQueries({ queryKey: ['subscription-prices'] });
+      }
+      
       toast({
         title: 'Configuración actualizada',
         description: `Se actualizó ${variables.key} correctamente`,
