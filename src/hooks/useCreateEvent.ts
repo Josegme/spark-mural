@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateQRToken } from '@/lib/utils';
 import { CreateEventData } from '@/lib/validations/event';
-import { EVENT_PRICES } from '@/lib/constants';
+import { usePublicPrices } from '@/hooks/usePublicPrices';
 import { toast } from 'sonner';
 
 // Países que usan Stripe
@@ -73,6 +73,7 @@ const initialFormData: WizardFormData = {
 export function useCreateEvent() {
   const navigate = useNavigate();
   const { user, profile, isSuperAdmin } = useAuth();
+  const { prices } = usePublicPrices();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<WizardFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -130,7 +131,7 @@ export function useCreateEvent() {
   };
 
   const calculatePrice = (): number => {
-    return formData.es_premium ? EVENT_PRICES.premium.precio : EVENT_PRICES.basico.precio;
+    return formData.es_premium ? prices.premium.precio : prices.basico.precio;
   };
 
   // Detectar qué pasarela usar según el país del usuario

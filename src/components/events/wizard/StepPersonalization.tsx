@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { stepPersonalizationSchema, StepPersonalizationData } from '@/lib/validations/event';
-import { IA_STYLES, EVENT_PRICES } from '@/lib/constants';
+import { IA_STYLES } from '@/lib/constants';
+import { usePublicPrices } from '@/hooks/usePublicPrices';
 import { formatPrice, cn } from '@/lib/utils';
 
 interface StepPersonalizationProps {
@@ -33,6 +34,8 @@ const defaultColors = [
 ];
 
 export function StepPersonalization({ data, onNext, onBack }: StepPersonalizationProps) {
+  const { prices } = usePublicPrices();
+  
   const form = useForm<StepPersonalizationData>({
     resolver: zodResolver(stepPersonalizationSchema),
     defaultValues: {
@@ -96,7 +99,7 @@ export function StepPersonalization({ data, onNext, onBack }: StepPersonalizatio
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <span className="badge-premium">+{formatPrice(EVENT_PRICES.premium.precio - EVENT_PRICES.basico.precio)}</span>
+                    <span className="badge-premium">+{formatPrice(prices.premium.precio - prices.basico.precio)}</span>
                   </div>
                   <FormControl>
                     <Switch
