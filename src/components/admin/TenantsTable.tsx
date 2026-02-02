@@ -33,10 +33,15 @@ import {
   Ban,
   CheckCircle,
   Plus,
-  UserPlus,
   AlertTriangle,
-  Infinity
+  Infinity,
+  KeyRound,
+  Trash2,
+  Pause,
+  Play
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { formatDate, formatPrice } from '@/lib/utils';
 import type { Tenant } from '@/hooks/useAdminData';
 import { TenantEditModal } from './TenantEditModal';
@@ -67,6 +72,119 @@ export function TenantsTable({ tenants, isLoading, onRefresh }: TenantsTableProp
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Handler: Restablecer contraseña
+  const handleResetPassword = async (tenant: Tenant) => {
+    const confirmed = window.confirm(
+      `¿Seguro que querés restablecer la contraseña de "${tenant.nombre}"?\n\n` +
+      'Se enviará un email con instrucciones para crear una nueva contraseña.'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(tenant.email, {
+        redirectTo: `${window.location.origin}/restablecer-password`
+      });
+      
+      if (error) throw error;
+      toast.success(`Email enviado a ${tenant.email}`);
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast.error('Error al enviar email de recuperación');
+    }
+  };
+
+  // Handler: Suspender tenant
+  const handleSuspend = async (tenant: Tenant) => {
+    const confirmed = window.confirm(
+      `Al suspender "${tenant.nombre}":\n\n` +
+      '• No podrá crear nuevos eventos\n' +
+      '• Los eventos existentes NO se afectan\n' +
+      '• Puede reactivarse en cualquier momento\n\n' +
+      '¿Continuar?'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      const { error } = await supabase
+        .from('tenants')
+        .update({ estado: 'suspendido' })
+        .eq('id', tenant.id);
+      
+      if (error) throw error;
+      toast.success('Tenant suspendido correctamente');
+      onRefresh?.();
+    } catch (error: any) {
+      console.error('Error suspending tenant:', error);
+      toast.error('Error al suspender tenant');
+    }
+  };
+
+  // Handler: Activar tenant
+  const handleActivate = async (tenant: Tenant) => {
+    try {
+      const { error } = await supabase
+        .from('tenants')
+        .update({ estado: 'activo' })
+        .eq('id', tenant.id);
+      
+      if (error) throw error;
+      toast.success('Tenant activado correctamente');
+      onRefresh?.();
+    } catch (error: any) {
+      console.error('Error activating tenant:', error);
+      toast.error('Error al activar tenant');
+    }
+  };
+
+  // Handler: Eliminar tenant
+  const handleDelete = async (tenant: Tenant) => {
+    // Verificar eventos activos
+    const { count: eventosActivos } = await supabase
+      .from('eventos')
+      .select('*', { count: 'exact', head: true })
+      .eq('tenant_id', tenant.id)
+      .in('estado', ['activo', 'programado']);
+    
+    let mensaje = '';
+    if (eventosActivos && eventosActivos > 0) {
+      mensaje = 
+        `⚠️ ADVERTENCIA: "${tenant.nombre}" tiene ${eventosActivos} eventos activos.\n\n` +
+        'Al eliminar este tenant:\n' +
+        '• Se eliminarán TODOS sus eventos\n' +
+        '• Se eliminarán TODOS los contenidos de esos eventos\n' +
+        '• Esta acción NO se puede deshacer\n\n' +
+        'Escribí "ELIMINAR" para confirmar:';
+    } else {
+      mensaje = 
+        `¿Seguro que querés eliminar a "${tenant.nombre}"?\n\n` +
+        'Esta acción no se puede deshacer.\n\n' +
+        'Escribí "ELIMINAR" para confirmar:';
+    }
+    
+    const confirmacion = window.prompt(mensaje);
+    
+    if (confirmacion !== 'ELIMINAR') {
+      toast.info('Eliminación cancelada');
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('tenants')
+        .delete()
+        .eq('id', tenant.id);
+      
+      if (error) throw error;
+      toast.success('Tenant eliminado correctamente');
+      onRefresh?.();
+    } catch (error: any) {
+      console.error('Error deleting tenant:', error);
+      toast.error('Error al eliminar tenant');
+    }
+  };
 
   const filteredTenants = tenants.filter(tenant => {
     const matchesSearch = 
@@ -232,6 +350,7 @@ export function TenantsTable({ tenants, isLoading, onRefresh }: TenantsTableProp
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            {/* Opciones existentes */}
                             <DropdownMenuItem onClick={() => setEditingTenant(tenant)}>
                               <Edit className="w-4 h-4 mr-2" />
                               Editar Configuración
@@ -240,18 +359,36 @@ export function TenantsTable({ tenants, isLoading, onRefresh }: TenantsTableProp
                               <Eye className="w-4 h-4 mr-2" />
                               Ver Eventos
                             </DropdownMenuItem>
+                            
                             <DropdownMenuSeparator />
+                            
+                            {/* Nuevas opciones */}
+                            <DropdownMenuItem onClick={() => handleResetPassword(tenant)}>
+                              <KeyRound className="w-4 h-4 mr-2" />
+                              Restablecer Contraseña
+                            </DropdownMenuItem>
+                            
                             {tenant.estado === 'activo' ? (
-                              <DropdownMenuItem className="text-destructive">
-                                <Ban className="w-4 h-4 mr-2" />
+                              <DropdownMenuItem onClick={() => handleSuspend(tenant)}>
+                                <Pause className="w-4 h-4 mr-2" />
                                 Suspender
                               </DropdownMenuItem>
                             ) : (
-                              <DropdownMenuItem className="text-success">
-                                <CheckCircle className="w-4 h-4 mr-2" />
+                              <DropdownMenuItem onClick={() => handleActivate(tenant)}>
+                                <Play className="w-4 h-4 mr-2" />
                                 Activar
                               </DropdownMenuItem>
                             )}
+                            
+                            <DropdownMenuSeparator />
+                            
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(tenant)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Eliminar
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
