@@ -46,6 +46,8 @@ export interface EventDetails {
   total_likes: number;
   album_disponible_hasta: string | null;
   created_at: string;
+  precio_pagado: number;
+  payment_link?: string | null;
 }
 
 export function useEventDetails(eventId: string | undefined) {
@@ -67,7 +69,25 @@ export function useEventDetails(eventId: string | undefined) {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      // Buscar link de pago si el evento tiene pago pendiente
+      let paymentLink: string | null = null;
+      if (data.precio_pagado > 0) {
+        const { data: pagoData } = await supabase
+          .from('pagos')
+          .select('metadata')
+          .eq('evento_id', eventId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (pagoData?.metadata) {
+          const metadata = pagoData.metadata as Record<string, unknown>;
+          paymentLink = (metadata.init_point as string) || (metadata.sandbox_init_point as string) || null;
+        }
+      }
+
+      return { ...data, payment_link: paymentLink };
     },
     enabled: !!eventId && !!user?.id,
   });
@@ -181,6 +201,52 @@ export function useEventDetails(eventId: string | undefined) {
     },
   });
 
+  // Eliminar evento
+  const deleteEventMutation = useMutation({
+    mutationFn: async () => {
+      if (!eventId) throw new Error('No event ID');
+
+      // Primero eliminar contenido asociado
+      const { error: contentError } = await supabase
+        .from('contenido')
+        .delete()
+        .eq('evento_id', eventId);
+
+      if (contentError) throw contentError;
+
+      // Eliminar pagos asociados
+      const { error: pagosError } = await supabase
+        .from('pagos')
+        .delete()
+        .eq('evento_id', eventId);
+
+      if (pagosError) throw pagosError;
+
+      // Finalmente eliminar el evento
+      const { error } = await supabase
+        .from('eventos')
+        .delete()
+        .eq('id', eventId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-events'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-events'] });
+      toast({
+        title: 'Evento eliminado',
+        description: 'El evento y todo su contenido han sido eliminados',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'No se pudo eliminar el evento',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     event: eventQuery.data,
     content: contentQuery.data || [],
@@ -189,7 +255,9 @@ export function useEventDetails(eventId: string | undefined) {
     moderate: moderateMutation.mutate,
     updateEvent: updateEventMutation.mutate,
     changeStatus: changeStatusMutation.mutate,
+    deleteEvent: deleteEventMutation.mutate,
     isUpdating: updateEventMutation.isPending || changeStatusMutation.isPending,
+    isDeleting: deleteEventMutation.isPending,
     refetch: () => {
       eventQuery.refetch();
       contentQuery.refetch();

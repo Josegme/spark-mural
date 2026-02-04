@@ -21,7 +21,7 @@ import type { UserEvent } from '@/hooks/useUserEvents';
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { event, content, isLoading, error, moderate, updateEvent, changeStatus, isUpdating } = useEventDetails(id);
+  const { event, content, isLoading, error, moderate, updateEvent, changeStatus, deleteEvent, isUpdating, isDeleting } = useEventDetails(id);
   const [qrModalOpen, setQrModalOpen] = useState(false);
 
   if (isLoading) {
@@ -122,7 +122,9 @@ export default function EventDetailPage() {
             <EventSettings
               event={event}
               onUpdate={updateEvent}
+              onDelete={deleteEvent}
               isUpdating={isUpdating}
+              isDeleting={isDeleting}
             />
           </TabsContent>
 

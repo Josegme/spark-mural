@@ -63,8 +63,13 @@ export function useUploadContent(token: string): UseUploadContentReturn {
       return null;
     }
 
-    if (data.estado !== 'activo' && data.estado !== 'programado') {
-      setError(ERROR_MESSAGES.EVENT_NOT_ACTIVE);
+    // Solo permitir subidas si el evento está activo o pausado (pausado permite acumular contenido)
+    if (data.estado !== 'activo' && data.estado !== 'pausado') {
+      if (data.estado === 'programado') {
+        setError('El evento aún no ha iniciado. Esperá a que el anfitrión lo active.');
+      } else {
+        setError(ERROR_MESSAGES.EVENT_NOT_ACTIVE);
+      }
       setIsLoading(false);
       return null;
     }
