@@ -3,6 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -54,6 +55,7 @@ export function useEventDetails(eventId: string | undefined) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Obtener detalles del evento
   const eventQuery = useQuery({
@@ -237,6 +239,8 @@ export function useEventDetails(eventId: string | undefined) {
         title: 'Evento eliminado',
         description: 'El evento y todo su contenido han sido eliminados',
       });
+      // Navegar al dashboard después de eliminar exitosamente
+      navigate('/dashboard');
     },
     onError: () => {
       toast({

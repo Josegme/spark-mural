@@ -3,7 +3,6 @@
  */
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +44,6 @@ interface EventSettingsProps {
 }
 
 export function EventSettings({ event, onUpdate, onDelete, isUpdating, isDeleting }: EventSettingsProps) {
-  const navigate = useNavigate();
   const [moderationActive, setModerationActive] = useState(event.moderacion_activa);
   const [uploadLimit, setUploadLimit] = useState(event.limite_subidas_por_invitado?.toString() || '');
   const [bannerColor, setBannerColor] = useState(event.color_banner || '#4c1d95');
@@ -72,7 +70,7 @@ export function EventSettings({ event, onUpdate, onDelete, isUpdating, isDeletin
   const handleDelete = () => {
     if (onDelete) {
       onDelete();
-      navigate('/dashboard');
+      // La navegación se hace en el hook después de que la mutación sea exitosa
     }
   };
 
