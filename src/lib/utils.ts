@@ -31,9 +31,16 @@ export function generateDeviceId(): string {
   return newId;
 }
 
-// Formatear fecha para mostrar
+// Formatear fecha para mostrar (sin problemas de timezone)
 export function formatDate(date: string | Date): string {
-  const d = new Date(date);
+  // Si es un string en formato YYYY-MM-DD, parsearlo directamente sin timezone
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split('-').map(Number);
+    return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+  }
+  
+  // Para otros formatos, usar el parsing normal pero con precaución de timezone
+  const d = typeof date === 'string' ? new Date(date + 'T12:00:00') : date;
   return d.toLocaleDateString('es-AR', {
     day: '2-digit',
     month: '2-digit',

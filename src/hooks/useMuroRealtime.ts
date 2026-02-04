@@ -43,6 +43,7 @@ interface UseMuroRealtimeReturn {
   totalMessages: number;
   goToNext: () => void;
   goToPrevious: () => void;
+  isEventPaused: boolean;
 }
 
 export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
@@ -54,6 +55,7 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
   
   const channelRef = useRef<RealtimeChannel | null>(null);
   const carouselIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const eventPollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cargar evento por token
   const fetchEvent = useCallback(async () => {
@@ -143,6 +145,19 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
       if (eventData) {
         await fetchContents(eventData.id);
         setupRealtime(eventData.id);
+        
+        // Polling para detectar cambios de estado (cada 5 segundos)
+        eventPollingRef.current = setInterval(async () => {
+          const { data } = await supabase
+            .from('eventos')
+            .select('estado')
+            .eq('qr_pantalla_token', token)
+            .single();
+          
+          if (data) {
+            setEvent(prev => prev ? { ...prev, estado: data.estado } : null);
+          }
+        }, 5000);
       }
     };
 
@@ -155,15 +170,28 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
       if (carouselIntervalRef.current) {
         clearInterval(carouselIntervalRef.current);
       }
+      if (eventPollingRef.current) {
+        clearInterval(eventPollingRef.current);
+      }
     };
   }, [token, fetchEvent, fetchContents, setupRealtime]);
 
   // Solo fotos para el carrusel (mensajes van en globitos flotantes)
   const photoContents = contents.filter((c) => c.tipo === 'foto');
 
-  // Auto-rotación del carrusel (solo fotos)
+  // El carrusel se pausa si el evento está pausado
+  const isEventPaused = event?.estado === 'pausado';
+
+  // Auto-rotación del carrusel (solo fotos) - se pausa si el evento está pausado
   useEffect(() => {
-    if (photoContents.length <= 1) return;
+    // Limpiar intervalo previo
+    if (carouselIntervalRef.current) {
+      clearInterval(carouselIntervalRef.current);
+      carouselIntervalRef.current = null;
+    }
+
+    // No iniciar carrusel si está pausado o hay pocas fotos
+    if (isEventPaused || photoContents.length <= 1) return;
 
     carouselIntervalRef.current = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % photoContents.length);
@@ -174,7 +202,7 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
         clearInterval(carouselIntervalRef.current);
       }
     };
-  }, [photoContents.length]);
+  }, [photoContents.length, isEventPaused]);
 
   // Navegación manual (solo entre fotos)
   const goToNext = useCallback(() => {
@@ -202,5 +230,6 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
     totalMessages,
     goToNext,
     goToPrevious,
+    isEventPaused,
   };
 }

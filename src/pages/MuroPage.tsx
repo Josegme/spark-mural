@@ -21,7 +21,11 @@ export default function MuroPage() {
     error,
     totalPhotos,
     totalMessages,
+    isEventPaused,
   } = useMuroRealtime(token || '');
+
+  // Verificar si el evento está en estado programado (no iniciado)
+  const isEventNotStarted = event?.estado === 'programado';
 
   if (isLoading) {
     return (
@@ -56,6 +60,30 @@ export default function MuroPage() {
     );
   }
 
+  // Evento no iniciado (programado)
+  if (isEventNotStarted) {
+    return (
+      <MuroLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center max-w-md">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-info/20 flex items-center justify-center">
+              <span className="text-5xl">📅</span>
+            </div>
+            <h1 className="text-2xl font-display font-bold text-muro-foreground mb-2">
+              Evento programado
+            </h1>
+            <p className="text-muro-foreground/60 mb-4">
+              {event.nombre}
+            </p>
+            <p className="text-muro-foreground/40 text-sm">
+              El muro se activará cuando el anfitrión inicie el evento.
+            </p>
+          </div>
+        </div>
+      </MuroLayout>
+    );
+  }
+
   // Obtener token de subida del evento (necesitamos cargarlo)
   // Por ahora usamos el mismo token como fallback
   const uploadToken = token || '';
@@ -76,6 +104,23 @@ export default function MuroPage() {
 
         {/* Área principal: Carrusel de FOTOS + Mensajes flotantes */}
         <div className="flex-1 relative">
+          {/* Overlay de pausa */}
+          {isEventPaused && (
+            <div className="absolute inset-0 bg-black/60 z-40 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-warning/20 flex items-center justify-center">
+                  <span className="text-4xl">⏸️</span>
+                </div>
+                <h2 className="text-2xl font-display font-bold text-white mb-2">
+                  Evento en pausa
+                </h2>
+                <p className="text-white/60">
+                  El muro se reanudará pronto...
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Carrusel solo muestra fotos */}
           <MuroCarousel
             contents={photoContents}
@@ -84,7 +129,7 @@ export default function MuroPage() {
           />
           
           {/* Mensajes flotantes en el lateral (aparecen y desaparecen en 5 seg) */}
-          <MuroMessages messages={contents} />
+          {!isEventPaused && <MuroMessages messages={contents} />}
         </div>
       </div>
     </MuroLayout>
