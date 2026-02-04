@@ -208,29 +208,20 @@ export function useEventDetails(eventId: string | undefined) {
     mutationFn: async () => {
       if (!eventId) throw new Error('No event ID');
 
-      // Primero eliminar contenido asociado
-      const { error: contentError } = await supabase
-        .from('contenido')
-        .delete()
-        .eq('evento_id', eventId);
+      // El DELETE directo falla por RLS (no hay policies de DELETE en eventos/contenido/pagos).
+      // Para no tocar políticas, delegamos el borrado a una función backend con service role.
+      const { data, error } = await supabase.functions.invoke('delete-event', {
+        body: { eventId },
+      });
 
-      if (contentError) throw contentError;
+      if (error) {
+        // `error.message` suele traer el status + texto; lo propagamos para mostrarlo en UI.
+        throw new Error(error.message);
+      }
 
-      // Eliminar pagos asociados
-      const { error: pagosError } = await supabase
-        .from('pagos')
-        .delete()
-        .eq('evento_id', eventId);
-
-      if (pagosError) throw pagosError;
-
-      // Finalmente eliminar el evento
-      const { error } = await supabase
-        .from('eventos')
-        .delete()
-        .eq('id', eventId);
-
-      if (error) throw error;
+      if (!data?.ok) {
+        throw new Error(data?.error || 'No se pudo eliminar el evento');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-events'] });
@@ -242,10 +233,11 @@ export function useEventDetails(eventId: string | undefined) {
       // Navegar al dashboard después de eliminar exitosamente
       navigate('/dashboard');
     },
-    onError: () => {
+    onError: (err) => {
+      const message = err instanceof Error ? err.message : 'No se pudo eliminar el evento';
       toast({
         title: 'Error',
-        description: 'No se pudo eliminar el evento',
+        description: message,
         variant: 'destructive',
       });
     },
