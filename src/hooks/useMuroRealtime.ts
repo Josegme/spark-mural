@@ -57,43 +57,54 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
   const carouselIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const eventPollingRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Cargar evento por token
+  // Cargar evento por token usando función RPC segura
   const fetchEvent = useCallback(async () => {
     const { data, error: fetchError } = await supabase
-      .from('eventos')
-      .select('id, nombre, tipo, es_premium, tema_ia, estilo_ia, logo_url, color_banner, estado')
-      .eq('qr_pantalla_token', token)
-      .single();
+      .rpc('get_evento_by_token', { _token: token });
 
-    if (fetchError) {
+    if (fetchError || !data || data.length === 0) {
       setError('Evento no encontrado');
       setIsLoading(false);
       return null;
     }
 
-    setEvent(data);
-    return data;
+    // La función retorna un array, tomamos el primer resultado
+    const eventData = data[0];
+    setEvent(eventData);
+    return eventData;
   }, [token]);
 
-  // Cargar contenido inicial
+  // Cargar contenido inicial usando función RPC segura
   const fetchContents = useCallback(async (eventId: string) => {
     const { data, error: fetchError } = await supabase
-      .from('contenido')
-      .select('id, tipo, url_original, url_ia, mensaje_texto, invitado_nombre, likes_count, created_at, estado_ia')
-      .eq('evento_id', eventId)
-      .eq('aprobado', true)
-      .in('tipo', ['foto', 'mensaje']) // Solo fotos y mensajes - videos van al álbum
-      .order('created_at', { ascending: false })
-      .limit(100);
+      .rpc('get_contenido_by_evento_token', { 
+        _evento_id: eventId, 
+        _token: token 
+      });
 
     if (fetchError) {
       console.error('Error fetching contents:', fetchError);
       return;
     }
 
-    setContents(data as MuroContent[] || []);
+    // Mapear el resultado al formato esperado
+    const mappedContents: MuroContent[] = (data || [])
+      .filter((c: { tipo: string }) => c.tipo === 'foto' || c.tipo === 'mensaje')
+      .map((c: { id: string; tipo: string; url_original: string | null; url_ia: string | null; mensaje_texto: string | null; invitado_nombre: string | null; likes_count: number; created_at: string; estado_ia: string }) => ({
+        id: c.id,
+        tipo: c.tipo as 'foto' | 'video' | 'mensaje',
+        url_original: c.url_original,
+        url_ia: c.url_ia,
+        mensaje_texto: c.mensaje_texto,
+        invitado_nombre: c.invitado_nombre,
+        likes_count: c.likes_count,
+        created_at: c.created_at,
+        estado_ia: c.estado_ia as 'pendiente' | 'procesando' | 'completado' | 'error',
+      }));
+
+    setContents(mappedContents);
     setIsLoading(false);
-  }, []);
+  }, [token]);
 
   // Configurar suscripción realtime
   const setupRealtime = useCallback((eventId: string) => {
@@ -146,16 +157,13 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
         await fetchContents(eventData.id);
         setupRealtime(eventData.id);
         
-        // Polling para detectar cambios de estado (cada 5 segundos)
+        // Polling para detectar cambios de estado (usa función RPC segura)
         eventPollingRef.current = setInterval(async () => {
           const { data } = await supabase
-            .from('eventos')
-            .select('estado')
-            .eq('qr_pantalla_token', token)
-            .single();
+            .rpc('get_evento_by_token', { _token: token });
           
-          if (data) {
-            setEvent(prev => prev ? { ...prev, estado: data.estado } : null);
+          if (data && data.length > 0) {
+            setEvent(prev => prev ? { ...prev, estado: data[0].estado } : null);
           }
         }, 5000);
       }

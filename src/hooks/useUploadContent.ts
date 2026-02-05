@@ -49,23 +49,22 @@ export function useUploadContent(token: string): UseUploadContentReturn {
 
   const deviceId = generateDeviceId();
 
-  // Cargar evento por token de invitados
+  // Cargar evento por token de invitados usando función RPC segura
   const fetchEvent = useCallback(async () => {
     const { data, error: fetchError } = await supabase
-      .from('eventos')
-      .select('id, nombre, tipo, es_premium, tema_ia, estilo_ia, logo_url, color_banner, estado, limite_subidas_por_invitado, moderacion_activa')
-      .eq('qr_invitados_token', token)
-      .single();
+      .rpc('get_evento_by_token', { _token: token });
 
-    if (fetchError) {
+    if (fetchError || !data || data.length === 0) {
       setError(ERROR_MESSAGES.EVENT_NOT_FOUND);
       setIsLoading(false);
       return null;
     }
 
+    const eventData = data[0];
+
     // Solo permitir subidas si el evento está activo o pausado (pausado permite acumular contenido)
-    if (data.estado !== 'activo' && data.estado !== 'pausado') {
-      if (data.estado === 'programado') {
+    if (eventData.estado !== 'activo' && eventData.estado !== 'pausado') {
+      if (eventData.estado === 'programado') {
         setError('El evento aún no ha iniciado. Esperá a que el anfitrión lo active.');
       } else {
         setError(ERROR_MESSAGES.EVENT_NOT_ACTIVE);
@@ -74,18 +73,34 @@ export function useUploadContent(token: string): UseUploadContentReturn {
       return null;
     }
 
-    setEvent(data);
+    // Mapear a EventInfo (la función RPC no retorna todos los campos)
+    const mappedEvent: EventInfo = {
+      id: eventData.id,
+      nombre: eventData.nombre,
+      tipo: eventData.tipo,
+      es_premium: eventData.es_premium,
+      tema_ia: eventData.tema_ia,
+      estilo_ia: eventData.estilo_ia,
+      logo_url: eventData.logo_url,
+      color_banner: eventData.color_banner || '#4c1d95',
+      estado: eventData.estado,
+      limite_subidas_por_invitado: null, // Campo no disponible en RPC
+      moderacion_activa: eventData.moderacion_activa,
+    };
+
+    setEvent(mappedEvent);
     
-    // Contar uploads previos de este dispositivo
+    // Contar uploads previos de este dispositivo usando RPC
+    // Nota: contenido sigue teniendo RLS para inserts
     const { count } = await supabase
       .from('contenido')
       .select('*', { count: 'exact', head: true })
-      .eq('evento_id', data.id)
+      .eq('evento_id', eventData.id)
       .eq('invitado_device_id', deviceId);
 
     setUploadsCount(count || 0);
     setIsLoading(false);
-    return data;
+    return mappedEvent;
   }, [token, deviceId]);
 
   // Inicializar - usar useEffect para cargar datos
