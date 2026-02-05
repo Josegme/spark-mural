@@ -992,6 +992,43 @@ export type Database = {
         Args: { _evento_id: string; _token: string }
         Returns: boolean
       }
+      get_contenido_by_evento_token: {
+        Args: { _evento_id: string; _token: string }
+        Returns: {
+          created_at: string
+          estado_ia: string
+          evento_id: string
+          id: string
+          invitado_nombre: string
+          likes_count: number
+          mensaje_texto: string
+          tipo: string
+          url_ia: string
+          url_original: string
+        }[]
+      }
+      get_evento_by_token: {
+        Args: { _token: string }
+        Returns: {
+          color_banner: string
+          duracion_horas: number
+          es_premium: boolean
+          estado: string
+          estilo_ia: string
+          fecha_evento: string
+          hora_inicio: string
+          id: string
+          logo_url: string
+          moderacion_activa: boolean
+          nombre: string
+          tema_ia: string
+          tipo: string
+          total_fotos: number
+          total_likes: number
+          total_mensajes: number
+          total_videos: number
+        }[]
+      }
       get_global_config: { Args: { config_key: string }; Returns: Json }
       get_user_role: {
         Args: { _user_id: string }
