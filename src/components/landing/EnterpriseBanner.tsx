@@ -6,18 +6,11 @@
 import { Building2, Phone, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface EnterpriseBannerProps {
-  whatsapp?: string;
-  mensaje?: string;
-}
+import whatsappQR from '@/assets/whatsapp-qr.png';
 
-export function EnterpriseBanner({ 
-  whatsapp = '5493764606205', 
-  mensaje = 'Hola! Quiero información sobre planes empresariales para mi salón/eventos.' 
-}: EnterpriseBannerProps) {
-  // WhatsApp URL format: https://wa.me/number (digits only, no + or spaces)
-  const cleanNumber = whatsapp.replace(/[^0-9]/g, '');
-  const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(mensaje)}`;
+const WHATSAPP_LINK = 'https://wa.link/3z1jjp';
+
+export function EnterpriseBanner() {
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent p-8 md:p-12">
@@ -68,7 +61,7 @@ export function EnterpriseBanner({
             className="bg-white text-primary hover:bg-white/90 shadow-xl text-lg px-8 py-6 gap-3"
             asChild
           >
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+            <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">
               <Phone className="w-5 h-5" />
               Contactar por WhatsApp
               <ArrowRight className="w-5 h-5" />
@@ -78,6 +71,15 @@ export function EnterpriseBanner({
           <p className="text-white/70 text-sm text-center md:text-right">
             Respuesta rápida • Sin compromiso
           </p>
+
+          {/* QR Code */}
+          <div className="mt-2 p-3 bg-white rounded-xl shadow-lg">
+            <img 
+              src={whatsappQR} 
+              alt="Escanear para contactar por WhatsApp" 
+              className="w-24 h-24 md:w-28 md:h-28"
+            />
+          </div>
         </div>
       </div>
     </div>
