@@ -2,9 +2,10 @@
  * PICKEVENT - Paso 2: Personalización
  */
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Sparkles, Palette, ImageIcon, Wand2, ChevronLeft } from 'lucide-react';
+import { Sparkles, Palette, ImageIcon, Wand2, ChevronLeft, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +14,8 @@ import { stepPersonalizationSchema, StepPersonalizationData } from '@/lib/valida
 import { IA_STYLES } from '@/lib/constants';
 import { usePublicPrices } from '@/hooks/usePublicPrices';
 import { formatPrice, cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface StepPersonalizationProps {
   data: Partial<StepPersonalizationData>;
@@ -35,6 +38,9 @@ const defaultColors = [
 
 export function StepPersonalization({ data, onNext, onBack }: StepPersonalizationProps) {
   const { prices } = usePublicPrices();
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>(data.logo_url || '');
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   
   const form = useForm<StepPersonalizationData>({
     resolver: zodResolver(stepPersonalizationSchema),
@@ -50,8 +56,72 @@ export function StepPersonalization({ data, onNext, onBack }: StepPersonalizatio
   const esPremium = form.watch('es_premium');
   const colorBanner = form.watch('color_banner');
 
-  const onSubmit = (values: StepPersonalizationData) => {
-    onNext(values);
+  // Manejar selección de archivo de logo
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamaño (máx 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('La imagen no puede superar 2MB');
+      return;
+    }
+
+    // Validar tipo
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Solo se aceptan imágenes JPG, PNG o WEBP');
+      return;
+    }
+
+    setLogoFile(file);
+    
+    // Mostrar preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setLogoPreview(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Limpiar logo seleccionado
+  const handleClearLogo = () => {
+    setLogoFile(null);
+    setLogoPreview('');
+    form.setValue('logo_url', '');
+  };
+
+  const onSubmit = async (values: StepPersonalizationData) => {
+    let finalLogoUrl = values.logo_url;
+
+    // Si hay un archivo de logo nuevo, subirlo
+    if (logoFile) {
+      setIsUploadingLogo(true);
+      try {
+        const fileName = `logos/${Date.now()}_${logoFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('contenido-eventos')
+          .upload(fileName, logoFile);
+
+        if (uploadError) throw uploadError;
+
+        // Obtener URL pública
+        const { data: urlData } = supabase.storage
+          .from('contenido-eventos')
+          .getPublicUrl(fileName);
+
+        finalLogoUrl = urlData.publicUrl;
+      } catch (error) {
+        console.error('Error uploading logo:', error);
+        toast.error('Error al subir el logo');
+        setIsUploadingLogo(false);
+        return;
+      } finally {
+        setIsUploadingLogo(false);
+      }
+    }
+
+    onNext({ ...values, logo_url: finalLogoUrl });
   };
 
   return (
@@ -235,31 +305,69 @@ export function StepPersonalization({ data, onNext, onBack }: StepPersonalizatio
           )}
         />
 
-        {/* Logo URL (opcional) */}
-        <FormField
-          control={form.control}
-          name="logo_url"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center gap-2 text-base">
-                <ImageIcon className="w-4 h-4" />
-                Logo del evento (opcional)
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="url"
-                  placeholder="https://ejemplo.com/mi-logo.png"
-                  className="h-12"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Pegá la URL de una imagen para mostrar en el banner
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
+        {/* Logo del evento (opcional) */}
+        <div className="space-y-3">
+          <label className="flex items-center gap-2 text-base font-medium text-foreground">
+            <ImageIcon className="w-4 h-4" />
+            Logo del evento (opcional)
+          </label>
+          
+          {/* Preview del logo */}
+          {logoPreview && (
+            <div className="relative group">
+              <img
+                src={logoPreview}
+                alt="Preview del logo"
+                className="w-full h-32 object-cover rounded-xl border-2 border-border"
+              />
+              <button
+                type="button"
+                onClick={handleClearLogo}
+                disabled={isUploadingLogo}
+                className="absolute top-2 right-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           )}
-        />
+
+          {/* Input de archivo */}
+          <div className="relative">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleLogoChange}
+              disabled={isUploadingLogo}
+              className="hidden"
+              id="logo-upload"
+            />
+            <label
+              htmlFor="logo-upload"
+              className={cn(
+                'flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-xl cursor-pointer transition-colors',
+                logoFile ? 'border-accent bg-accent/10' : 'border-border hover:border-accent/50 hover:bg-accent/5',
+                isUploadingLogo && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              <Upload className="w-5 h-5 text-muted-foreground" />
+              <div className="text-sm">
+                {isUploadingLogo ? (
+                  <span className="text-muted-foreground">Subiendo...</span>
+                ) : logoFile ? (
+                  <>
+                    <span className="font-medium text-foreground">{logoFile.name}</span>
+                    <span className="text-xs text-muted-foreground"> • Haz clic para cambiar</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium text-foreground">Clic para subir una imagen</span>
+                    <span className="text-xs text-muted-foreground"> • JPG, PNG o WEBP (máx 2MB)</span>
+                  </>
+                )}
+              </div>
+            </label>
+          </div>
+        </div>
 
         {/* Botones navegación */}
         <div className="flex justify-between pt-4">
@@ -276,9 +384,10 @@ export function StepPersonalization({ data, onNext, onBack }: StepPersonalizatio
           <Button
             type="submit"
             size="lg"
-            className="min-w-[160px] bg-gradient-primary hover:opacity-90"
+            disabled={isUploadingLogo}
+            className="min-w-[160px] bg-gradient-primary hover:opacity-90 disabled:opacity-50"
           >
-            Siguiente
+            {isUploadingLogo ? 'Subiendo logo...' : 'Siguiente'}
           </Button>
         </div>
       </form>
