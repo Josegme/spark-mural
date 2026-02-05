@@ -37,11 +37,11 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { evento_id } = await req.json();
+    const { evento_id, recipientEmails } = await req.json();
 
-    if (!evento_id) {
+    if (!evento_id || !recipientEmails || !Array.isArray(recipientEmails) || recipientEmails.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'evento_id is required' }),
+        JSON.stringify({ error: 'evento_id and recipientEmails array are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -72,20 +72,14 @@ serve(async (req) => {
       );
     }
 
-    // Get client profile
+    // Get client profile para obtener el nombre
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('email, nombre')
+      .select('nombre')
       .eq('id', evento.cliente_user_id)
       .single();
 
-    if (profileError || !profile) {
-      console.error('Client profile not found:', profileError);
-      return new Response(
-        JSON.stringify({ error: 'Client profile not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const clienteName = profile?.nombre || 'Cliente';
 
     const baseUrl = getBaseUrl();
     const muroUrl = `${baseUrl}/muro/${evento.qr_pantalla_token}`;
@@ -99,11 +93,12 @@ serve(async (req) => {
       day: 'numeric'
     });
 
-    console.log('Sending email to:', profile.email);
+    console.log('Sending emails to:', recipientEmails);
 
+    // Enviar a todos los emails especificados
     const { data: emailResult, error: emailError } = await resend.emails.send({
       from: 'PickEvent <onboarding@resend.dev>',
-      to: [profile.email],
+      to: recipientEmails,
       subject: `🎉 ¡Tu evento "${evento.nombre}" está listo!`,
       html: `
         <!DOCTYPE html>
@@ -126,7 +121,7 @@ serve(async (req) => {
             <!-- Success Banner -->
             <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2)); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 16px; padding: 30px; text-align: center; margin-bottom: 30px;">
               <div style="font-size: 48px; margin-bottom: 16px;">🎉</div>
-              <h2 style="margin: 0 0 8px 0; font-size: 24px; color: #ffffff;">¡Felicidades, ${profile.nombre}!</h2>
+              <h2 style="margin: 0 0 8px 0; font-size: 24px; color: #ffffff;">¡Felicidades, ${clienteName}!</h2>
               <p style="margin: 0; color: #a1a1aa; font-size: 16px;">Tu evento ha sido creado exitosamente</p>
             </div>
 

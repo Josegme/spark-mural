@@ -160,23 +160,37 @@ serve(async (req) => {
           onConflict: 'payment_id_externo',
         });
 
-      // Trigger email with QR codes
+      // Trigger email with QR codes to both user and payer
       try {
-        const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-event-qr-emails`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({
-            evento_id: evento.id,
-            cliente_email: session.customer_email || metadata.cliente_email,
-            cliente_nombre: metadata.cliente_nombre || 'Cliente',
-          }),
-        });
+        // Get user profile for email
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', userId)
+          .single();
         
-        const emailText = await emailResponse.text();
-        console.log('Email function response:', emailText);
+        const recipientEmails = [];
+        if (userProfile?.email) recipientEmails.push(userProfile.email);
+        if (session.customer_email && session.customer_email !== userProfile?.email) {
+          recipientEmails.push(session.customer_email);
+        }
+        
+        if (recipientEmails.length > 0) {
+          const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-event-qr-emails`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+            },
+            body: JSON.stringify({
+              evento_id: evento.id,
+              recipientEmails,
+            }),
+          });
+          
+          const emailText = await emailResponse.text();
+          console.log('Email function response:', emailText);
+        }
       } catch (emailError) {
         console.error('Error triggering email:', emailError);
         // Don't fail the webhook for email errors

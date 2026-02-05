@@ -424,14 +424,19 @@ export function useCreateEvent() {
         }
       }
 
-      // If clienteEmail is provided and different from current user, send QR emails
-      if (clienteEmail && clienteEmail !== profile?.email) {
+      // If clienteEmail is provided, send QR emails to both the user and the client
+      if (clienteEmail) {
         try {
+          const recipientEmails = [profile!.email];
+          // Only add client email if it's different from user email
+          if (clienteEmail !== profile!.email) {
+            recipientEmails.push(clienteEmail);
+          }
+          
           await supabase.functions.invoke('send-event-qr-emails', {
             body: {
               evento_id: data.id,
-              cliente_email: clienteEmail,
-              cliente_nombre: 'Cliente',
+              recipientEmails,
             },
           });
         } catch (emailError) {
