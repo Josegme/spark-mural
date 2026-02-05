@@ -53,24 +53,24 @@ function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-6">
-          <Link 
-            to="/#como-funciona" 
+          <a 
+            href="/#como-funciona" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Cómo Funciona
-          </Link>
-          <Link 
-            to="/#planes" 
+          </a>
+          <a 
+            href="/#planes" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Planes
-          </Link>
-          <Link 
-            to="/#casos-de-uso" 
+          </a>
+          <a 
+            href="/#casos-de-uso" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Casos de Uso
-          </Link>
+          </a>
         </nav>
 
         <div className="flex items-center gap-3">
@@ -130,9 +130,9 @@ function Footer() {
           <div className="space-y-4">
             <h4 className="font-display font-semibold">Producto</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/#como-funciona" className="hover:text-foreground transition-colors">Cómo Funciona</Link></li>
-              <li><Link to="/#planes" className="hover:text-foreground transition-colors">Planes y Precios</Link></li>
-              <li><Link to="/#casos-de-uso" className="hover:text-foreground transition-colors">Casos de Uso</Link></li>
+              <li><a href="/#como-funciona" className="hover:text-foreground transition-colors">Cómo Funciona</a></li>
+              <li><a href="/#planes" className="hover:text-foreground transition-colors">Planes y Precios</a></li>
+              <li><a href="/#casos-de-uso" className="hover:text-foreground transition-colors">Casos de Uso</a></li>
             </ul>
           </div>
 
