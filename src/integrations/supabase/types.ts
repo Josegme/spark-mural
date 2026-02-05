@@ -142,6 +142,13 @@ export type Database = {
             referencedRelation: "eventos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "contenido_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       eventos: {
@@ -440,6 +447,13 @@ export type Database = {
             columns: ["evento_id"]
             isOneToOne: false
             referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos_public"
             referencedColumns: ["id"]
           },
         ]
@@ -825,7 +839,77 @@ export type Database = {
             referencedRelation: "eventos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "contenido_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos_public"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      eventos_public: {
+        Row: {
+          color_banner: string | null
+          duracion_horas: number | null
+          es_premium: boolean | null
+          estado: Database["public"]["Enums"]["event_status"] | null
+          estilo_ia: Database["public"]["Enums"]["ia_style"] | null
+          fecha_evento: string | null
+          hora_inicio: string | null
+          id: string | null
+          limite_subidas_por_invitado: number | null
+          logo_url: string | null
+          moderacion_activa: boolean | null
+          nombre: string | null
+          tema_ia: string | null
+          tipo: Database["public"]["Enums"]["event_type"] | null
+          total_fotos: number | null
+          total_likes: number | null
+          total_mensajes: number | null
+          total_videos: number | null
+        }
+        Insert: {
+          color_banner?: string | null
+          duracion_horas?: number | null
+          es_premium?: boolean | null
+          estado?: Database["public"]["Enums"]["event_status"] | null
+          estilo_ia?: Database["public"]["Enums"]["ia_style"] | null
+          fecha_evento?: string | null
+          hora_inicio?: string | null
+          id?: string | null
+          limite_subidas_por_invitado?: number | null
+          logo_url?: string | null
+          moderacion_activa?: boolean | null
+          nombre?: string | null
+          tema_ia?: string | null
+          tipo?: Database["public"]["Enums"]["event_type"] | null
+          total_fotos?: number | null
+          total_likes?: number | null
+          total_mensajes?: number | null
+          total_videos?: number | null
+        }
+        Update: {
+          color_banner?: string | null
+          duracion_horas?: number | null
+          es_premium?: boolean | null
+          estado?: Database["public"]["Enums"]["event_status"] | null
+          estilo_ia?: Database["public"]["Enums"]["ia_style"] | null
+          fecha_evento?: string | null
+          hora_inicio?: string | null
+          id?: string | null
+          limite_subidas_por_invitado?: number | null
+          logo_url?: string | null
+          moderacion_activa?: boolean | null
+          nombre?: string | null
+          tema_ia?: string | null
+          tipo?: Database["public"]["Enums"]["event_type"] | null
+          total_fotos?: number | null
+          total_likes?: number | null
+          total_mensajes?: number | null
+          total_videos?: number | null
+        }
+        Relationships: []
       }
       pagos_summary: {
         Row: {
@@ -858,6 +942,13 @@ export type Database = {
             columns: ["evento_id"]
             isOneToOne: false
             referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos_public"
             referencedColumns: ["id"]
           },
         ]
