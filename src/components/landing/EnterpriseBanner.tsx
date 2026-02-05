@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 
 import whatsappQR from '@/assets/whatsapp-qr.png';
 
-const WHATSAPP_LINK = 'https://wa.link/3z1jjp';
+const WHATSAPP_LINK = 'https://wa.me/5493764606205';
 
 export function EnterpriseBanner() {
 
