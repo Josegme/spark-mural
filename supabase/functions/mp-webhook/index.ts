@@ -279,19 +279,37 @@ serve(async (req) => {
             }
           }
 
-          // Send QR codes email
+          // Send QR codes email to both user and client
           console.log('Triggering email send for existing event:', existingPayment.evento_id);
           try {
-            const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-event-qr-emails`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseServiceKey}`,
-              },
-              body: JSON.stringify({ evento_id: existingPayment.evento_id }),
-            });
-            const emailResult = await emailResponse.json();
-            console.log('Email send result:', emailResult);
+            // Get user and client emails
+            const { data: userProfile } = await supabase
+              .from('profiles')
+              .select('email')
+              .eq('id', payment.metadata?.user_id || eventoData?.cliente_user_id)
+              .single();
+            
+            const recipientEmails = [];
+            if (userProfile?.email) recipientEmails.push(userProfile.email);
+            if (payment.payer?.email && payment.payer.email !== userProfile?.email) {
+              recipientEmails.push(payment.payer.email);
+            }
+            
+            if (recipientEmails.length > 0) {
+              const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-event-qr-emails`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabaseServiceKey}`,
+                },
+                body: JSON.stringify({ 
+                  evento_id: existingPayment.evento_id,
+                  recipientEmails 
+                }),
+              });
+              const emailResult = await emailResponse.json();
+              console.log('Email send result:', emailResult);
+            }
           } catch (emailError) {
             console.error('Failed to send QR emails:', emailError);
           }
@@ -425,19 +443,37 @@ serve(async (req) => {
               }
             }
 
-            // Send QR codes email automatically
+            // Send QR codes email to both user and client
             console.log('Triggering email send for event:', evento.id);
             try {
-              const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-event-qr-emails`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseServiceKey}`,
-                },
-                body: JSON.stringify({ evento_id: evento.id }),
-              });
-              const emailResult = await emailResponse.json();
-              console.log('Email send result:', emailResult);
+              // Get user profile for email
+              const { data: userProfile } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq('id', metadata.user_id)
+                .single();
+              
+              const recipientEmails = [];
+              if (userProfile?.email) recipientEmails.push(userProfile.email);
+              if (payment.payer?.email && payment.payer.email !== userProfile?.email) {
+                recipientEmails.push(payment.payer.email);
+              }
+              
+              if (recipientEmails.length > 0) {
+                const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-event-qr-emails`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseServiceKey}`,
+                  },
+                  body: JSON.stringify({ 
+                    evento_id: evento.id,
+                    recipientEmails 
+                  }),
+                });
+                const emailResult = await emailResponse.json();
+                console.log('Email send result:', emailResult);
+              }
             } catch (emailError) {
               console.error('Failed to send QR emails:', emailError);
             }
