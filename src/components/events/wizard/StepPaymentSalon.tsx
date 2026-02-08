@@ -14,7 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { WizardFormData } from '@/hooks/useCreateEvent';
-import { EVENT_TYPES, EVENT_PRICES } from '@/lib/constants';
+import { EVENT_TYPES } from '@/lib/constants';
+import { usePublicPrices } from '@/hooks/usePublicPrices';
 import { formatDate } from '@/lib/utils';
 
 const salonPaymentSchema = z.object({
@@ -47,6 +48,7 @@ export function StepPaymentSalon({
   puedeCrearEvento,
   suscripcionVencida = false,
 }: StepPaymentSalonProps) {
+  const { prices } = usePublicPrices();
   const form = useForm<SalonPaymentData>({
     resolver: zodResolver(salonPaymentSchema),
     defaultValues: {
@@ -61,7 +63,7 @@ export function StepPaymentSalon({
   };
 
   const eventType = EVENT_TYPES[formData.tipo as keyof typeof EVENT_TYPES];
-  const planDetails = formData.es_premium ? EVENT_PRICES.premium : EVENT_PRICES.basico;
+  const planDetails = formData.es_premium ? prices.premium : prices.basico;
 
   return (
     <Form {...form}>

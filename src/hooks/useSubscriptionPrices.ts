@@ -22,11 +22,11 @@ export interface SubscriptionPrices {
   ilimitado: number;
 }
 
-// Valores por defecto si falla la lectura (sincronizados con Super Admin)
+// Valores por defecto si falla la lectura (sincronizados con configuracion_global)
 const DEFAULT_PRICES: SubscriptionPrices = {
-  starter: 270000,
-  profesional: 350000,
-  ilimitado: 500000,
+  starter: 150000,
+  profesional: 290000,
+  ilimitado: 457000,
 };
 
 // Metadata de los planes (no cambia, solo los precios)

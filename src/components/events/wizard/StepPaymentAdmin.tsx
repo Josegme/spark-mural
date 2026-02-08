@@ -17,7 +17,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { WizardFormData, PaymentGateway } from '@/hooks/useCreateEvent';
-import { EVENT_TYPES, EVENT_PRICES } from '@/lib/constants';
+import { EVENT_TYPES } from '@/lib/constants';
+import { usePublicPrices } from '@/hooks/usePublicPrices';
 import { formatPrice, formatDate, cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
@@ -63,6 +64,7 @@ export function StepPaymentAdmin({
 }: StepPaymentAdminProps) {
   const navigate = useNavigate();
   const { isSuperAdmin } = useAuth();
+  const { prices } = usePublicPrices();
   const [generatedLink, setGeneratedLink] = useState<string | null>(paymentLink || null);
   const [isCopying, setIsCopying] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -128,7 +130,7 @@ export function StepPaymentAdmin({
 
   const precio = precioFinal; // Usar el precio final (personalizado o calculado)
   const eventType = EVENT_TYPES[formData.tipo as keyof typeof EVENT_TYPES];
-  const planDetails = formData.es_premium ? EVENT_PRICES.premium : EVENT_PRICES.basico;
+  const planDetails = formData.es_premium ? prices.premium : prices.basico;
 
   return (
     <Form {...form}>
