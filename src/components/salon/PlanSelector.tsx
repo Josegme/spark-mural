@@ -1,6 +1,6 @@
 /**
  * PICKEVENT - Selector de Planes de Suscripción para Salones
- * Muestra los 3 planes: 10, 20, ilimitados eventos/mes
+ * Usa precios dinámicos desde configuración global via useSubscriptionPrices
  */
 
 import { useState } from 'react';
@@ -16,68 +16,14 @@ import {
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useSubscriptionPrices, SubscriptionPlan } from '@/hooks/useSubscriptionPrices';
+import { Skeleton } from '@/components/ui/skeleton';
 
-interface Plan {
-  id: string;
-  nombre: string;
-  precio: number;
-  limite_eventos: number;
-  descripcion: string;
-  features: string[];
-  popular?: boolean;
-  icon: React.ReactNode;
-}
-
-const PLANES: Plan[] = [
-  {
-    id: 'starter',
-    nombre: 'Starter',
-    precio: 20000,
-    limite_eventos: 10,
-    descripcion: 'Ideal para salones pequeños',
-    icon: <Building2 className="w-6 h-6" />,
-    features: [
-      '10 eventos por mes',
-      'Muro interactivo en tiempo real',
-      '3 QR codes por evento',
-      'Álbum descargable (30 días)',
-      'Soporte por email',
-    ],
-  },
-  {
-    id: 'profesional',
-    nombre: 'Profesional',
-    precio: 40000,
-    limite_eventos: 20,
-    descripcion: 'Para salones con demanda media',
-    icon: <Sparkles className="w-6 h-6" />,
-    popular: true,
-    features: [
-      '20 eventos por mes',
-      'Todo lo del plan Starter',
-      'Eventos Premium con IA',
-      'Personalización avanzada',
-      'Soporte prioritario',
-      'Reportes detallados',
-    ],
-  },
-  {
-    id: 'ilimitado',
-    nombre: 'Ilimitado',
-    precio: 80000,
-    limite_eventos: -1,
-    descripcion: 'Sin límites para grandes empresas',
-    icon: <Crown className="w-6 h-6" />,
-    features: [
-      'Eventos ilimitados',
-      'Todo lo del plan Profesional',
-      'API acceso (próximamente)',
-      'White-label opcional',
-      'Soporte dedicado 24/7',
-      'Capacitación incluida',
-    ],
-  },
-];
+const PLAN_ICONS: Record<string, React.ReactNode> = {
+  starter: <Building2 className="w-6 h-6" />,
+  profesional: <Sparkles className="w-6 h-6" />,
+  ilimitado: <Crown className="w-6 h-6" />,
+};
 
 interface PlanSelectorProps {
   currentPlanId?: string;
@@ -88,8 +34,9 @@ interface PlanSelectorProps {
 export function PlanSelector({ currentPlanId, onSelectPlan, showUpgradeOnly = false }: PlanSelectorProps) {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { plans, isLoading } = useSubscriptionPrices();
 
-  const handleSelectPlan = async (plan: Plan) => {
+  const handleSelectPlan = async (plan: SubscriptionPlan) => {
     if (plan.id === currentPlanId) {
       toast.info('Ya tenés este plan activo');
       return;
@@ -99,7 +46,6 @@ export function PlanSelector({ currentPlanId, onSelectPlan, showUpgradeOnly = fa
     setIsProcessing(true);
 
     try {
-      // Por ahora mostrar mensaje - la integración con MP se hace en el futuro
       toast.success(`Plan ${plan.nombre} seleccionado. Un asesor te contactará para completar la suscripción.`);
       
       if (onSelectPlan) {
@@ -113,12 +59,30 @@ export function PlanSelector({ currentPlanId, onSelectPlan, showUpgradeOnly = fa
   };
 
   const filteredPlanes = showUpgradeOnly && currentPlanId
-    ? PLANES.filter(p => {
-        const currentIndex = PLANES.findIndex(plan => plan.id === currentPlanId);
-        const planIndex = PLANES.findIndex(plan => plan.id === p.id);
+    ? plans.filter(p => {
+        const currentIndex = plans.findIndex(plan => plan.id === currentPlanId);
+        const planIndex = plans.findIndex(plan => plan.id === p.id);
         return planIndex > currentIndex;
       })
-    : PLANES;
+    : plans;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-display font-bold mb-2">
+            {showUpgradeOnly ? 'Mejorá tu Plan' : 'Elegí tu Plan'}
+          </h2>
+          <p className="text-muted-foreground">Cargando planes...</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} className="h-96 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -167,7 +131,7 @@ export function PlanSelector({ currentPlanId, onSelectPlan, showUpgradeOnly = fa
 
               <CardHeader className="text-center pb-2">
                 <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3 text-primary">
-                  {plan.icon}
+                  {PLAN_ICONS[plan.id] || <Building2 className="w-6 h-6" />}
                 </div>
                 <CardTitle className="text-xl">{plan.nombre}</CardTitle>
                 <CardDescription>{plan.descripcion}</CardDescription>

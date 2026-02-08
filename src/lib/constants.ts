@@ -123,15 +123,15 @@ export const PAYMENT_GATEWAYS = {
   NZ: { gateway: 'stripe', label: 'Stripe', icon: '🇳🇿' },
 } as const;
 
-// Planes disponibles
+// Planes de suscripción (fallback - fuente de verdad: configuracion_global)
 export const SUBSCRIPTION_PLANS = {
   basico: {
-    nombre: 'Básico',
-    precio: 30000,
-    limite_eventos_mes: 20,
+    nombre: 'Starter',
+    precio: 150000,
+    limite_eventos_mes: 10,
     descripcion: 'Ideal para salones pequeños',
     features: [
-      'Hasta 20 eventos por mes',
+      'Hasta 10 eventos por mes',
       'Muro interactivo en tiempo real',
       '3 QR codes por evento',
       'Álbum descargable',
@@ -139,13 +139,13 @@ export const SUBSCRIPTION_PLANS = {
     ],
   },
   premium: {
-    nombre: 'Premium',
-    precio: 50000,
-    limite_eventos_mes: 30,
+    nombre: 'Profesional',
+    precio: 290000,
+    limite_eventos_mes: 20,
     descripcion: 'Para salones con alta demanda',
     features: [
-      'Hasta 30 eventos por mes',
-      'Todo lo del plan Básico',
+      'Hasta 20 eventos por mes',
+      'Todo lo del plan Starter',
       'IA generativa incluida',
       'Personalización avanzada',
       'Soporte prioritario',
@@ -153,13 +153,13 @@ export const SUBSCRIPTION_PLANS = {
     ],
   },
   enterprise: {
-    nombre: 'Enterprise',
-    precio: 100000,
+    nombre: 'Ilimitado',
+    precio: 457000,
     limite_eventos_mes: -1, // Ilimitado
     descripcion: 'Solución completa para grandes empresas',
     features: [
       'Eventos ilimitados',
-      'Todo lo del plan Premium',
+      'Todo lo del plan Profesional',
       'API acceso',
       'White-label opcional',
       'Soporte dedicado 24/7',
@@ -168,11 +168,11 @@ export const SUBSCRIPTION_PLANS = {
   },
 } as const;
 
-// Precios de eventos individuales
+// Precios de eventos individuales (fallback - fuente de verdad: configuracion_global)
 export const EVENT_PRICES = {
   basico: {
     nombre: 'Básico',
-    precio: 10000,
+    precio: 110000,
     descripcion: 'Muro interactivo sin IA',
     features: [
       'Muro interactivo en vivo',
@@ -184,7 +184,7 @@ export const EVENT_PRICES = {
   },
   premium: {
     nombre: 'Premium + IA',
-    precio: 25000,
+    precio: 153000,
     descripcion: 'Con transformación de fotos',
     features: [
       'Todo lo del plan Básico',
