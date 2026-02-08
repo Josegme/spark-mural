@@ -35,7 +35,7 @@ type AdminPaymentData = z.infer<typeof adminPaymentSchema>;
 
 interface StepPaymentAdminProps {
   formData: WizardFormData;
-  onGeneratePaymentLink: (clienteEmail: string) => Promise<string | null>;
+  onGeneratePaymentLink: (clienteEmail: string, precioOverride?: number) => Promise<string | null>;
   onCreatePromotional: (clienteEmail: string) => Promise<boolean>;
   onBack: () => void;
   isSubmitting: boolean;
@@ -98,7 +98,8 @@ export function StepPaymentAdmin({
       }
       await onCreatePromotional(values.clienteEmail);
     } else {
-      const link = await onGeneratePaymentLink(values.clienteEmail);
+      // Pass custom price for Super Admin, otherwise use default
+      const link = await onGeneratePaymentLink(values.clienteEmail, precioFinal);
       if (link) {
         setGeneratedLink(link);
       }

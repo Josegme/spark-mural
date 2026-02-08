@@ -462,7 +462,7 @@ export function useCreateEvent() {
 
   // Generate payment link for external sharing (Admin/Asistente flow)
   // This creates the event first, then generates a payment link associated with it
-  const generatePaymentLinkForClient = async (clienteEmail: string): Promise<string | null> => {
+  const generatePaymentLinkForClient = async (clienteEmail: string, precioOverride?: number): Promise<string | null> => {
     if (!user) {
       toast.error('Debés iniciar sesión para generar el link');
       return null;
@@ -471,7 +471,7 @@ export function useCreateEvent() {
     setIsSubmitting(true);
 
     try {
-      const precio = calculatePrice();
+      const precio = precioOverride !== undefined ? precioOverride : calculatePrice();
       const qr_pantalla_token = generateQRToken();
       const qr_invitados_token = generateQRToken();
       const qr_descarga_token = generateQRToken();
