@@ -3,7 +3,7 @@
  * Con filtros avanzados, edición y creación
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -72,6 +72,47 @@ export function TenantsTable({ tenants, isLoading, onRefresh }: TenantsTableProp
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [assignedUsers, setAssignedUsers] = useState<Record<string, { nombre: string; email: string }>>({});
+
+  // Fetch assigned user names for tenants that have usuario_asignado_id
+  useEffect(() => {
+    const userIds = tenants
+      .map(t => t.usuario_asignado_id)
+      .filter((id): id is string => !!id);
+    
+    if (userIds.length === 0) {
+      // Fallback: find users by tenant_id
+      const tenantIds = tenants.map(t => t.id);
+      if (tenantIds.length === 0) return;
+      
+      supabase
+        .from('profiles')
+        .select('nombre, email, tenant_id')
+        .in('tenant_id', tenantIds)
+        .then(({ data }) => {
+          if (!data) return;
+          const map: Record<string, { nombre: string; email: string }> = {};
+          data.forEach(p => {
+            if (p.tenant_id) map[p.tenant_id] = { nombre: p.nombre, email: p.email };
+          });
+          setAssignedUsers(map);
+        });
+      return;
+    }
+
+    supabase
+      .from('profiles')
+      .select('id, nombre, email, tenant_id')
+      .in('tenant_id', tenants.map(t => t.id))
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, { nombre: string; email: string }> = {};
+        data.forEach(p => {
+          if (p.tenant_id) map[p.tenant_id] = { nombre: p.nombre, email: p.email };
+        });
+        setAssignedUsers(map);
+      });
+  }, [tenants]);
 
   // Handler: Restablecer contraseña
   const handleResetPassword = async (tenant: Tenant) => {
@@ -306,6 +347,15 @@ export function TenantsTable({ tenants, isLoading, onRefresh }: TenantsTableProp
                         <div>
                           <p className="font-medium">{tenant.nombre}</p>
                           <p className="text-sm text-muted-foreground">{tenant.email}</p>
+                          {assignedUsers[tenant.id] ? (
+                            <p className="text-xs text-primary mt-0.5">
+                              👤 {assignedUsers[tenant.id].nombre} ({assignedUsers[tenant.id].email})
+                            </p>
+                          ) : (
+                            <p className="text-xs text-amber-500 mt-0.5">
+                              ⚠ Sin usuario asignado
+                            </p>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>

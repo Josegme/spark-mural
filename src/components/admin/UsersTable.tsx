@@ -19,6 +19,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { 
@@ -28,14 +29,18 @@ import {
   Eye,
   Edit,
   Shield,
-  UserCog
+  UserCog,
+  Settings2
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import type { AdminUser } from '@/hooks/useAdminData';
+import type { AdminUser, Tenant } from '@/hooks/useAdminData';
+import { TenantEditModal } from './TenantEditModal';
 
 interface UsersTableProps {
   users: AdminUser[];
+  tenants: Tenant[];
   isLoading?: boolean;
+  onRefresh?: () => void;
 }
 
 const roleConfig: Record<string, { label: string; className: string }> = {
@@ -45,9 +50,10 @@ const roleConfig: Record<string, { label: string; className: string }> = {
   cliente: { label: 'Cliente', className: 'bg-muted text-muted-foreground' },
 };
 
-export function UsersTable({ users, isLoading }: UsersTableProps) {
+export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableProps) {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
@@ -62,6 +68,12 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
     acc[user.rol] = (acc[user.rol] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
+
+  // Helper to find tenant for a user
+  const findTenantForUser = (user: AdminUser): Tenant | undefined => {
+    if (!user.tenant_id) return undefined;
+    return tenants.find(t => t.id === user.tenant_id);
+  };
 
   if (isLoading) {
     return (
@@ -78,111 +90,139 @@ export function UsersTable({ users, isLoading }: UsersTableProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            Usuarios ({users.length})
-          </CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar..."
-                className="pl-8 w-64"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <Button
-              variant={roleFilter === null ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setRoleFilter(null)}
-            >
-              Todos
-            </Button>
-            {Object.entries(roleConfig).map(([role, config]) => (
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Usuarios ({users.length})
+            </CardTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar..."
+                  className="pl-8 w-64"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
               <Button
-                key={role}
-                variant={roleFilter === role ? 'default' : 'outline'}
+                variant={roleFilter === null ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setRoleFilter(role)}
+                onClick={() => setRoleFilter(null)}
               >
-                {config.label} ({roleCounts[role] || 0})
+                Todos
               </Button>
-            ))}
+              {Object.entries(roleConfig).map(([role, config]) => (
+                <Button
+                  key={role}
+                  variant={roleFilter === role ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setRoleFilter(role)}
+                >
+                  {config.label} ({roleCounts[role] || 0})
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {filteredUsers.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No hay usuarios que coincidan con la búsqueda
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Usuario</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead>País</TableHead>
-                <TableHead>Registrado</TableHead>
-                <TableHead className="w-10"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => {
-                const roleInfo = roleConfig[user.rol] || roleConfig.cliente;
+        </CardHeader>
+        <CardContent>
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay usuarios que coincidan con la búsqueda
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Usuario</TableHead>
+                  <TableHead>Rol</TableHead>
+                  <TableHead>País</TableHead>
+                  <TableHead>Registrado</TableHead>
+                  <TableHead className="w-10"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((user) => {
+                  const roleInfo = roleConfig[user.rol] || roleConfig.cliente;
+                  const userTenant = findTenantForUser(user);
 
-                return (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{user.nombre}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={roleInfo.className}>
-                        {user.rol === 'super_admin' && <Shield className="w-3 h-3 mr-1" />}
-                        {roleInfo.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{user.pais || '-'}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(user.created_at)}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="w-4 h-4 mr-2" />
-                            Ver Perfil
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <UserCog className="w-4 h-4 mr-2" />
-                            Cambiar Rol
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+                  return (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{user.nombre}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          {userTenant && (
+                            <p className="text-xs text-primary mt-0.5">
+                              🏢 {userTenant.nombre}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={roleInfo.className}>
+                          {user.rol === 'super_admin' && <Shield className="w-3 h-3 mr-1" />}
+                          {roleInfo.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{user.pais || '-'}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(user.created_at)}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Eye className="w-4 h-4 mr-2" />
+                              Ver Perfil
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <UserCog className="w-4 h-4 mr-2" />
+                              Cambiar Rol
+                            </DropdownMenuItem>
+                            {userTenant && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => setEditingTenant(userTenant)}>
+                                  <Settings2 className="w-4 h-4 mr-2" />
+                                  Configurar Tenant
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modal de edición de tenant desde la tabla de usuarios */}
+      <TenantEditModal
+        tenant={editingTenant}
+        open={!!editingTenant}
+        onOpenChange={(open) => !open && setEditingTenant(null)}
+        onSaved={() => {
+          setEditingTenant(null);
+          onRefresh?.();
+        }}
+      />
+    </>
   );
 }
