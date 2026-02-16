@@ -110,7 +110,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="users">
-            <UsersTable users={users} isLoading={isLoading} />
+            <UsersTable users={users} tenants={tenants} isLoading={isLoading} onRefresh={refetch} />
           </TabsContent>
 
           <TabsContent value="assign">
