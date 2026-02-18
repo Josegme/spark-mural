@@ -988,6 +988,7 @@ export type Database = {
       }
     }
     Functions: {
+      event_accepts_uploads: { Args: { _evento_id: string }; Returns: boolean }
       evento_has_valid_token: {
         Args: { _evento_id: string; _token: string }
         Returns: boolean
