@@ -158,7 +158,7 @@ export function useUploadContent(token: string): UseUploadContentReturn {
         .getPublicUrl(fileName);
 
       // Insertar en tabla contenido
-      const { data: contentData, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('contenido')
         .insert({
           evento_id: event.id,
@@ -169,15 +169,13 @@ export function useUploadContent(token: string): UseUploadContentReturn {
           mensaje_texto: message?.trim() || null,
           aprobado: !event.moderacion_activa,
           estado_ia: event.es_premium ? 'pendiente' : 'completado',
-        })
-        .select('id')
-        .single();
+        });
 
       if (insertError) throw insertError;
 
       setUploadsCount((prev) => prev + 1);
       toast.success(SUCCESS_MESSAGES.PHOTO_UPLOADED);
-      return { success: true, contentId: contentData.id };
+      return { success: true };
     } catch (err) {
       console.error('Upload error:', err);
       toast.error('Error al subir la foto');
@@ -216,7 +214,7 @@ export function useUploadContent(token: string): UseUploadContentReturn {
         .from('contenido-eventos')
         .getPublicUrl(fileName);
 
-      const { data: contentData, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('contenido')
         .insert({
           evento_id: event.id,
@@ -225,15 +223,13 @@ export function useUploadContent(token: string): UseUploadContentReturn {
           invitado_nombre: guestName.trim() || null,
           invitado_device_id: deviceId,
           aprobado: !event.moderacion_activa,
-        })
-        .select('id')
-        .single();
+        });
 
       if (insertError) throw insertError;
 
       setUploadsCount((prev) => prev + 1);
       toast.success(SUCCESS_MESSAGES.VIDEO_UPLOADED);
-      return { success: true, contentId: contentData.id };
+      return { success: true };
     } catch (err) {
       console.error('Upload error:', err);
       toast.error('Error al subir el video');
@@ -255,7 +251,7 @@ export function useUploadContent(token: string): UseUploadContentReturn {
     setIsUploading(true);
 
     try {
-      const { data: contentData, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('contenido')
         .insert({
           evento_id: event.id,
@@ -264,15 +260,13 @@ export function useUploadContent(token: string): UseUploadContentReturn {
           invitado_nombre: guestName.trim() || null,
           invitado_device_id: deviceId,
           aprobado: !event.moderacion_activa,
-        })
-        .select('id')
-        .single();
+        });
 
       if (insertError) throw insertError;
 
       setUploadsCount((prev) => prev + 1);
       toast.success(SUCCESS_MESSAGES.MESSAGE_SENT);
-      return { success: true, contentId: contentData.id };
+      return { success: true };
     } catch (err) {
       console.error('Message error:', err);
       toast.error('Error al enviar el mensaje');
