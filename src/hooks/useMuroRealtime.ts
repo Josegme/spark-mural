@@ -56,8 +56,8 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const carouselIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const eventPollingRef = useRef<NodeJS.Timeout | null>(null);
+  const eventIdRef = useRef<string | null>(null);
 
-  // Cargar evento por token usando función RPC segura
   const fetchEvent = useCallback(async () => {
     const { data, error: fetchError } = await supabase
       .rpc('get_evento_by_token', { _token: token });
@@ -68,13 +68,12 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
       return null;
     }
 
-    // La función retorna un array, tomamos el primer resultado
     const eventData = data[0];
     setEvent(eventData);
+    eventIdRef.current = eventData.id;
     return eventData;
   }, [token]);
 
-  // Cargar contenido inicial usando función RPC segura
   const fetchContents = useCallback(async (eventId: string) => {
     const { data, error: fetchError } = await supabase
       .rpc('get_contenido_by_evento_token', { 
@@ -87,7 +86,6 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
       return;
     }
 
-    // Mapear el resultado al formato esperado
     const mappedContents: MuroContent[] = (data || [])
       .filter((c: { tipo: string }) => c.tipo === 'foto' || c.tipo === 'mensaje')
       .map((c: { id: string; tipo: string; url_original: string | null; url_ia: string | null; mensaje_texto: string | null; invitado_nombre: string | null; likes_count: number; created_at: string; estado_ia: string }) => ({
@@ -106,14 +104,14 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
     setIsLoading(false);
   }, [token]);
 
-  // Configurar suscripción realtime
+  // Configurar suscripción realtime con polling fallback
   const setupRealtime = useCallback((eventId: string) => {
     if (channelRef.current) {
       channelRef.current.unsubscribe();
     }
 
     const channel = supabase
-      .channel(`muro-${eventId}`)
+      .channel(`muro-${eventId}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -123,10 +121,24 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
           filter: `evento_id=eq.${eventId}`,
         },
         (payload) => {
-          const newContent = payload.new as MuroContent & { aprobado?: boolean };
-          if (newContent.aprobado !== false) {
-            setContents((prev) => [newContent, ...prev]);
-          }
+          console.log('🔴 Realtime INSERT:', payload.new);
+          const raw = payload.new as Record<string, unknown>;
+          // Solo agregar fotos y mensajes, no videos
+          if (raw.tipo !== 'foto' && raw.tipo !== 'mensaje') return;
+          if (raw.aprobado === false) return;
+          
+          const newContent: MuroContent = {
+            id: raw.id as string,
+            tipo: raw.tipo as 'foto' | 'video' | 'mensaje',
+            url_original: (raw.url_original as string) || null,
+            url_ia: (raw.url_ia as string) || null,
+            mensaje_texto: (raw.mensaje_texto as string) || null,
+            invitado_nombre: (raw.invitado_nombre as string) || null,
+            likes_count: (raw.likes_count as number) || 0,
+            created_at: (raw.created_at as string) || new Date().toISOString(),
+            estado_ia: (raw.estado_ia as MuroContent['estado_ia']) || 'pendiente',
+          };
+          setContents(prev => [newContent, ...prev]);
         }
       )
       .on(
@@ -138,26 +150,50 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
           filter: `evento_id=eq.${eventId}`,
         },
         (payload) => {
-          const updated = payload.new as MuroContent;
-          setContents((prev) =>
-            prev.map((c) => (c.id === updated.id ? updated : c))
+          const raw = payload.new as Record<string, unknown>;
+          const updated: MuroContent = {
+            id: raw.id as string,
+            tipo: raw.tipo as 'foto' | 'video' | 'mensaje',
+            url_original: (raw.url_original as string) || null,
+            url_ia: (raw.url_ia as string) || null,
+            mensaje_texto: (raw.mensaje_texto as string) || null,
+            invitado_nombre: (raw.invitado_nombre as string) || null,
+            likes_count: (raw.likes_count as number) || 0,
+            created_at: (raw.created_at as string) || new Date().toISOString(),
+            estado_ia: (raw.estado_ia as MuroContent['estado_ia']) || 'pendiente',
+          };
+          setContents(prev =>
+            prev.map(c => (c.id === updated.id ? updated : c))
           );
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Realtime status:', status);
+      });
 
     channelRef.current = channel;
-  }, []);
+
+    // Polling fallback: re-fetch contents every 10s to catch anything realtime missed
+    const contentPoll = setInterval(() => {
+      if (eventIdRef.current) {
+        fetchContents(eventIdRef.current);
+      }
+    }, 10000);
+
+    return () => clearInterval(contentPoll);
+  }, [fetchContents]);
 
   // Inicialización
   useEffect(() => {
+    let contentPollCleanup: (() => void) | undefined;
+
     const init = async () => {
       const eventData = await fetchEvent();
       if (eventData) {
         await fetchContents(eventData.id);
-        setupRealtime(eventData.id);
+        contentPollCleanup = setupRealtime(eventData.id);
         
-        // Polling para detectar cambios de estado (usa función RPC segura)
+        // Polling para estado del evento
         eventPollingRef.current = setInterval(async () => {
           const { data } = await supabase
             .rpc('get_evento_by_token', { _token: token });
@@ -181,24 +217,20 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
       if (eventPollingRef.current) {
         clearInterval(eventPollingRef.current);
       }
+      contentPollCleanup?.();
     };
   }, [token, fetchEvent, fetchContents, setupRealtime]);
 
-  // Solo fotos para el carrusel (mensajes van en globitos flotantes)
   const photoContents = contents.filter((c) => c.tipo === 'foto');
-
-  // El carrusel se pausa si el evento está pausado
   const isEventPaused = event?.estado === 'pausado';
 
-  // Auto-rotación del carrusel (solo fotos) - se pausa si el evento está pausado
+  // Auto-rotación del carrusel
   useEffect(() => {
-    // Limpiar intervalo previo
     if (carouselIntervalRef.current) {
       clearInterval(carouselIntervalRef.current);
       carouselIntervalRef.current = null;
     }
 
-    // No iniciar carrusel si está pausado o hay pocas fotos
     if (isEventPaused || photoContents.length <= 1) return;
 
     carouselIntervalRef.current = setInterval(() => {
@@ -212,7 +244,6 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
     };
   }, [photoContents.length, isEventPaused]);
 
-  // Navegación manual (solo entre fotos)
   const goToNext = useCallback(() => {
     if (photoContents.length === 0) return;
     setCurrentIndex((prev) => (prev + 1) % photoContents.length);
@@ -223,14 +254,13 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
     setCurrentIndex((prev) => (prev - 1 + photoContents.length) % photoContents.length);
   }, [photoContents.length]);
 
-  // Estadísticas
   const totalPhotos = photoContents.length;
   const totalMessages = contents.filter((c) => c.tipo === 'mensaje').length;
 
   return {
     event,
-    contents, // Todos los contenidos (para mensajes flotantes)
-    photoContents, // Solo fotos (para el carrusel)
+    contents,
+    photoContents,
     currentIndex,
     isLoading,
     error,

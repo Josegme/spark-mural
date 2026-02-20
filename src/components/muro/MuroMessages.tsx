@@ -1,11 +1,11 @@
 /**
  * PICKEVENT - Mensajes flotantes del Muro
- * Burbujitas animadas con mensajes de invitados
- * Los mensajes aparecen y desaparecen automáticamente en 5 segundos
+ * Burbujas grandes animadas con mensajes de invitados
+ * Aparecen y desaparecen automáticamente en 5 segundos
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { APP_CONFIG } from '@/lib/constants';
 import type { MuroContent } from '@/hooks/useMuroRealtime';
 
@@ -15,8 +15,8 @@ interface MuroMessagesProps {
 }
 
 interface VisibleMessage extends MuroContent {
-  displayId: string; // ID único para animación
-  expiresAt: number; // Timestamp de expiración
+  displayId: string;
+  expiresAt: number;
 }
 
 export function MuroMessages({ 
@@ -34,21 +34,18 @@ export function MuroMessages({
 
     if (newMessages.length === 0) return;
 
-    // Marcar como procesados
     newMessages.forEach(m => processedIdsRef.current.add(m.id));
 
-    // Agregar al estado con timestamp de expiración
     const now = Date.now();
     const messagesToAdd = newMessages.map((m, idx) => ({
       ...m,
       displayId: `${m.id}-${now}-${idx}`,
-      expiresAt: now + APP_CONFIG.MESSAGE_BUBBLE_DURATION + (idx * 500), // Escalonar ligeramente
+      expiresAt: now + APP_CONFIG.MESSAGE_BUBBLE_DURATION + (idx * 500),
     }));
 
     setVisibleMessages(prev => {
-      // Agregar nuevos al principio, mantener máximo
       const combined = [...messagesToAdd, ...prev];
-      return combined.slice(0, maxVisible * 2); // Buffer extra para transiciones
+      return combined.slice(0, maxVisible * 2);
     });
   }, [messages, maxVisible]);
 
@@ -58,40 +55,37 @@ export function MuroMessages({
       const now = Date.now();
       setVisibleMessages(prev => {
         const filtered = prev.filter(m => m.expiresAt > now);
-        // Si no cambió nada, no re-render
         return filtered.length !== prev.length ? filtered : prev;
       });
-    }, 500); // Revisar cada 500ms
+    }, 500);
 
     return () => clearInterval(interval);
   }, []);
 
-  // Cleanup de IDs procesados (para evitar memory leak en eventos largos)
+  // Cleanup de IDs procesados
   useEffect(() => {
     const cleanup = setInterval(() => {
-      // Mantener solo los últimos 100 IDs
       if (processedIdsRef.current.size > 100) {
         const arr = Array.from(processedIdsRef.current);
         processedIdsRef.current = new Set(arr.slice(-50));
       }
-    }, 60000); // Cada minuto
+    }, 60000);
 
     return () => clearInterval(cleanup);
   }, []);
 
-  // Solo mostrar los primeros N mensajes visibles
   const displayMessages = visibleMessages.slice(0, maxVisible);
 
   if (displayMessages.length === 0) return null;
 
   return (
-    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 max-w-xs z-10 pointer-events-none">
+    <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-5 max-w-sm z-10 pointer-events-none">
       <AnimatePresence mode="popLayout">
         {displayMessages.map((message, index) => (
           <motion.div
             key={message.displayId}
             layout
-            initial={{ opacity: 0, x: 100, scale: 0.8 }}
+            initial={{ opacity: 0, x: 120, scale: 0.8 }}
             animate={{ 
               opacity: 1, 
               x: 0, 
@@ -105,24 +99,25 @@ export function MuroMessages({
             }}
             exit={{ 
               opacity: 0, 
-              x: 100, 
+              x: 120, 
               scale: 0.8,
               transition: { duration: 0.3, ease: 'easeOut' }
             }}
-            className="muro-bubble pointer-events-auto"
+            className="relative rounded-2xl px-6 py-5 shadow-2xl pointer-events-auto"
+            style={{ background: 'hsl(330 85% 55% / 0.92)' }}
           >
-            <p className="text-sm font-medium line-clamp-3">
+            <p className="text-xl font-bold text-white leading-snug line-clamp-3">
               "{message.mensaje_texto}"
             </p>
             {message.invitado_nombre && (
-              <p className="text-xs text-white/70 mt-2">
+              <p className="text-sm text-white/70 mt-3 font-medium">
                 — {message.invitado_nombre}
               </p>
             )}
             
-            {/* Barra de progreso que indica cuánto tiempo queda */}
+            {/* Barra de progreso */}
             <motion.div
-              className="absolute bottom-0 left-0 h-0.5 bg-white/40 rounded-full"
+              className="absolute bottom-0 left-0 h-1 bg-white/40 rounded-full"
               initial={{ width: '100%' }}
               animate={{ width: '0%' }}
               transition={{ 

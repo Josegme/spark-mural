@@ -1,10 +1,9 @@
 /**
- * PICKEVENT - Banner del Muro
- * Header con logo, nombre del evento y QR para subir
+ * PICKEVENT - Banner Lateral del Muro
+ * Panel vertical izquierdo con logo, nombre del evento, stats y QR
  */
 
-import { QrCode, Camera, Heart, MessageCircle } from 'lucide-react';
-import { getUploadUrl } from '@/lib/utils';
+import { QrCode, Camera, MessageCircle } from 'lucide-react';
 import { EVENT_TYPES } from '@/lib/constants';
 
 interface MuroBannerProps {
@@ -27,15 +26,14 @@ export function MuroBanner({
   totalMessages,
 }: MuroBannerProps) {
   const eventTypeConfig = EVENT_TYPES[eventType as keyof typeof EVENT_TYPES];
-  const uploadUrl = getUploadUrl(uploadToken);
 
   return (
     <div
-      className="relative flex items-center justify-between px-8 py-4"
+      className="flex flex-col items-center justify-between py-6 px-4 w-[200px] min-w-[200px] shrink-0"
       style={{ backgroundColor: bannerColor }}
     >
-      {/* Logo y nombre del evento */}
-      <div className="flex items-center gap-4">
+      {/* Logo y nombre */}
+      <div className="flex flex-col items-center gap-3 text-center">
         {logoUrl ? (
           <img
             src={logoUrl}
@@ -48,37 +46,38 @@ export function MuroBanner({
           </div>
         )}
         <div>
-          <h1 className="text-2xl md:text-3xl font-display font-bold text-white drop-shadow-lg">
+          <h1 className="text-lg font-display font-bold text-white drop-shadow-lg leading-tight">
             {eventName}
           </h1>
-          <p className="text-white/80 text-sm flex items-center gap-2">
-            <span>{eventTypeConfig?.label || 'Evento'}</span>
-            <span className="text-white/40">•</span>
-            <span className="flex items-center gap-1">
-              <Camera className="w-4 h-4" /> {totalPhotos}
-            </span>
-            <span className="text-white/40">•</span>
-            <span className="flex items-center gap-1">
-              <MessageCircle className="w-4 h-4" /> {totalMessages}
-            </span>
+          <p className="text-white/70 text-xs mt-1">
+            {eventTypeConfig?.label || 'Evento'}
           </p>
         </div>
       </div>
 
-      {/* QR Code para subir */}
-      <div className="flex items-center gap-4">
-        <div className="text-right hidden md:block">
-          <p className="text-white font-semibold">¡Subí tu foto!</p>
-          <p className="text-white/70 text-sm">Escaneá el QR</p>
+      {/* Stats */}
+      <div className="flex flex-col gap-3 w-full">
+        <div className="flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2 justify-center">
+          <Camera className="w-4 h-4 text-white/80" />
+          <span className="text-white font-bold text-lg">{totalPhotos}</span>
         </div>
+        <div className="flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2 justify-center">
+          <MessageCircle className="w-4 h-4 text-white/80" />
+          <span className="text-white font-bold text-lg">{totalMessages}</span>
+        </div>
+      </div>
+
+      {/* QR Code */}
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-white/90 font-semibold text-sm text-center">¡Subí tu foto!</p>
         <div className="bg-white p-2 rounded-xl shadow-lg">
-          <div className="w-20 h-20 flex items-center justify-center">
-            {/* Simple QR placeholder - en producción usar librería de QR */}
+          <div className="w-24 h-24 flex items-center justify-center">
             <div className="w-full h-full bg-gradient-to-br from-muted to-muted-foreground/20 rounded-lg flex items-center justify-center">
-              <QrCode className="w-12 h-12 text-foreground" />
+              <QrCode className="w-14 h-14 text-foreground" />
             </div>
           </div>
         </div>
+        <p className="text-white/60 text-xs text-center">Escaneá el QR</p>
       </div>
     </div>
   );

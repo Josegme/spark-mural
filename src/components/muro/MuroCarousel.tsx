@@ -1,22 +1,20 @@
 /**
  * PICKEVENT - Carrusel del Muro
- * Muestra SOLO FOTOS con transiciones animadas
- * Los mensajes van en globitos flotantes (MuroMessages)
- * Los videos van directo al álbum, no se muestran en el muro
+ * Muestra SOLO FOTOS con transiciones animadas y likes automáticos
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Camera, Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import type { MuroContent } from '@/hooks/useMuroRealtime';
 
 interface MuroCarouselProps {
-  contents: MuroContent[]; // Solo fotos
+  contents: MuroContent[];
   currentIndex: number;
   isPremium: boolean;
 }
 
 export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarouselProps) {
-  // Filtrar para asegurar que solo sean fotos
   const photos = contents.filter(c => c.tipo === 'foto');
   
   if (photos.length === 0) {
@@ -31,7 +29,7 @@ export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarousel
   if (!currentPhoto) return null;
 
   return (
-    <div className="flex-1 relative overflow-hidden h-full">
+    <div className="relative w-full h-full overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentPhoto.id}
@@ -39,13 +37,13 @@ export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarousel
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.05 }}
           transition={{ duration: 0.5, ease: 'easeInOut' }}
-          className="absolute inset-0 flex items-center justify-center p-8"
+          className="absolute inset-0 flex items-center justify-center p-6"
         >
           <PhotoCard content={currentPhoto} isPremium={isPremium} />
         </motion.div>
       </AnimatePresence>
 
-      {/* Indicadores de navegación */}
+      {/* Indicadores */}
       {photos.length > 1 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
           {photos.slice(0, 10).map((_, idx) => (
@@ -70,37 +68,55 @@ export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarousel
 }
 
 function PhotoCard({ content, isPremium }: { content: MuroContent; isPremium: boolean }) {
-  // Si es premium y tiene URL IA procesada, mostrar esa
   const imageUrl = isPremium && content.url_ia ? content.url_ia : content.url_original;
+  
+  // Likes automáticos simulados
+  const [displayLikes, setDisplayLikes] = useState(content.likes_count || 0);
+  const [showHeartPop, setShowHeartPop] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Log para debugging
-  console.log('📸 Rendering photo:', { id: content.id, url: imageUrl });
+  useEffect(() => {
+    // Reset al cambiar de foto
+    setDisplayLikes(content.likes_count || 0);
+
+    // Simular likes automáticos cada 2-6 segundos
+    const scheduleNextLike = () => {
+      const delay = 2000 + Math.random() * 4000;
+      intervalRef.current = setTimeout(() => {
+        const increment = Math.random() < 0.3 ? Math.floor(Math.random() * 3) + 2 : 1;
+        setDisplayLikes(prev => prev + increment);
+        setShowHeartPop(true);
+        setTimeout(() => setShowHeartPop(false), 600);
+        scheduleNextLike();
+      }, delay);
+    };
+
+    scheduleNextLike();
+
+    return () => {
+      if (intervalRef.current) clearTimeout(intervalRef.current);
+    };
+  }, [content.id, content.likes_count]);
 
   return (
-    <div className="relative max-w-4xl w-full">
-      {/* Imagen principal */}
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-muro-card">
+    <div className="relative max-w-3xl w-full h-full flex items-center justify-center">
+      <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-muro-card max-h-[85vh]">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={`Foto de ${content.invitado_nombre || 'invitado'}`}
-            className="w-full h-auto max-h-[70vh] object-contain"
+            className="w-full h-auto max-h-[85vh] object-contain"
             loading="eager"
             crossOrigin="anonymous"
-            onLoad={() => console.log('✅ Image loaded:', imageUrl)}
             onError={(e) => {
-              console.error('❌ Error loading image:', imageUrl);
-              // Mostrar placeholder con mensaje
               const target = e.currentTarget;
               target.style.display = 'none';
-              // Mostrar fallback
               const fallback = target.parentElement?.querySelector('.photo-fallback');
               if (fallback) (fallback as HTMLElement).style.display = 'flex';
             }}
           />
         ) : null}
         
-        {/* Fallback cuando no hay URL o falla la carga */}
         <div 
           className="photo-fallback w-full h-96 flex-col items-center justify-center hidden"
           style={{ display: !imageUrl ? 'flex' : 'none' }}
@@ -109,7 +125,7 @@ function PhotoCard({ content, isPremium }: { content: MuroContent; isPremium: bo
           <p className="text-white/40 text-sm">Foto no disponible</p>
         </div>
 
-        {/* Badge IA si está procesada */}
+        {/* Badge IA */}
         {isPremium && content.url_ia && (
           <div className="absolute top-4 right-4 flex items-center gap-2 bg-gradient-premium px-4 py-2 rounded-full">
             <Sparkles className="w-5 h-5 text-black" />
@@ -117,7 +133,6 @@ function PhotoCard({ content, isPremium }: { content: MuroContent; isPremium: bo
           </div>
         )}
 
-        {/* Badge de procesando IA */}
         {isPremium && content.estado_ia === 'procesando' && (
           <div className="absolute top-4 right-4 flex items-center gap-2 bg-yellow-500/90 px-4 py-2 rounded-full animate-pulse">
             <Sparkles className="w-5 h-5 text-black animate-spin" />
@@ -125,9 +140,9 @@ function PhotoCard({ content, isPremium }: { content: MuroContent; isPremium: bo
           </div>
         )}
 
-        {/* Overlay con info del autor y likes */}
+        {/* Overlay inferior con info y likes */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-end justify-between">
             <div>
               {content.invitado_nombre && (
                 <p className="text-white font-semibold text-xl">
@@ -140,10 +155,24 @@ function PhotoCard({ content, isPremium }: { content: MuroContent; isPremium: bo
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
+            <div className="relative flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
+              {/* Pop de corazón animado */}
+              <AnimatePresence>
+                {showHeartPop && (
+                  <motion.div
+                    initial={{ opacity: 1, y: 0, scale: 1 }}
+                    animate={{ opacity: 0, y: -30, scale: 1.5 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="absolute -top-6 left-1/2 -translate-x-1/2"
+                  >
+                    <Heart className="w-5 h-5 text-primary fill-primary" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <Heart className="w-6 h-6 text-primary fill-primary" />
               <span className="text-white font-bold text-lg">
-                {content.likes_count}
+                {displayLikes}
               </span>
             </div>
           </div>

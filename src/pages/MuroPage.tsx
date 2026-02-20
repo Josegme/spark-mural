@@ -24,7 +24,6 @@ export default function MuroPage() {
     isEventPaused,
   } = useMuroRealtime(token || '');
 
-  // Verificar si el evento está en estado programado (no iniciado)
   const isEventNotStarted = event?.estado === 'programado';
 
   if (isLoading) {
@@ -60,7 +59,6 @@ export default function MuroPage() {
     );
   }
 
-  // Evento no iniciado (programado)
   if (isEventNotStarted) {
     return (
       <MuroLayout>
@@ -72,9 +70,7 @@ export default function MuroPage() {
             <h1 className="text-2xl font-display font-bold text-muro-foreground mb-2">
               Evento programado
             </h1>
-            <p className="text-muro-foreground/60 mb-4">
-              {event.nombre}
-            </p>
+            <p className="text-muro-foreground/60 mb-4">{event.nombre}</p>
             <p className="text-muro-foreground/40 text-sm">
               El muro se activará cuando el anfitrión inicie el evento.
             </p>
@@ -84,14 +80,12 @@ export default function MuroPage() {
     );
   }
 
-  // Obtener token de subida del evento (necesitamos cargarlo)
-  // Por ahora usamos el mismo token como fallback
   const uploadToken = token || '';
 
   return (
     <MuroLayout>
-      <div className="flex flex-col h-screen">
-        {/* Banner superior */}
+      <div className="flex flex-row h-screen">
+        {/* Banner lateral izquierdo */}
         <MuroBanner
           eventName={event.nombre}
           eventType={event.tipo}
@@ -103,7 +97,7 @@ export default function MuroPage() {
         />
 
         {/* Área principal: Carrusel de FOTOS + Mensajes flotantes */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative overflow-hidden">
           {/* Overlay de pausa */}
           {isEventPaused && (
             <div className="absolute inset-0 bg-black/60 z-40 flex items-center justify-center">
@@ -128,7 +122,7 @@ export default function MuroPage() {
             isPremium={event.es_premium}
           />
           
-          {/* Mensajes flotantes en el lateral (aparecen y desaparecen en 5 seg) */}
+          {/* Mensajes flotantes alrededor de la foto */}
           {!isEventPaused && <MuroMessages messages={contents} />}
         </div>
       </div>
