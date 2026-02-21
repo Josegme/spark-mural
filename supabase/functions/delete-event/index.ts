@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 type DeleteEventRequest = {
@@ -50,7 +50,7 @@ serve(async (req) => {
     // Obtener evento
     const { data: evento, error: eventoError } = await supabase
       .from("eventos")
-      .select("id, cliente_user_id, estado")
+      .select("id, cliente_user_id, estado, precio_pagado, tenant_id")
       .eq("id", eventId)
       .maybeSingle();
 
@@ -69,31 +69,56 @@ serve(async (req) => {
       );
     }
 
-    // Validar rol super_admin (tabla user_roles) o dueño del evento
+    // Nunca eliminar eventos activos
+    if (evento.estado === "activo") {
+      return new Response(
+        JSON.stringify({ ok: false, error: "No se puede eliminar un evento activo" }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Determinar rol y permisos del solicitante
     const { data: roleRow } = await supabase
       .from("user_roles")
-      .select("id")
+      .select("role")
       .eq("user_id", user.id)
-      .eq("role", "super_admin")
       .limit(1)
       .maybeSingle();
 
-    const isSuperAdmin = !!roleRow;
-    const isOwner = evento.cliente_user_id === user.id;
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("rol, tenant_id")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    if (!isOwner && !isSuperAdmin) {
+    const appRole = roleRow?.role || profile?.rol || "cliente";
+    const userTenantId = profile?.tenant_id;
+    const isOwner = evento.cliente_user_id === user.id;
+    const isSuperAdmin = appRole === "super_admin";
+    const isTenantManager = (appRole === "asistente" || appRole === "salon") && 
+                            userTenantId && evento.tenant_id === userTenantId;
+
+    // Verificar que el usuario tiene relación con el evento
+    if (!isOwner && !isSuperAdmin && !isTenantManager) {
       return new Response(
         JSON.stringify({ ok: false, error: "No tenés permisos para eliminar este evento" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Regla de negocio: no permitir eliminar eventos activos (tu observación es correcta)
-    if (evento.estado === "activo") {
-      return new Response(
-        JSON.stringify({ ok: false, error: "No se puede eliminar un evento activo" }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    // Reglas de eliminación por rol:
+    // - Super Admin: siempre (excepto activos, ya validado arriba)
+    // - Salón (tenant manager): siempre (excepto activos) - trabaja por cuota, no por pago
+    // - Asistente (tenant manager): solo si precio_pagado = 0
+    // - Cliente (owner): solo si precio_pagado = 0
+    if (!isSuperAdmin) {
+      const isSalon = appRole === "salon" && isTenantManager;
+      if (!isSalon && evento.precio_pagado > 0) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "No se puede eliminar un evento que ya fue pagado" }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
     }
 
     // Borrado en cascada manual
