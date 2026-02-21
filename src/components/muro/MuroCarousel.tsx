@@ -1,6 +1,6 @@
 /**
  * PICKEVENT - Carrusel del Muro
- * Muestra SOLO FOTOS con transiciones animadas y likes automáticos
+ * Muestra SOLO FOTOS a pantalla completa con transiciones animadas y likes automáticos
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,23 +29,23 @@ export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarousel
   if (!currentPhoto) return null;
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden bg-black">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentPhoto.id}
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 1.02 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.05 }}
-          transition={{ duration: 0.5, ease: 'easeInOut' }}
-          className="absolute inset-0 flex items-center justify-center p-6"
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ duration: 0.6, ease: 'easeInOut' }}
+          className="absolute inset-0"
         >
-          <PhotoCard content={currentPhoto} isPremium={isPremium} />
+          <FullscreenPhoto content={currentPhoto} isPremium={isPremium} />
         </motion.div>
       </AnimatePresence>
 
       {/* Indicadores */}
       {photos.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
           {photos.slice(0, 10).map((_, idx) => (
             <div
               key={idx}
@@ -67,7 +67,7 @@ export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarousel
   );
 }
 
-function PhotoCard({ content, isPremium }: { content: MuroContent; isPremium: boolean }) {
+function FullscreenPhoto({ content, isPremium }: { content: MuroContent; isPremium: boolean }) {
   const imageUrl = isPremium && content.url_ia ? content.url_ia : content.url_original;
   
   // Likes automáticos simulados
@@ -76,10 +76,8 @@ function PhotoCard({ content, isPremium }: { content: MuroContent; isPremium: bo
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Reset al cambiar de foto
     setDisplayLikes(content.likes_count || 0);
 
-    // Simular likes automáticos cada 2-6 segundos
     const scheduleNextLike = () => {
       const delay = 2000 + Math.random() * 4000;
       intervalRef.current = setTimeout(() => {
@@ -99,82 +97,80 @@ function PhotoCard({ content, isPremium }: { content: MuroContent; isPremium: bo
   }, [content.id, content.likes_count]);
 
   return (
-    <div className="relative max-w-3xl w-full h-full flex items-center justify-center">
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-muro-card max-h-[85vh]">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={`Foto de ${content.invitado_nombre || 'invitado'}`}
-            className="w-full h-auto max-h-[85vh] object-contain"
-            loading="eager"
-            crossOrigin="anonymous"
-            onError={(e) => {
-              const target = e.currentTarget;
-              target.style.display = 'none';
-              const fallback = target.parentElement?.querySelector('.photo-fallback');
-              if (fallback) (fallback as HTMLElement).style.display = 'flex';
-            }}
-          />
-        ) : null}
-        
-        <div 
-          className="photo-fallback w-full h-96 flex-col items-center justify-center hidden"
-          style={{ display: !imageUrl ? 'flex' : 'none' }}
-        >
-          <Camera className="w-24 h-24 text-white/20 mb-4" />
-          <p className="text-white/40 text-sm">Foto no disponible</p>
+    <div className="absolute inset-0">
+      {/* Foto a pantalla completa */}
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt={`Foto de ${content.invitado_nombre || 'invitado'}`}
+          className="w-full h-full object-contain bg-black"
+          loading="eager"
+          crossOrigin="anonymous"
+          onError={(e) => {
+            const target = e.currentTarget;
+            target.style.display = 'none';
+            const fallback = target.parentElement?.querySelector('.photo-fallback');
+            if (fallback) (fallback as HTMLElement).style.display = 'flex';
+          }}
+        />
+      ) : null}
+      
+      <div 
+        className="photo-fallback w-full h-full flex-col items-center justify-center hidden bg-black"
+        style={{ display: !imageUrl ? 'flex' : 'none' }}
+      >
+        <Camera className="w-24 h-24 text-white/20 mb-4" />
+        <p className="text-white/40 text-sm">Foto no disponible</p>
+      </div>
+
+      {/* Badge IA */}
+      {isPremium && content.url_ia && (
+        <div className="absolute top-4 right-4 flex items-center gap-2 bg-gradient-premium px-4 py-2 rounded-full z-10">
+          <Sparkles className="w-5 h-5 text-black" />
+          <span className="text-black font-semibold text-sm">IA</span>
         </div>
+      )}
 
-        {/* Badge IA */}
-        {isPremium && content.url_ia && (
-          <div className="absolute top-4 right-4 flex items-center gap-2 bg-gradient-premium px-4 py-2 rounded-full">
-            <Sparkles className="w-5 h-5 text-black" />
-            <span className="text-black font-semibold text-sm">IA</span>
+      {isPremium && content.estado_ia === 'procesando' && (
+        <div className="absolute top-4 right-4 flex items-center gap-2 bg-yellow-500/90 px-4 py-2 rounded-full animate-pulse z-10">
+          <Sparkles className="w-5 h-5 text-black animate-spin" />
+          <span className="text-black font-semibold text-sm">Procesando IA...</span>
+        </div>
+      )}
+
+      {/* Overlay inferior con info y likes */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-6 z-10">
+        <div className="flex items-end justify-between">
+          <div>
+            {content.invitado_nombre && (
+              <p className="text-white font-semibold text-xl drop-shadow-lg">
+                📸 {content.invitado_nombre}
+              </p>
+            )}
+            {content.mensaje_texto && (
+              <p className="text-white/80 mt-1 line-clamp-2 drop-shadow-md">
+                "{content.mensaje_texto}"
+              </p>
+            )}
           </div>
-        )}
-
-        {isPremium && content.estado_ia === 'procesando' && (
-          <div className="absolute top-4 right-4 flex items-center gap-2 bg-yellow-500/90 px-4 py-2 rounded-full animate-pulse">
-            <Sparkles className="w-5 h-5 text-black animate-spin" />
-            <span className="text-black font-semibold text-sm">Procesando IA...</span>
-          </div>
-        )}
-
-        {/* Overlay inferior con info y likes */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
-          <div className="flex items-end justify-between">
-            <div>
-              {content.invitado_nombre && (
-                <p className="text-white font-semibold text-xl">
-                  📸 {content.invitado_nombre}
-                </p>
+          <div className="relative flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
+            <AnimatePresence>
+              {showHeartPop && (
+                <motion.div
+                  initial={{ opacity: 1, y: 0, scale: 1 }}
+                  animate={{ opacity: 0, y: -30, scale: 1.5 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="absolute -top-6 left-1/2 -translate-x-1/2"
+                >
+                  <Heart className="w-5 h-5 text-primary fill-primary" />
+                </motion.div>
               )}
-              {content.mensaje_texto && (
-                <p className="text-white/80 mt-1 line-clamp-2">
-                  "{content.mensaje_texto}"
-                </p>
-              )}
-            </div>
-            <div className="relative flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-              {/* Pop de corazón animado */}
-              <AnimatePresence>
-                {showHeartPop && (
-                  <motion.div
-                    initial={{ opacity: 1, y: 0, scale: 1 }}
-                    animate={{ opacity: 0, y: -30, scale: 1.5 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="absolute -top-6 left-1/2 -translate-x-1/2"
-                  >
-                    <Heart className="w-5 h-5 text-primary fill-primary" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <Heart className="w-6 h-6 text-primary fill-primary" />
-              <span className="text-white font-bold text-lg">
-                {displayLikes}
-              </span>
-            </div>
+            </AnimatePresence>
+            <Heart className="w-6 h-6 text-primary fill-primary" />
+            <span className="text-white font-bold text-lg">
+              {displayLikes}
+            </span>
           </div>
         </div>
       </div>
