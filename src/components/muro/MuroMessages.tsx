@@ -14,9 +14,32 @@ interface MuroMessagesProps {
   maxVisible?: number;
 }
 
+// Zonas: bordes de la foto (nunca centro, nunca sobre el banner izquierdo)
+const POSITION_ZONES = [
+  // Arriba izquierda
+  { top: '5%', left: '2%', right: 'auto', bottom: 'auto' },
+  { top: '8%', left: '10%', right: 'auto', bottom: 'auto' },
+  // Arriba derecha
+  { top: '5%', right: '3%', left: 'auto', bottom: 'auto' },
+  { top: '10%', right: '10%', left: 'auto', bottom: 'auto' },
+  // Medio izquierda
+  { top: '40%', left: '2%', right: 'auto', bottom: 'auto' },
+  { top: '55%', left: '3%', right: 'auto', bottom: 'auto' },
+  // Medio derecha
+  { top: '40%', right: '3%', left: 'auto', bottom: 'auto' },
+  { top: '55%', right: '4%', left: 'auto', bottom: 'auto' },
+  // Abajo izquierda
+  { bottom: '12%', left: '2%', right: 'auto', top: 'auto' },
+  { bottom: '18%', left: '8%', right: 'auto', top: 'auto' },
+  // Abajo derecha
+  { bottom: '12%', right: '3%', left: 'auto', top: 'auto' },
+  { bottom: '18%', right: '10%', left: 'auto', top: 'auto' },
+];
+
 interface VisibleMessage extends MuroContent {
   displayId: string;
   expiresAt: number;
+  position: typeof POSITION_ZONES[number];
 }
 
 export function MuroMessages({ 
@@ -37,11 +60,20 @@ export function MuroMessages({
     newMessages.forEach(m => processedIdsRef.current.add(m.id));
 
     const now = Date.now();
-    const messagesToAdd = newMessages.map((m, idx) => ({
-      ...m,
-      displayId: `${m.id}-${now}-${idx}`,
-      expiresAt: now + APP_CONFIG.MESSAGE_BUBBLE_DURATION + (idx * 500),
-    }));
+    const usedZones = new Set<number>();
+    const messagesToAdd = newMessages.map((m, idx) => {
+      let zoneIdx: number;
+      do {
+        zoneIdx = Math.floor(Math.random() * POSITION_ZONES.length);
+      } while (usedZones.has(zoneIdx) && usedZones.size < POSITION_ZONES.length);
+      usedZones.add(zoneIdx);
+      return {
+        ...m,
+        displayId: `${m.id}-${now}-${idx}`,
+        expiresAt: now + APP_CONFIG.MESSAGE_BUBBLE_DURATION + (idx * 500),
+        position: POSITION_ZONES[zoneIdx],
+      };
+    });
 
     setVisibleMessages(prev => {
       const combined = [...messagesToAdd, ...prev];
@@ -79,32 +111,31 @@ export function MuroMessages({
   if (displayMessages.length === 0) return null;
 
   return (
-    <div className="absolute right-6 top-1/2 -translate-y-1/2 flex flex-col gap-5 max-w-sm z-10 pointer-events-none">
-      <AnimatePresence mode="popLayout">
-        {displayMessages.map((message, index) => (
+    <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+      <AnimatePresence>
+        {displayMessages.map((message) => (
           <motion.div
             key={message.displayId}
-            layout
-            initial={{ opacity: 0, x: 120, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.7 }}
             animate={{ 
               opacity: 1, 
-              x: 0, 
               scale: 1,
               transition: { 
                 type: 'spring',
                 stiffness: 300,
                 damping: 25,
-                delay: index * 0.05 
               }
             }}
             exit={{ 
               opacity: 0, 
-              x: 120, 
-              scale: 0.8,
+              scale: 0.7,
               transition: { duration: 0.3, ease: 'easeOut' }
             }}
-            className="relative rounded-2xl px-6 py-5 shadow-2xl pointer-events-auto"
-            style={{ background: 'hsl(330 85% 55% / 0.92)' }}
+            className="absolute max-w-sm rounded-2xl px-6 py-5 shadow-2xl pointer-events-auto"
+            style={{ 
+              background: 'hsl(330 85% 55% / 0.92)',
+              ...message.position,
+            }}
           >
             <p className="text-xl font-bold text-white leading-snug line-clamp-3">
               "{message.mensaje_texto}"
@@ -114,8 +145,6 @@ export function MuroMessages({
                 — {message.invitado_nombre}
               </p>
             )}
-            
-            {/* Barra de progreso */}
             <motion.div
               className="absolute bottom-0 left-0 h-1 bg-white/40 rounded-full"
               initial={{ width: '100%' }}
