@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import type { EventDetails } from '@/hooks/useEventDetails';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EventSettingsProps {
   event: EventDetails;
@@ -44,11 +45,32 @@ interface EventSettingsProps {
 }
 
 export function EventSettings({ event, onUpdate, onDelete, isUpdating, isDeleting }: EventSettingsProps) {
+  const { profile } = useAuth();
   const [moderationActive, setModerationActive] = useState(event.moderacion_activa);
   const [uploadLimit, setUploadLimit] = useState(event.limite_subidas_por_invitado?.toString() || '');
   const [bannerColor, setBannerColor] = useState(event.color_banner || '#4c1d95');
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
+
+  // Lógica de eliminación por rol
+  const userRole = profile?.rol || 'cliente';
+  const isSuperAdmin = userRole === 'super_admin';
+  const isSalon = userRole === 'salon';
+  const isEventActive = event.estado === 'activo';
+  const isPaid = event.precio_pagado > 0;
+
+  // Super Admin: siempre (excepto activos)
+  // Salón: siempre (excepto activos) - trabaja por cuota
+  // Asistente/Cliente: solo si no está pagado y no está activo
+  const canDeleteEvent = !isEventActive && (
+    isSuperAdmin || isSalon || !isPaid
+  );
+
+  const deleteReason = isEventActive
+    ? 'No se puede eliminar un evento activo'
+    : isPaid && !isSuperAdmin && !isSalon
+      ? 'No se puede eliminar un evento que ya fue pagado'
+      : null;
 
   const handleSave = () => {
     onUpdate({
@@ -270,12 +292,12 @@ export function EventSettings({ event, onUpdate, onDelete, isUpdating, isDeletin
             <div className="space-y-1">
               <p className="font-medium">Eliminar evento</p>
               <p className="text-sm text-muted-foreground">
-                Elimina el evento y todo su contenido permanentemente
+                {deleteReason || 'Elimina el evento y todo su contenido permanentemente'}
               </p>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
+                <Button variant="destructive" size="sm" disabled={!canDeleteEvent}>
                   <Trash2 className="w-4 h-4 mr-2" />
                   Eliminar
                 </Button>
