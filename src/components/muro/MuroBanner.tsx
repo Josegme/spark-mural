@@ -1,9 +1,10 @@
 /**
  * PICKEVENT - Banner Lateral del Muro
- * Panel vertical izquierdo con logo, nombre del evento, stats y QR
+ * Panel vertical izquierdo con logo, nombre del evento, stats y QR real
  */
 
-import { QrCode, Camera, MessageCircle } from 'lucide-react';
+import { Camera, MessageCircle } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { EVENT_TYPES } from '@/lib/constants';
 
 interface MuroBannerProps {
@@ -26,6 +27,9 @@ export function MuroBanner({
   totalMessages,
 }: MuroBannerProps) {
   const eventTypeConfig = EVENT_TYPES[eventType as keyof typeof EVENT_TYPES];
+
+  // Construir URL real de subida para el QR
+  const uploadUrl = `${window.location.origin}/subir/${uploadToken}`;
 
   return (
     <div
@@ -67,15 +71,17 @@ export function MuroBanner({
         </div>
       </div>
 
-      {/* QR Code */}
+      {/* QR Code real */}
       <div className="flex flex-col items-center gap-2">
         <p className="text-white/90 font-semibold text-sm text-center">¡Subí tu foto!</p>
         <div className="bg-white p-2 rounded-xl shadow-lg">
-          <div className="w-24 h-24 flex items-center justify-center">
-            <div className="w-full h-full bg-gradient-to-br from-muted to-muted-foreground/20 rounded-lg flex items-center justify-center">
-              <QrCode className="w-14 h-14 text-foreground" />
-            </div>
-          </div>
+          <QRCodeSVG
+            value={uploadUrl}
+            size={96}
+            bgColor="#ffffff"
+            fgColor="#000000"
+            level="M"
+          />
         </div>
         <p className="text-white/60 text-xs text-center">Escaneá el QR</p>
       </div>
