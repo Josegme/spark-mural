@@ -79,6 +79,30 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
     return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data)}`;
   };
 
+  const downloadQR = async (url: string, label: string) => {
+    try {
+      const response = await fetch(generateQRImageUrl(url));
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const safeName = event.nombre.toLowerCase().replace(/\s+/g, '-');
+      link.href = blobUrl;
+      link.download = `${label}-${safeName}.png`;
+      link.click();
+      URL.revokeObjectURL(blobUrl);
+      toast({
+        title: '¡Descargado!',
+        description: `QR de ${label} descargado`,
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'No se pudo descargar el QR',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -143,6 +167,14 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
                     >
                       <Copy className="w-4 h-4 mr-2" />
                       Copiar Link
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => downloadQR(qr.url, qr.id)}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Descargar QR
                     </Button>
                     <Button
                       className="flex-1"
