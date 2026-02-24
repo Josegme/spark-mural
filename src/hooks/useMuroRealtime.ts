@@ -30,6 +30,7 @@ export interface MuroEvent {
   logo_url: string | null;
   color_banner: string;
   estado: string;
+  qr_invitados_token: string | null;
 }
 
 interface UseMuroRealtimeReturn {
