@@ -80,7 +80,8 @@ export default function MuroPage() {
     );
   }
 
-  const uploadToken = token || '';
+  // Usar qr_invitados_token para el QR de subida (consistente con el modal)
+  const uploadToken = event?.qr_invitados_token || token || '';
 
   return (
     <MuroLayout>

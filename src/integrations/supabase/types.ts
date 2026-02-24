@@ -1022,6 +1022,7 @@ export type Database = {
           logo_url: string
           moderacion_activa: boolean
           nombre: string
+          qr_invitados_token: string
           tema_ia: string
           tipo: string
           total_fotos: number

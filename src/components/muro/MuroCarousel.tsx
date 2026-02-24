@@ -67,22 +67,37 @@ export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarousel
   );
 }
 
+// Contador global de likes que nunca decrece entre fotos
+const globalLikesRef = { current: 0 };
+
 function FullscreenPhoto({ content, isPremium }: { content: MuroContent; isPremium: boolean }) {
   const imageUrl = isPremium && content.url_ia ? content.url_ia : content.url_original;
   
-  // Likes automáticos simulados
-  const [displayLikes, setDisplayLikes] = useState(content.likes_count || 0);
+  // Likes automáticos simulados - siempre incrementales
+  const [displayLikes, setDisplayLikes] = useState(() => {
+    // Al montar, arrancar desde el máximo entre el global y el likes_count real
+    const base = Math.max(globalLikesRef.current, content.likes_count || 0);
+    globalLikesRef.current = base;
+    return base;
+  });
   const [showHeartPop, setShowHeartPop] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    setDisplayLikes(content.likes_count || 0);
+    // Al cambiar de foto, nunca bajar: usar el máximo entre global y el count real
+    const base = Math.max(globalLikesRef.current, content.likes_count || 0);
+    globalLikesRef.current = base;
+    setDisplayLikes(base);
 
     const scheduleNextLike = () => {
       const delay = 2000 + Math.random() * 4000;
       intervalRef.current = setTimeout(() => {
         const increment = Math.random() < 0.3 ? Math.floor(Math.random() * 3) + 2 : 1;
-        setDisplayLikes(prev => prev + increment);
+        setDisplayLikes(prev => {
+          const next = prev + increment;
+          globalLikesRef.current = next;
+          return next;
+        });
         setShowHeartPop(true);
         setTimeout(() => setShowHeartPop(false), 600);
         scheduleNextLike();
