@@ -296,7 +296,7 @@ serve(async (req) => {
             }
             
             if (recipientEmails.length > 0) {
-              const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-event-qr-emails`, {
+                const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-event-qr-emails`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -304,7 +304,12 @@ serve(async (req) => {
                 },
                 body: JSON.stringify({ 
                   evento_id: existingPayment.evento_id,
-                  recipientEmails 
+                  recipientEmails,
+                  paymentInfo: {
+                    monto: payment.transaction_amount,
+                    pasarela: 'mercadopago_ar',
+                    transaccion_id: String(payment.id),
+                  },
                 }),
               });
               const emailResult = await emailResponse.json();
@@ -468,7 +473,12 @@ serve(async (req) => {
                   },
                   body: JSON.stringify({ 
                     evento_id: evento.id,
-                    recipientEmails 
+                    recipientEmails,
+                    paymentInfo: {
+                      monto: payment.transaction_amount,
+                      pasarela: 'mercadopago_ar',
+                      transaccion_id: String(payment.id),
+                    },
                   }),
                 });
                 const emailResult = await emailResponse.json();

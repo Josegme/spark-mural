@@ -7,14 +7,62 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Get the base URL for the app
 function getBaseUrl(): string {
   return Deno.env.get('APP_BASE_URL') || 'https://id-preview--3f67129c-818e-4d9b-8e17-29150f6ad5f5.lovable.app';
 }
 
-// Generate QR code image URL
 function getQRCodeUrl(data: string): string {
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data)}`;
+}
+
+// Format currency based on gateway
+function formatCurrency(amount: number, gateway: string): string {
+  if (gateway.startsWith('mercadopago_ar') || gateway === 'mercadopago_ar') {
+    return `ARS $${amount.toLocaleString('es-AR')}`;
+  }
+  if (gateway.startsWith('mercadopago_br') || gateway === 'mercadopago_br') {
+    return `BRL R$${amount.toLocaleString('pt-BR')}`;
+  }
+  if (gateway === 'stripe') {
+    return `USD $${amount.toLocaleString('en-US')}`;
+  }
+  return `$${amount}`;
+}
+
+function getGatewayLabel(gateway: string): string {
+  const labels: Record<string, string> = {
+    'mercadopago_ar': 'Mercado Pago (Argentina)',
+    'mercadopago_br': 'Mercado Pago (Brasil)',
+    'mercadopago_py': 'Mercado Pago (Paraguay)',
+    'stripe': 'Stripe',
+    'bancard': 'Bancard',
+  };
+  return labels[gateway] || gateway;
+}
+
+// Build payment confirmation HTML block
+function buildPaymentSection(paymentInfo: { monto: number; pasarela: string; transaccion_id: string }): string {
+  const { monto, pasarela, transaccion_id } = paymentInfo;
+  return `
+    <!-- Payment Confirmation -->
+    <div style="background-color: #18181b; border: 1px solid #22c55e; border-radius: 12px; padding: 24px; margin-bottom: 30px;">
+      <h3 style="margin: 0 0 16px 0; color: #22c55e; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">✅ Pago Confirmado</h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #a1a1aa; font-size: 14px;">Monto:</td>
+          <td style="padding: 8px 0; color: #ffffff; font-size: 16px; font-weight: 600; text-align: right;">${formatCurrency(monto, pasarela)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #a1a1aa; font-size: 14px; border-top: 1px solid #27272a;">Método:</td>
+          <td style="padding: 8px 0; color: #ffffff; font-size: 14px; text-align: right; border-top: 1px solid #27272a;">${getGatewayLabel(pasarela)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #a1a1aa; font-size: 14px; border-top: 1px solid #27272a;">ID Transacción:</td>
+          <td style="padding: 8px 0; color: #a1a1aa; font-size: 12px; text-align: right; border-top: 1px solid #27272a; font-family: monospace;">${transaccion_id}</td>
+        </tr>
+      </table>
+    </div>
+  `;
 }
 
 serve(async (req) => {
@@ -37,7 +85,8 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { evento_id, recipientEmails } = await req.json();
+    // Accept optional paymentInfo: { monto, pasarela, transaccion_id }
+    const { evento_id, recipientEmails, paymentInfo } = await req.json();
 
     if (!evento_id || !recipientEmails || !Array.isArray(recipientEmails) || recipientEmails.length === 0) {
       return new Response(
@@ -48,17 +97,11 @@ serve(async (req) => {
 
     console.log('Fetching event data for:', evento_id);
 
-    // Get event data with client info
     const { data: evento, error: eventoError } = await supabase
       .from('eventos')
       .select(`
-        id,
-        nombre,
-        fecha_evento,
-        hora_inicio,
-        qr_pantalla_token,
-        qr_invitados_token,
-        qr_descarga_token,
+        id, nombre, fecha_evento, hora_inicio,
+        qr_pantalla_token, qr_invitados_token, qr_descarga_token,
         cliente_user_id
       `)
       .eq('id', evento_id)
@@ -72,8 +115,7 @@ serve(async (req) => {
       );
     }
 
-    // Get client profile para obtener el nombre
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
       .select('nombre')
       .eq('id', evento.cliente_user_id)
@@ -87,15 +129,16 @@ serve(async (req) => {
     const descargaUrl = `${baseUrl}/album/${evento.qr_descarga_token}`;
 
     const fechaFormateada = new Date(evento.fecha_evento).toLocaleDateString('es-AR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
 
-    console.log('Sending emails to:', recipientEmails);
+    // Build payment section HTML if paymentInfo is provided
+    const paymentSectionHtml = paymentInfo?.monto && paymentInfo?.pasarela && paymentInfo?.transaccion_id
+      ? buildPaymentSection(paymentInfo)
+      : '';
 
-    // Enviar a todos los emails especificados
+    console.log('Sending emails to:', recipientEmails, paymentInfo ? 'with payment info' : 'without payment info');
+
     const { data: emailResult, error: emailError } = await resend.emails.send({
       from: 'PickEvent <onboarding@resend.dev>',
       to: recipientEmails,
@@ -132,6 +175,8 @@ serve(async (req) => {
               <p style="margin: 0; color: #a1a1aa;">📅 ${fechaFormateada}</p>
               <p style="margin: 8px 0 0 0; color: #a1a1aa;">🕐 ${evento.hora_inicio} hs</p>
             </div>
+
+            ${paymentSectionHtml}
 
             <!-- QR Codes Section -->
             <h3 style="text-align: center; margin-bottom: 24px; color: #ffffff;">Tus códigos QR</h3>

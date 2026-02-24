@@ -185,6 +185,11 @@ serve(async (req) => {
             body: JSON.stringify({
               evento_id: evento.id,
               recipientEmails,
+              paymentInfo: {
+                monto: (session.amount_total || 0) / 100,
+                pasarela: 'stripe',
+                transaccion_id: session.id,
+              },
             }),
           });
           
