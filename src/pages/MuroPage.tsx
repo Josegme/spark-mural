@@ -6,7 +6,7 @@
 import { useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { MuroLayout } from '@/components/layout';
-import { MuroBanner, MuroCarousel, MuroMessages } from '@/components/muro';
+import { MuroBanner, MuroCarousel, MuroMessages, MuroGameOverlay } from '@/components/muro';
 import { useMuroRealtime } from '@/hooks/useMuroRealtime';
 
 export default function MuroPage() {
@@ -22,6 +22,7 @@ export default function MuroPage() {
     totalPhotos,
     totalMessages,
     isEventPaused,
+    activeGame,
   } = useMuroRealtime(token || '');
 
   const isEventNotStarted = event?.estado === 'programado';
@@ -99,8 +100,19 @@ export default function MuroPage() {
 
         {/* Área principal: Carrusel de FOTOS + Mensajes flotantes */}
         <div className="flex-1 relative overflow-hidden">
+          {/* Game overlay - takes over the entire area */}
+          {activeGame && activeGame.estado !== 'cerrado' && (
+            <MuroGameOverlay
+              gameName={activeGame.nombre || 'Juego'}
+              gameRule={activeGame.regla || ''}
+              allPhotoUrls={photoContents.filter(c => c.url_original).map(c => c.url_original!)}
+              selectedPhotoUrls={activeGame.fotos_seleccionadas}
+              estado={activeGame.estado}
+            />
+          )}
+
           {/* Overlay de pausa */}
-          {isEventPaused && (
+          {isEventPaused && !activeGame && (
             <div className="absolute inset-0 bg-black/60 z-40 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-warning/20 flex items-center justify-center">
@@ -124,7 +136,7 @@ export default function MuroPage() {
           />
           
           {/* Mensajes flotantes alrededor de la foto */}
-          {!isEventPaused && <MuroMessages messages={contents} />}
+          {!isEventPaused && !activeGame && <MuroMessages messages={contents} />}
         </div>
       </div>
     </MuroLayout>

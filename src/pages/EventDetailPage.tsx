@@ -17,6 +17,7 @@ import {
   EventSettings,
   AlbumDownload,
 } from '@/components/event-detail';
+import { EventGames } from '@/components/event-detail/EventGames';
 import type { UserEvent } from '@/hooks/useUserEvents';
 
 export default function EventDetailPage() {
@@ -115,6 +116,9 @@ export default function EventDetailPage() {
                 onModerate={(contentId, aprobado) => moderate({ contentId, aprobado })}
                 showModeration={true}
               />
+
+              {/* Juegos del Evento */}
+              <EventGames eventoId={event.id} content={content} />
             </div>
           </TabsContent>
 
