@@ -113,7 +113,7 @@ interface GameSlotProps {
 }
 
 function GameSlot({ game, index, isSaving, isGameActive, photoCount, onUpdate, onSave, onLaunch }: GameSlotProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   return (
     <div className="border rounded-lg p-4 space-y-3">
