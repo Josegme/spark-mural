@@ -22,6 +22,7 @@ import SalonPage from "./pages/SalonPage";
 import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import TestingGuidePage from "./pages/TestingGuidePage";
 import TechnicalReportPage from "./pages/TechnicalReportPage";
+import StakeholderReportPage from "./pages/StakeholderReportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -148,6 +149,10 @@ const App = () => (
             
             {/* Technical Report - Público para compartir */}
             <Route path="/technical-report" element={<TechnicalReportPage />} />
+            
+            {/* Stakeholder Report - PDF exportable */}
+            <Route path="/informe-stakeholders" element={<StakeholderReportPage />} />
+            
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

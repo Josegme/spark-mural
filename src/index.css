@@ -368,3 +368,316 @@
     animation-delay: 500ms;
   }
 }
+
+/* ============================================
+   STAKEHOLDER REPORT - Print / PDF Styles
+   ============================================ */
+
+.report-container {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  font-family: 'Inter', sans-serif;
+  color: hsl(240 10% 10%);
+  line-height: 1.6;
+}
+
+.report-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  border-bottom: 3px solid hsl(330 85% 55%);
+  margin-bottom: 3rem;
+  padding-bottom: 3rem;
+}
+
+.report-cover-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.report-logo-badge {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, hsl(330 85% 55%), hsl(270 60% 35%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.report-cover-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: hsl(240 10% 15%);
+}
+
+.report-cover-subtitle {
+  font-size: 1.15rem;
+  color: hsl(240 4% 46%);
+  max-width: 500px;
+}
+
+.report-cover-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: hsl(240 4% 56%);
+  margin-top: 1rem;
+}
+
+.report-cover-divider {
+  color: hsl(330 85% 55%);
+}
+
+.report-page {
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid hsl(240 5% 90%);
+}
+
+.report-h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(270 60% 35%);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid hsl(330 85% 55% / 0.2);
+}
+
+.report-h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: hsl(240 10% 20%);
+  margin: 1.5rem 0 0.75rem;
+}
+
+.report-text {
+  font-size: 0.95rem;
+  color: hsl(240 5% 30%);
+  margin-bottom: 1rem;
+}
+
+.report-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.report-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.report-value-card {
+  text-align: center;
+  padding: 1rem;
+  border: 1px solid hsl(240 5% 90%);
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.report-value-card .report-value-icon {
+  font-size: 1.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.report-value-card strong {
+  display: block;
+  font-size: 0.9rem;
+  color: hsl(270 60% 35%);
+}
+
+.report-value-card p {
+  margin: 0;
+  color: hsl(240 4% 46%);
+  font-size: 0.8rem;
+}
+
+.report-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
+.report-flow-step {
+  text-align: center;
+  padding: 1rem;
+  border: 1px solid hsl(240 5% 90%);
+  border-radius: 0.75rem;
+  min-width: 140px;
+  font-size: 0.85rem;
+}
+
+.report-flow-step p {
+  margin: 0;
+  color: hsl(240 4% 46%);
+  font-size: 0.78rem;
+}
+
+.report-flow-number {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, hsl(330 85% 55%), hsl(270 60% 35%));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  margin: 0 auto 0.5rem;
+  font-size: 0.9rem;
+}
+
+.report-flow-arrow {
+  font-size: 1.5rem;
+  color: hsl(330 85% 55%);
+  font-weight: 700;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin: 0.75rem 0 1.5rem;
+}
+
+.report-table th {
+  background: hsl(270 60% 35%);
+  color: white;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.report-table th:first-child {
+  border-radius: 0.5rem 0 0 0;
+}
+
+.report-table th:last-child {
+  border-radius: 0 0.5rem 0 0;
+}
+
+.report-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid hsl(240 5% 92%);
+  color: hsl(240 5% 25%);
+}
+
+.report-table tbody tr:nth-child(even) {
+  background: hsl(240 5% 97%);
+}
+
+.report-feature-card {
+  padding: 1rem;
+  border: 1px solid hsl(240 5% 90%);
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.report-feature-card h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: hsl(270 60% 35%);
+}
+
+.report-feature-card ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: hsl(240 5% 30%);
+}
+
+.report-feature-card li {
+  margin-bottom: 0.2rem;
+}
+
+.report-event-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.report-event-types span {
+  padding: 0.5rem 1rem;
+  background: hsl(330 85% 55% / 0.08);
+  border: 1px solid hsl(330 85% 55% / 0.2);
+  border-radius: 2rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.report-security-item {
+  text-align: center;
+  padding: 1rem;
+  border: 1px solid hsl(240 5% 90%);
+  border-radius: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.report-security-item p {
+  margin: 0.25rem 0 0;
+  color: hsl(240 4% 46%);
+  font-size: 0.8rem;
+}
+
+.report-footer {
+  text-align: center;
+  padding: 1.5rem 0;
+  border-top: 2px solid hsl(330 85% 55% / 0.2);
+  font-size: 0.8rem;
+  color: hsl(240 4% 56%);
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Print styles */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .report-container {
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .report-cover {
+    min-height: 80vh;
+    page-break-after: always;
+  }
+
+  .report-page {
+    page-break-inside: avoid;
+    page-break-after: auto;
+    border-bottom: none;
+  }
+
+  .report-table {
+    page-break-inside: avoid;
+  }
+
+  .report-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.5rem 2rem;
+  }
+}
