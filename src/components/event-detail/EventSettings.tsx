@@ -2,7 +2,7 @@
  * Panel de configuración del evento
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,11 @@ interface EventSettingsProps {
 export function EventSettings({ event, onUpdate, onDelete, isUpdating, isDeleting }: EventSettingsProps) {
   const { profile } = useAuth();
   const [moderationActive, setModerationActive] = useState(event.moderacion_activa);
+
+  // Keep local state in sync with DB after refetch
+  useEffect(() => {
+    setModerationActive(event.moderacion_activa);
+  }, [event.moderacion_activa]);
   const [uploadLimit, setUploadLimit] = useState(event.limite_subidas_por_invitado?.toString() || '');
   const [bannerColor, setBannerColor] = useState(event.color_banner || '#4c1d95');
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
@@ -163,7 +168,11 @@ export function EventSettings({ event, onUpdate, onDelete, isUpdating, isDeletin
             <Switch
               id="moderation"
               checked={moderationActive}
-              onCheckedChange={setModerationActive}
+              onCheckedChange={(checked) => {
+                setModerationActive(checked);
+                // Auto-save moderation toggle immediately for instant sync with Moderación tab
+                onUpdate({ moderacion_activa: checked });
+              }}
             />
           </div>
 

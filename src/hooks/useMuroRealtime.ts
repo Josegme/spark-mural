@@ -152,6 +152,9 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
         },
         (payload) => {
           const raw = payload.new as Record<string, unknown>;
+          // Skip non-photo/message content
+          if (raw.tipo !== 'foto' && raw.tipo !== 'mensaje') return;
+          
           const updated: MuroContent = {
             id: raw.id as string,
             tipo: raw.tipo as 'foto' | 'video' | 'mensaje',
@@ -163,9 +166,23 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
             created_at: (raw.created_at as string) || new Date().toISOString(),
             estado_ia: (raw.estado_ia as MuroContent['estado_ia']) || 'pendiente',
           };
-          setContents(prev =>
-            prev.map(c => (c.id === updated.id ? updated : c))
-          );
+
+          setContents(prev => {
+            const exists = prev.some(c => c.id === updated.id);
+            
+            if (raw.aprobado === true && !exists) {
+              // Content was just approved by moderator — add it to the wall
+              return [updated, ...prev];
+            }
+            
+            if (raw.aprobado === false && exists) {
+              // Content was rejected — remove it from the wall
+              return prev.filter(c => c.id !== updated.id);
+            }
+            
+            // Update existing content (e.g. likes, IA status)
+            return prev.map(c => (c.id === updated.id ? updated : c));
+          });
         }
       )
       .subscribe((status) => {
