@@ -125,6 +125,23 @@ export function useUploadContent(token: string): UseUploadContentReturn {
     return true;
   };
 
+  // Leer siempre el estado actual de moderación para evitar desincronización entre pestañas/sesiones
+  const getCurrentModerationState = useCallback(async (): Promise<boolean> => {
+    const fallback = event?.moderacion_activa ?? false;
+
+    const { data, error: moderationError } = await supabase
+      .rpc('get_evento_by_token', { _token: token });
+
+    if (moderationError || !data || data.length === 0) {
+      return fallback;
+    }
+
+    const isModerationActive = Boolean(data[0].moderacion_activa);
+    setEvent((prev) => (prev ? { ...prev, moderacion_activa: isModerationActive } : prev));
+
+    return isModerationActive;
+  }, [event?.moderacion_activa, token]);
+
   // Subir foto
   const uploadPhoto = async (file: File, guestName: string, message?: string): Promise<UploadResult> => {
     if (!canUpload() || !event) return { success: false, error: 'No se puede subir' };
@@ -167,7 +184,7 @@ export function useUploadContent(token: string): UseUploadContentReturn {
           invitado_nombre: guestName.trim() || null,
           invitado_device_id: deviceId,
           mensaje_texto: message?.trim() || null,
-          aprobado: !event.moderacion_activa,
+          aprobado: !(await getCurrentModerationState()),
           estado_ia: event.es_premium ? 'pendiente' : 'completado',
         });
 
@@ -222,7 +239,7 @@ export function useUploadContent(token: string): UseUploadContentReturn {
           url_original: urlData.publicUrl,
           invitado_nombre: guestName.trim() || null,
           invitado_device_id: deviceId,
-          aprobado: !event.moderacion_activa,
+          aprobado: !(await getCurrentModerationState()),
         });
 
       if (insertError) throw insertError;
@@ -259,7 +276,7 @@ export function useUploadContent(token: string): UseUploadContentReturn {
           mensaje_texto: message.trim(),
           invitado_nombre: guestName.trim() || null,
           invitado_device_id: deviceId,
-          aprobado: !event.moderacion_activa,
+          aprobado: !(await getCurrentModerationState()),
         });
 
       if (insertError) throw insertError;
