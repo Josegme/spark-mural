@@ -26,11 +26,7 @@ export interface ActiveGame {
   cantidad_fotos?: number;
 }
 
-const DEFAULT_GAMES: Omit<GameConfig, 'evento_id'>[] = [
-  { nombre: 'Trensito Locardo', cantidad_fotos: 2, regla: 'Todos los que salen en la foto tienen que hacer un trensito con los ojos vendados', orden: 0 },
-  { nombre: 'Karaoke Sorpresa', cantidad_fotos: 1, regla: 'El que sale en la foto tiene que cantar una canción elegida por el público', orden: 1 },
-  { nombre: 'Baile en Pareja', cantidad_fotos: 2, regla: 'Los que salen en la foto tienen que bailar juntos la canción que suene', orden: 2 },
-];
+const DEFAULT_GAMES: Omit<GameConfig, 'evento_id'>[] = [];
 
 export function useEventGames(eventoId: string | undefined) {
   const [games, setGames] = useState<GameConfig[]>([]);
@@ -212,6 +208,27 @@ export function useEventGames(eventoId: string | undefined) {
     setGames(prev => prev.map((g, i) => i === index ? { ...g, ...updates } : g));
   }, []);
 
+  // Add a new empty game locally
+  const addGame = useCallback(() => {
+    if (!eventoId) return;
+    setGames(prev => [...prev, {
+      evento_id: eventoId,
+      nombre: '',
+      cantidad_fotos: 2,
+      regla: '',
+      orden: prev.length,
+    }]);
+  }, [eventoId]);
+
+  // Remove a game (local + DB)
+  const removeGame = useCallback(async (index: number) => {
+    const game = games[index];
+    if (game?.id) {
+      await supabase.from('juegos_evento').delete().eq('id', game.id);
+    }
+    setGames(prev => prev.filter((_, i) => i !== index));
+  }, [games]);
+
   return {
     games,
     activeGame,
@@ -221,6 +238,8 @@ export function useEventGames(eventoId: string | undefined) {
     launchGame,
     closeGame,
     updateGameLocal,
+    addGame,
+    removeGame,
     fetchActiveGame,
   };
 }

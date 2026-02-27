@@ -1,38 +1,31 @@
 /**
  * PICKEVENT - Juegos del Evento
- * Configuración y lanzamiento de juegos interactivos desde la pestaña Moderación
+ * Configuración de juegos interactivos en la pestaña Config
+ * Sin límite de juegos. El lanzamiento se hace desde el botón flotante.
  */
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Gamepad2, Save, Rocket, X, AlertTriangle } from 'lucide-react';
+import { Gamepad2, Save, Trash2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEventGames, type GameConfig } from '@/hooks/useEventGames';
-import type { EventContent } from '@/hooks/useEventDetails';
 
 interface EventGamesProps {
   eventoId: string;
-  content: EventContent[];
 }
 
-export function EventGames({ eventoId, content }: EventGamesProps) {
+export function EventGames({ eventoId }: EventGamesProps) {
   const {
     games,
-    activeGame,
     isLoading,
     isSaving,
     saveGame,
-    launchGame,
-    closeGame,
     updateGameLocal,
+    addGame,
+    removeGame,
   } = useEventGames(eventoId);
-
-  // Get all approved photo URLs for the roulette
-  const photoUrls = content
-    .filter(c => c.tipo === 'foto' && c.aprobado && c.url_original)
-    .map(c => c.url_original as string);
 
   if (isLoading) {
     return (
@@ -51,51 +44,37 @@ export function EventGames({ eventoId, content }: EventGamesProps) {
           <Gamepad2 className="w-5 h-5 text-primary" />
           Juegos del Evento
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Configurá hasta 3 juegos interactivos. Al lanzar uno, aparecerá en el muro a pantalla completa con una ruleta de fotos.
-        </p>
+        <CardDescription>
+          Configurá los juegos interactivos antes del evento. Durante el evento, usá el botón flotante "🎮 Lanzar Juego" que aparece abajo a la derecha para dispararlos en el muro.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Active game banner */}
-        {activeGame && activeGame.estado !== 'cerrado' && (
-          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-primary">🎮 Juego en curso: {activeGame.nombre}</p>
-              <p className="text-sm text-muted-foreground">
-                Estado: {activeGame.estado === 'girando' ? 'Ruleta girando...' : 'Fotos reveladas'}
-              </p>
-            </div>
-            <Button variant="destructive" size="sm" onClick={closeGame}>
-              <X className="w-4 h-4 mr-1" />
-              Cerrar juego
-            </Button>
-          </div>
+        {games.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No hay juegos configurados. Agregá uno para empezar.
+          </p>
         )}
 
-        {/* Photo count warning */}
-        {photoUrls.length < 2 && (
-          <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
-            <p className="text-sm text-warning">
-              Necesitás al menos 2 fotos de invitados para poder lanzar un juego. Actualmente: {photoUrls.length}
-            </p>
-          </div>
-        )}
-
-        {/* Game slots */}
         {games.map((game, index) => (
           <GameSlot
-            key={index}
+            key={game.id || `new-${index}`}
             game={game}
             index={index}
             isSaving={isSaving}
-            isGameActive={!!activeGame && activeGame.estado !== 'cerrado'}
-            photoCount={photoUrls.length}
             onUpdate={(updates) => updateGameLocal(index, updates)}
             onSave={() => saveGame(game, index)}
-            onLaunch={() => launchGame(game, photoUrls)}
+            onRemove={() => removeGame(index)}
           />
         ))}
+
+        <Button
+          variant="outline"
+          onClick={addGame}
+          className="w-full border-dashed"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Agregar juego
+        </Button>
       </CardContent>
     </Card>
   );
@@ -105,14 +84,12 @@ interface GameSlotProps {
   game: GameConfig;
   index: number;
   isSaving: boolean;
-  isGameActive: boolean;
-  photoCount: number;
   onUpdate: (updates: Partial<GameConfig>) => void;
   onSave: () => void;
-  onLaunch: () => void;
+  onRemove: () => void;
 }
 
-function GameSlot({ game, index, isSaving, isGameActive, photoCount, onUpdate, onSave, onLaunch }: GameSlotProps) {
+function GameSlot({ game, index, isSaving, onUpdate, onSave, onRemove }: GameSlotProps) {
   const [expanded, setExpanded] = useState(true);
 
   return (
@@ -127,16 +104,15 @@ function GameSlot({ game, index, isSaving, isGameActive, photoCount, onUpdate, o
           <span className="text-xs text-muted-foreground ml-2">
             ({game.cantidad_fotos} foto{game.cantidad_fotos > 1 ? 's' : ''})
           </span>
+          {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </button>
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onSave}
-            disabled={isSaving}
-          >
+          <Button size="sm" variant="outline" onClick={onSave} disabled={isSaving}>
             <Save className="w-3 h-3 mr-1" />
             Guardar
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onRemove} className="text-destructive hover:text-destructive">
+            <Trash2 className="w-3 h-3" />
           </Button>
         </div>
       </div>
@@ -153,7 +129,7 @@ function GameSlot({ game, index, isSaving, isGameActive, photoCount, onUpdate, o
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-muted-foreground">Cantidad de fotos</label>
+            <label className="text-sm font-medium text-muted-foreground">Cantidad de fotos a seleccionar</label>
             <Select
               value={String(game.cantidad_fotos)}
               onValueChange={(v) => onUpdate({ cantidad_fotos: Number(v) })}
@@ -180,19 +156,6 @@ function GameSlot({ game, index, isSaving, isGameActive, photoCount, onUpdate, o
           </div>
         </div>
       )}
-
-      {/* Launch button - always visible, prominent */}
-      <div className="flex justify-end pt-1">
-        <Button
-          onClick={onLaunch}
-          disabled={isGameActive || photoCount < 2 || !game.id}
-          className="bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 px-6"
-          size="lg"
-        >
-          <Rocket className="w-5 h-5 mr-2" />
-          ¡Lanzar Juego!
-        </Button>
-      </div>
     </div>
   );
 }
