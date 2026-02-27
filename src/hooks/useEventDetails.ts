@@ -150,6 +150,17 @@ export function useEventDetails(eventId: string | undefined) {
 
       if (error) throw error;
     },
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey: ['event-details', eventId] });
+      const previousEvent = queryClient.getQueryData<EventDetails | null>(['event-details', eventId]);
+
+      queryClient.setQueryData<EventDetails | null>(['event-details', eventId], (current) => {
+        if (!current) return current;
+        return { ...current, ...updates };
+      });
+
+      return { previousEvent };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['event-details', eventId] });
       toast({
@@ -157,7 +168,10 @@ export function useEventDetails(eventId: string | undefined) {
         description: 'Los cambios han sido guardados',
       });
     },
-    onError: () => {
+    onError: (_error, _updates, context) => {
+      if (context?.previousEvent) {
+        queryClient.setQueryData(['event-details', eventId], context.previousEvent);
+      }
       toast({
         title: 'Error',
         description: 'No se pudieron guardar los cambios',
