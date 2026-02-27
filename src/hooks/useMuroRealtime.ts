@@ -33,6 +33,16 @@ export interface MuroEvent {
   qr_invitados_token: string | null;
 }
 
+interface ActiveGameState {
+  id: string;
+  evento_id: string;
+  juego_id: string;
+  estado: 'girando' | 'revelado' | 'cerrado';
+  fotos_seleccionadas: string[];
+  nombre?: string;
+  regla?: string;
+}
+
 interface UseMuroRealtimeReturn {
   event: MuroEvent | null;
   contents: MuroContent[];
@@ -45,6 +55,7 @@ interface UseMuroRealtimeReturn {
   goToNext: () => void;
   goToPrevious: () => void;
   isEventPaused: boolean;
+  activeGame: ActiveGameState | null;
 }
 
 export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
@@ -53,6 +64,7 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeGame, setActiveGame] = useState<ActiveGameState | null>(null);
   
   const channelRef = useRef<RealtimeChannel | null>(null);
   const carouselIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -104,6 +116,36 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
     setContents(mappedContents);
     setIsLoading(false);
   }, [token]);
+
+  // Fetch active game state on init
+  const fetchActiveGameState = useCallback(async (eventId: string) => {
+    const { data } = await supabase
+      .from('juego_activo')
+      .select('*')
+      .eq('evento_id', eventId)
+      .neq('estado', 'cerrado')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (data && data.length > 0) {
+      const ag = data[0];
+      const { data: gameData } = await supabase
+        .from('juegos_evento')
+        .select('nombre, regla')
+        .eq('id', ag.juego_id)
+        .single();
+
+      setActiveGame({
+        id: ag.id,
+        evento_id: ag.evento_id,
+        juego_id: ag.juego_id,
+        estado: ag.estado as 'girando' | 'revelado',
+        fotos_seleccionadas: (ag.fotos_seleccionadas as string[]) || [],
+        nombre: gameData?.nombre || 'Juego',
+        regla: gameData?.regla || '',
+      });
+    }
+  }, []);
 
   // Configurar suscripción realtime con polling fallback
   const setupRealtime = useCallback((eventId: string) => {
@@ -185,6 +227,41 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
           });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'juego_activo',
+          filter: `evento_id=eq.${eventId}`,
+        },
+        async (payload) => {
+          const raw = payload.new as Record<string, unknown>;
+          const estado = raw.estado as string;
+
+          if (estado === 'cerrado' || payload.eventType === 'DELETE') {
+            setActiveGame(null);
+            return;
+          }
+
+          // Fetch game config for name/rule
+          const { data: gameData } = await supabase
+            .from('juegos_evento')
+            .select('nombre, regla')
+            .eq('id', raw.juego_id as string)
+            .single();
+
+          setActiveGame({
+            id: raw.id as string,
+            evento_id: raw.evento_id as string,
+            juego_id: raw.juego_id as string,
+            estado: estado as 'girando' | 'revelado',
+            fotos_seleccionadas: (raw.fotos_seleccionadas as string[]) || [],
+            nombre: gameData?.nombre || 'Juego',
+            regla: gameData?.regla || '',
+          });
+        }
+      )
       .subscribe((status) => {
         console.log('📡 Realtime status:', status);
       });
@@ -209,6 +286,8 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
       const eventData = await fetchEvent();
       if (eventData) {
         await fetchContents(eventData.id);
+        // Check for active game on load
+        await fetchActiveGameState(eventData.id);
         contentPollCleanup = setupRealtime(eventData.id);
         
         // Polling para estado del evento
@@ -287,5 +366,6 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
     goToNext,
     goToPrevious,
     isEventPaused,
+    activeGame,
   };
 }

@@ -275,6 +275,103 @@ export type Database = {
           },
         ]
       }
+      juego_activo: {
+        Row: {
+          created_at: string
+          estado: string
+          evento_id: string
+          fotos_seleccionadas: Json
+          id: string
+          juego_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          estado?: string
+          evento_id: string
+          fotos_seleccionadas?: Json
+          id?: string
+          juego_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          evento_id?: string
+          fotos_seleccionadas?: Json
+          id?: string
+          juego_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "juego_activo_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "juego_activo_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "juego_activo_juego_id_fkey"
+            columns: ["juego_id"]
+            isOneToOne: false
+            referencedRelation: "juegos_evento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      juegos_evento: {
+        Row: {
+          cantidad_fotos: number
+          created_at: string
+          evento_id: string
+          id: string
+          nombre: string
+          orden: number
+          regla: string
+        }
+        Insert: {
+          cantidad_fotos?: number
+          created_at?: string
+          evento_id: string
+          id?: string
+          nombre?: string
+          orden?: number
+          regla?: string
+        }
+        Update: {
+          cantidad_fotos?: number
+          created_at?: string
+          evento_id?: string
+          id?: string
+          nombre?: string
+          orden?: number
+          regla?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "juegos_evento_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "juegos_evento_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       likes: {
         Row: {
           contenido_id: string
