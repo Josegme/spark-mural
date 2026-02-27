@@ -18,6 +18,7 @@ import {
   AlbumDownload,
 } from '@/components/event-detail';
 import { EventGames } from '@/components/event-detail/EventGames';
+import { GameLauncherFAB } from '@/components/event-detail/GameLauncherFAB';
 import type { UserEvent } from '@/hooks/useUserEvents';
 
 export default function EventDetailPage() {
@@ -116,20 +117,20 @@ export default function EventDetailPage() {
                 onModerate={(contentId, aprobado) => moderate({ contentId, aprobado })}
                 showModeration={true}
               />
-
-              {/* Juegos del Evento */}
-              <EventGames eventoId={event.id} content={content} />
             </div>
           </TabsContent>
 
           <TabsContent value="settings">
-            <EventSettings
-              event={event}
-              onUpdate={updateEvent}
-              onDelete={deleteEvent}
-              isUpdating={isUpdating}
-              isDeleting={isDeleting}
-            />
+            <div className="space-y-6">
+              <EventSettings
+                event={event}
+                onUpdate={updateEvent}
+                onDelete={deleteEvent}
+                isUpdating={isUpdating}
+                isDeleting={isDeleting}
+              />
+              <EventGames eventoId={event.id} />
+            </div>
           </TabsContent>
 
           <TabsContent value="download">
@@ -140,6 +141,9 @@ export default function EventDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Botón flotante para lanzar juegos */}
+      <GameLauncherFAB eventoId={event.id} content={content} />
 
       <QRCodesModal
         event={eventForQR}
