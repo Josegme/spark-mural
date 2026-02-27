@@ -18,7 +18,6 @@ import {
   AlbumDownload,
 } from '@/components/event-detail';
 import { EventGames } from '@/components/event-detail/EventGames';
-import { GameLauncherFAB } from '@/components/event-detail/GameLauncherFAB';
 import type { UserEvent } from '@/hooks/useUserEvents';
 
 export default function EventDetailPage() {
@@ -122,6 +121,9 @@ export default function EventDetailPage() {
 
           <TabsContent value="settings">
             <div className="space-y-6">
+              {/* Juegos primero - es lo primero que organiza el anfitrión */}
+              <EventGames eventoId={event.id} content={content} />
+              {/* Configuración general después */}
               <EventSettings
                 event={event}
                 onUpdate={updateEvent}
@@ -129,7 +131,7 @@ export default function EventDetailPage() {
                 isUpdating={isUpdating}
                 isDeleting={isDeleting}
               />
-              <EventGames eventoId={event.id} />
+              {/* Zona de Peligro ya está al final de EventSettings */}
             </div>
           </TabsContent>
 
@@ -141,9 +143,6 @@ export default function EventDetailPage() {
           </TabsContent>
         </Tabs>
       </div>
-
-      {/* Botón flotante para lanzar juegos */}
-      <GameLauncherFAB eventoId={event.id} content={content} />
 
       <QRCodesModal
         event={eventForQR}

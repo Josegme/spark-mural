@@ -1,7 +1,7 @@
 /**
  * PICKEVENT - Juegos del Evento
- * Configuración de juegos interactivos en la pestaña Config
- * Sin límite de juegos. El lanzamiento se hace desde el botón flotante.
+ * Configuración y lanzamiento de juegos interactivos en la pestaña Config
+ * Sin límite de juegos. El botón "Lanzar" está dentro de cada juego guardado.
  */
 
 import { useState } from 'react';
@@ -9,23 +9,34 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Gamepad2, Save, Trash2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Gamepad2, Save, Trash2, Plus, ChevronDown, ChevronUp, Rocket, X, AlertTriangle } from 'lucide-react';
 import { useEventGames, type GameConfig } from '@/hooks/useEventGames';
+import type { EventContent } from '@/hooks/useEventDetails';
 
 interface EventGamesProps {
   eventoId: string;
+  content: EventContent[];
 }
 
-export function EventGames({ eventoId }: EventGamesProps) {
+export function EventGames({ eventoId, content }: EventGamesProps) {
   const {
     games,
+    activeGame,
     isLoading,
     isSaving,
     saveGame,
     updateGameLocal,
     addGame,
     removeGame,
+    launchGame,
+    closeGame,
   } = useEventGames(eventoId);
+
+  const photoUrls = content
+    .filter(c => c.tipo === 'foto' && c.aprobado && c.url_original)
+    .map(c => c.url_original as string);
+
+  const isGameActive = !!activeGame && activeGame.estado !== 'cerrado';
 
   if (isLoading) {
     return (
@@ -45,10 +56,36 @@ export function EventGames({ eventoId }: EventGamesProps) {
           Juegos del Evento
         </CardTitle>
         <CardDescription>
-          Configurá los juegos interactivos antes del evento. Durante el evento, usá el botón flotante "🎮 Lanzar Juego" que aparece abajo a la derecha para dispararlos en el muro.
+          Configurá los juegos interactivos antes del evento. Durante el evento, usá el botón "Lanzar" de cada juego para dispararlos en el muro.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Active game indicator */}
+        {isGameActive && (
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Gamepad2 className="w-5 h-5 text-primary animate-pulse" />
+              <div>
+                <p className="font-medium text-sm">🎮 Juego activo: {activeGame?.nombre}</p>
+                <p className="text-xs text-muted-foreground">Se está mostrando en el muro</p>
+              </div>
+            </div>
+            <Button size="sm" variant="destructive" onClick={closeGame}>
+              <X className="w-4 h-4 mr-1" />
+              Cerrar Juego
+            </Button>
+          </div>
+        )}
+
+        {photoUrls.length < 2 && games.length > 0 && (
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+            <p className="text-sm text-destructive">
+              Necesitás al menos 2 fotos aprobadas para lanzar juegos. Actualmente: {photoUrls.length}
+            </p>
+          </div>
+        )}
+
         {games.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-4">
             No hay juegos configurados. Agregá uno para empezar.
@@ -61,9 +98,12 @@ export function EventGames({ eventoId }: EventGamesProps) {
             game={game}
             index={index}
             isSaving={isSaving}
+            isGameActive={isGameActive}
+            canLaunch={!!game.id && photoUrls.length >= 2 && !isGameActive}
             onUpdate={(updates) => updateGameLocal(index, updates)}
             onSave={() => saveGame(game, index)}
             onRemove={() => removeGame(index)}
+            onLaunch={() => launchGame(game, photoUrls)}
           />
         ))}
 
@@ -84,13 +124,17 @@ interface GameSlotProps {
   game: GameConfig;
   index: number;
   isSaving: boolean;
+  isGameActive: boolean;
+  canLaunch: boolean;
   onUpdate: (updates: Partial<GameConfig>) => void;
   onSave: () => void;
   onRemove: () => void;
+  onLaunch: () => void;
 }
 
-function GameSlot({ game, index, isSaving, onUpdate, onSave, onRemove }: GameSlotProps) {
+function GameSlot({ game, index, isSaving, canLaunch, onUpdate, onSave, onRemove, onLaunch }: GameSlotProps) {
   const [expanded, setExpanded] = useState(true);
+  const isSaved = !!game.id;
 
   return (
     <div className="border rounded-lg p-4 space-y-3">
@@ -154,6 +198,23 @@ function GameSlot({ game, index, isSaving, onUpdate, onSave, onRemove }: GameSlo
               className="mt-1"
             />
           </div>
+
+          {/* Launch button - only for saved games */}
+          {isSaved && (
+            <Button
+              onClick={onLaunch}
+              disabled={!canLaunch}
+              className="w-full h-12 text-base font-bold bg-gradient-to-r from-primary to-accent text-primary-foreground hover:shadow-lg transition-all"
+            >
+              <Rocket className="w-5 h-5 mr-2" />
+              🎮 Lanzar este Juego
+            </Button>
+          )}
+          {!isSaved && (
+            <p className="text-xs text-muted-foreground text-center italic">
+              Guardá el juego primero para poder lanzarlo
+            </p>
+          )}
         </div>
       )}
     </div>
