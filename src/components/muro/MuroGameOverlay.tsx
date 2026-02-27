@@ -3,7 +3,7 @@
  * Ruleta de fotos a pantalla completa con animación y sonido
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playRouletteSound, playRevealSound, stopAllAudio } from '@/lib/gameAudio';
 
@@ -17,8 +17,8 @@ interface MuroGameOverlayProps {
 }
 
 const SPIN_DURATION = 6000; // 6 seconds total spin
-const TICK_INTERVAL_START = 80; // ms between photo changes at start
-const TICK_INTERVAL_END = 600; // ms at end (slowing down)
+const TICK_INTERVAL_START = 45; // ms entre cambios al inicio (más rápido)
+const TICK_INTERVAL_END = 220; // ms al final (sigue sintiéndose dinámico)
 
 export function MuroGameOverlay({
   gameName,
@@ -33,11 +33,21 @@ export function MuroGameOverlay({
   const spinRef = useRef<NodeJS.Timeout | null>(null);
   const hasPlayedSound = useRef(false);
 
+  const roulettePool = useMemo(() => {
+    const uniqueUrls = Array.from(
+      new Set([...allPhotoUrls, ...selectedPhotoUrls].filter((url): url is string => !!url))
+    );
+
+    // Fallback robusto: si por alguna razón allPhotoUrls llega vacío, usamos seleccionadas
+    return uniqueUrls;
+  }, [allPhotoUrls, selectedPhotoUrls]);
+
   // Start spinning animation
   useEffect(() => {
     if (estado === 'revelado') {
       setPhase('revealed');
       setShowRule(true);
+      playRevealSound();
       return;
     }
 
@@ -45,6 +55,7 @@ export function MuroGameOverlay({
 
     setPhase('spinning');
     setShowRule(false);
+    setCurrentSpinPhoto(Math.floor(Math.random() * Math.max(roulettePool.length, 1)));
 
     // Play roulette sound once
     if (!hasPlayedSound.current) {
@@ -65,11 +76,17 @@ export function MuroGameOverlay({
         return;
       }
 
-      // Calculate interval (exponential slowdown)
+      // Slowdown progresivo pero manteniendo ritmo tipo casino
       const progress = elapsed / SPIN_DURATION;
-      const interval = TICK_INTERVAL_START + (TICK_INTERVAL_END - TICK_INTERVAL_START) * (progress * progress);
+      const interval = TICK_INTERVAL_START + (TICK_INTERVAL_END - TICK_INTERVAL_START) * Math.pow(progress, 1.7);
 
-      setCurrentSpinPhoto(prev => (prev + 1) % allPhotoUrls.length);
+      if (roulettePool.length > 1) {
+        setCurrentSpinPhoto(prev => {
+          let next = Math.floor(Math.random() * roulettePool.length);
+          if (next === prev) next = (next + 1) % roulettePool.length;
+          return next;
+        });
+      }
 
       spinRef.current = setTimeout(tick, interval);
     };
@@ -80,7 +97,7 @@ export function MuroGameOverlay({
       if (spinRef.current) clearTimeout(spinRef.current);
       stopAllAudio();
     };
-  }, [estado, allPhotoUrls.length]);
+  }, [estado, roulettePool]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -131,7 +148,7 @@ export function MuroGameOverlay({
       {/* Spinning / Revealed photos */}
       {phase === 'spinning' ? (
         <SpinningRoulette
-          photoUrl={allPhotoUrls[currentSpinPhoto % allPhotoUrls.length]}
+          photoUrl={roulettePool.length > 0 ? roulettePool[currentSpinPhoto % roulettePool.length] : undefined}
         />
       ) : (
         <RevealedPhotos photos={selectedPhotoUrls} />
