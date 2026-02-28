@@ -117,33 +117,49 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
     setIsLoading(false);
   }, [token]);
 
-  // Fetch active game state on init
+  // Fetch active game state — works for anon users thanks to RLS policy
   const fetchActiveGameState = useCallback(async (eventId: string) => {
-    const { data } = await supabase
-      .from('juego_activo')
-      .select('*')
-      .eq('evento_id', eventId)
-      .neq('estado', 'cerrado')
-      .order('created_at', { ascending: false })
-      .limit(1);
+    try {
+      const { data, error } = await supabase
+        .from('juego_activo')
+        .select('*')
+        .eq('evento_id', eventId)
+        .neq('estado', 'cerrado')
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-    if (data && data.length > 0) {
-      const ag = data[0];
-      const { data: gameData } = await supabase
-        .from('juegos_evento')
-        .select('nombre, regla')
-        .eq('id', ag.juego_id)
-        .single();
+      if (error) {
+        console.error('⚠️ Error fetching active game:', error.message);
+        return;
+      }
 
-      setActiveGame({
-        id: ag.id,
-        evento_id: ag.evento_id,
-        juego_id: ag.juego_id,
-        estado: ag.estado as ActiveGameState['estado'],
-        fotos_seleccionadas: (ag.fotos_seleccionadas as string[]) || [],
-        nombre: gameData?.nombre || 'Juego',
-        regla: gameData?.regla || '',
-      });
+      if (data && data.length > 0) {
+        const ag = data[0];
+        const { data: gameData } = await supabase
+          .from('juegos_evento')
+          .select('nombre, regla')
+          .eq('id', ag.juego_id)
+          .single();
+
+        setActiveGame(prev => {
+          // Avoid unnecessary re-renders if state hasn't changed
+          if (prev?.id === ag.id && prev?.estado === ag.estado) return prev;
+          return {
+            id: ag.id,
+            evento_id: ag.evento_id,
+            juego_id: ag.juego_id,
+            estado: ag.estado as ActiveGameState['estado'],
+            fotos_seleccionadas: (ag.fotos_seleccionadas as string[]) || [],
+            nombre: gameData?.nombre || 'Juego',
+            regla: gameData?.regla || '',
+          };
+        });
+      } else {
+        // No active game found — clear state
+        setActiveGame(prev => prev ? null : prev);
+      }
+    } catch (err) {
+      console.error('⚠️ fetchActiveGameState failed:', err);
     }
   }, []);
 
