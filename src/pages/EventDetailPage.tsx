@@ -8,7 +8,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, LayoutGrid, Shield, Settings, Download } from 'lucide-react';
+import { Loader2, LayoutGrid, Shield, Settings, Download, Gamepad2 } from 'lucide-react';
 import { useEventDetails } from '@/hooks/useEventDetails';
 import { QRCodesModal } from '@/components/dashboard/QRCodesModal';
 import {
@@ -73,7 +73,7 @@ export default function EventDetailPage() {
         />
 
         <Tabs defaultValue="content" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-4">
+          <TabsList className="grid w-full max-w-lg grid-cols-5">
             <TabsTrigger value="content" className="gap-2">
               <LayoutGrid className="w-4 h-4" />
               <span className="hidden sm:inline">Contenido</span>
@@ -81,6 +81,10 @@ export default function EventDetailPage() {
             <TabsTrigger value="moderation" className="gap-2">
               <Shield className="w-4 h-4" />
               <span className="hidden sm:inline">Moderación</span>
+            </TabsTrigger>
+            <TabsTrigger value="games" className="gap-2">
+              <Gamepad2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Juegos</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="w-4 h-4" />
@@ -119,11 +123,12 @@ export default function EventDetailPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="games">
+            <EventGames eventoId={event.id} content={content} />
+          </TabsContent>
+
           <TabsContent value="settings">
             <div className="space-y-6">
-              {/* Juegos primero - es lo primero que organiza el anfitrión */}
-              <EventGames eventoId={event.id} content={content} />
-              {/* Configuración general después */}
               <EventSettings
                 event={event}
                 onUpdate={updateEvent}
