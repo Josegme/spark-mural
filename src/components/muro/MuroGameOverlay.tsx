@@ -18,10 +18,6 @@ interface MuroGameOverlayProps {
   onRevealComplete?: () => void;
 }
 
-const SPIN_DURATION = 6000;
-const TICK_INTERVAL_START = 45;
-const TICK_INTERVAL_END = 220;
-
 export function MuroGameOverlay({
   gameName,
   gameRule,
@@ -46,7 +42,7 @@ export function MuroGameOverlay({
     roulettePoolRef.current = pool;
   }, [allPhotoUrls, selectedPhotoUrls]);
 
-  // Sync phase with estado
+  // Sync phase with estado — ONLY manual stop via panel button
   useEffect(() => {
     if (estado === 'esperando') {
       setPhase('waiting');
@@ -55,37 +51,39 @@ export function MuroGameOverlay({
       isSpinning.current = false;
       if (spinRef.current) clearTimeout(spinRef.current);
     } else if (estado === 'revelado') {
-      // Stop spinning and reveal
+      // Operator pressed stop — reveal now
       isSpinning.current = false;
       if (spinRef.current) clearTimeout(spinRef.current);
+      stopAllAudio();
       setPhase('revealed');
       playRevealSound();
       hasPlayedSound.current = false;
       setTimeout(() => setShowRule(true), 800);
     } else if (estado === 'girando' && !isSpinning.current) {
-      // Start spinning indefinitely — operator stops it manually from the panel
+      // Spin indefinitely until operator presses stop
       isSpinning.current = true;
       setPhase('spinning');
       setShowRule(false);
 
+      // Start from a random index
       const pool = roulettePoolRef.current;
-      setCurrentSpinPhoto(Math.floor(Math.random() * Math.max(pool.length, 1)));
+      const startIdx = Math.floor(Math.random() * Math.max(pool.length, 1));
+      setCurrentSpinPhoto(startIdx);
 
       if (!hasPlayedSound.current) {
-        playRouletteSound(60000); // Long duration — will be stopped manually
+        playRouletteSound(120000);
         hasPlayedSound.current = true;
       }
 
+      // Cycle sequentially through ALL photos for true visual randomness
+      let idx = startIdx;
       const tick = () => {
+        if (!isSpinning.current) return;
         const currentPool = roulettePoolRef.current;
         if (currentPool.length > 1) {
-          setCurrentSpinPhoto(prev => {
-            let next = Math.floor(Math.random() * currentPool.length);
-            if (next === prev) next = (next + 1) % currentPool.length;
-            return next;
-          });
+          idx = (idx + 1) % currentPool.length;
+          setCurrentSpinPhoto(idx);
         }
-        // Keep spinning with a consistent interval
         spinRef.current = setTimeout(tick, 120);
       };
 
@@ -114,26 +112,37 @@ export function MuroGameOverlay({
       {/* Background particles */}
       <BackgroundParticles />
 
-      {/* Game title — always visible */}
-      <motion.h1
-        initial={{ opacity: 0, y: -40 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-5xl md:text-7xl font-display font-bold text-white text-center mb-8 drop-shadow-2xl z-10"
-      >
-        🎮 {gameName}
-      </motion.h1>
+      {/* Game title — only during waiting phase */}
+      {phase === 'waiting' && (
+        <motion.h1
+          initial={{ opacity: 0, y: -40 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-5xl md:text-7xl font-display font-bold text-white text-center mb-8 drop-shadow-2xl z-10"
+        >
+          🎮 {gameName}
+        </motion.h1>
+      )}
 
       {/* Phase: Waiting */}
       {phase === 'waiting' && <WaitingPhase onFakePress={() => {}} />}
 
-      {/* Phase: Spinning */}
+      {/* Phase: Spinning — game name as small header */}
       {phase === 'spinning' && (
-        <SpinningRoulette
-          photoUrl={pool.length > 0 ? pool[currentSpinPhoto % pool.length] : undefined}
-        />
+        <>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-xl md:text-2xl font-bold text-white/60 mb-4 z-10"
+          >
+            🎮 {gameName}
+          </motion.p>
+          <SpinningRoulette
+            photoUrl={pool.length > 0 ? pool[currentSpinPhoto % pool.length] : undefined}
+          />
+        </>
       )}
 
-      {/* Phase: Revealed — selected photos + rule */}
+      {/* Phase: Revealed — selected photos + rule, no title overlap */}
       {phase === 'revealed' && (
         <RevealedPhotos photos={selectedPhotoUrls} rule={gameRule} showRule={showRule} />
       )}

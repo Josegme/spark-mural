@@ -230,7 +230,12 @@ export function useEventGames(eventoId: string | undefined) {
     const game = games.find(g => g.id === activeGame.juego_id);
     const cantidadFotos = game?.cantidad_fotos || activeGame.cantidad_fotos || 2;
 
-    const shuffled = [...photoUrls].sort(() => Math.random() - 0.5);
+    // Fisher-Yates shuffle for truly uniform randomness
+    const shuffled = [...photoUrls];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
     const selected = shuffled.slice(0, cantidadFotos);
 
     try {
