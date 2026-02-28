@@ -2,7 +2,7 @@
  * PICKEVENT - Hook para gestionar Juegos del Evento
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -33,6 +33,7 @@ export function useEventGames(eventoId: string | undefined) {
   const [activeGame, setActiveGame] = useState<ActiveGame | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const launchInFlightRef = useRef(false);
   const { toast } = useToast();
 
   // Fetch games
@@ -76,6 +77,7 @@ export function useEventGames(eventoId: string | undefined) {
       .select('*')
       .eq('evento_id', eventoId)
       .neq('estado', 'cerrado')
+      .order('updated_at', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -185,11 +187,14 @@ export function useEventGames(eventoId: string | undefined) {
       return;
     }
 
+    if (launchInFlightRef.current) return;
+    launchInFlightRef.current = true;
+
     try {
       // Close any existing active game first
       await supabase
         .from('juego_activo')
-        .update({ estado: 'cerrado' })
+        .update({ estado: 'cerrado', updated_at: new Date().toISOString() })
         .eq('evento_id', eventoId)
         .neq('estado', 'cerrado');
 
@@ -206,6 +211,14 @@ export function useEventGames(eventoId: string | undefined) {
 
       if (error) throw error;
 
+      // Safety cleanup: ensure only this game row remains active
+      await supabase
+        .from('juego_activo')
+        .update({ estado: 'cerrado', updated_at: new Date().toISOString() })
+        .eq('evento_id', eventoId)
+        .neq('estado', 'cerrado')
+        .neq('id', data.id);
+
       setActiveGame({
         id: data.id,
         evento_id: data.evento_id,
@@ -220,6 +233,8 @@ export function useEventGames(eventoId: string | undefined) {
       toast({ title: '🎮 ¡Juego lanzado!', description: `"${game.nombre}" aparece en el muro. ¡Girá la ruleta cuando quieras!` });
     } catch {
       toast({ title: 'Error', description: 'No se pudo lanzar el juego', variant: 'destructive' });
+    } finally {
+      launchInFlightRef.current = false;
     }
   }, [eventoId, toast]);
 
@@ -269,7 +284,7 @@ export function useEventGames(eventoId: string | undefined) {
       const { error } = await supabase
         .from('juego_activo')
         .update({ estado: 'revelado', updated_at: new Date().toISOString() })
-        .eq('id', activeGame.id)
+        .eq('evento_id', eventoId)
         .eq('estado', 'girando');
 
       if (error) throw error;
@@ -282,13 +297,14 @@ export function useEventGames(eventoId: string | undefined) {
 
   // Close game
   const closeGame = useCallback(async () => {
-    if (!activeGame) return;
+    if (!activeGame || !eventoId) return;
 
     try {
       const { error } = await supabase
         .from('juego_activo')
         .update({ estado: 'cerrado', updated_at: new Date().toISOString() })
-        .eq('id', activeGame.id);
+        .eq('evento_id', eventoId)
+        .neq('estado', 'cerrado');
 
       if (error) throw error;
       setActiveGame(null);
@@ -296,7 +312,7 @@ export function useEventGames(eventoId: string | undefined) {
     } catch {
       toast({ title: 'Error', description: 'No se pudo cerrar el juego', variant: 'destructive' });
     }
-  }, [activeGame, toast]);
+  }, [activeGame, eventoId, toast]);
 
   // Update local game state
   const updateGameLocal = useCallback((index: number, updates: Partial<GameConfig>) => {
