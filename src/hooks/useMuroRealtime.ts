@@ -275,8 +275,18 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
       }
     }, 10000);
 
-    return () => clearInterval(contentPoll);
-  }, [fetchContents]);
+    // Polling fallback for game state every 3s — realtime may not deliver reliably
+    const gamePoll = setInterval(() => {
+      if (eventIdRef.current) {
+        fetchActiveGameState(eventIdRef.current);
+      }
+    }, 3000);
+
+    return () => {
+      clearInterval(contentPoll);
+      clearInterval(gamePoll);
+    };
+  }, [fetchContents, fetchActiveGameState]);
 
   // Inicialización
   useEffect(() => {
