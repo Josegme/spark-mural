@@ -42,28 +42,11 @@ export function MuroGameOverlay({
     );
   }, [allPhotoUrls, selectedPhotoUrls]);
 
-  // Fake button on muro triggers spin via Supabase
-  const handleFakeButtonPress = useCallback(async () => {
-    if (!activeGameId) return;
-    // This triggers the spin from the wall — same as pressing from the panel
-    // The panel's spinGame does the photo selection, but from the wall we just
-    // signal readiness. We update estado to trigger the panel to spin.
-    // Actually, the wall button should also work independently — select random photos and spin.
-    const photoUrls = allPhotoUrls.filter(u => !!u);
-    if (photoUrls.length < 2) return;
-
-    const shuffled = [...photoUrls].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, 4); // Max 4, will be limited by game config
-
-    await supabase
-      .from('juego_activo')
-      .update({
-        estado: 'girando',
-        fotos_seleccionadas: selected,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', activeGameId);
-  }, [activeGameId, allPhotoUrls]);
+  // Fake button — purely decorative, does nothing. The real spin is triggered from the dashboard panel.
+  const handleFakeButtonPress = useCallback(() => {
+    // Intentionally empty — this button is just for show during the event.
+    // The host "pretends" to press it while the operator triggers the spin from the panel.
+  }, []);
 
   // Sync phase with estado
   useEffect(() => {
