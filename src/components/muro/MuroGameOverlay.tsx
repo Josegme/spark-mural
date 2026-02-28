@@ -126,20 +126,11 @@ export function MuroGameOverlay({
       {/* Phase: Waiting */}
       {phase === 'waiting' && <WaitingPhase onFakePress={() => {}} />}
 
-      {/* Phase: Spinning — game name as small header */}
+      {/* Phase: Spinning */}
       {phase === 'spinning' && (
-        <>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-xl md:text-2xl font-bold text-white/60 mb-4 z-10"
-          >
-            🎮 {gameName}
-          </motion.p>
-          <SpinningRoulette
-            photoUrl={pool.length > 0 ? pool[currentSpinPhoto % pool.length] : undefined}
-          />
-        </>
+        <SpinningRoulette
+          photoUrl={pool.length > 0 ? pool[currentSpinPhoto % pool.length] : undefined}
+        />
       )}
 
       {/* Phase: Revealed — selected photos + rule, no title overlap */}
