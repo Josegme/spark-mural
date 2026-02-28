@@ -1,0 +1,2 @@
+ALTER TABLE public.juego_activo DROP CONSTRAINT IF EXISTS juego_activo_estado_check;
+ALTER TABLE public.juego_activo ADD CONSTRAINT juego_activo_estado_check CHECK (estado IN ('esperando', 'girando', 'revelado', 'cerrado'));

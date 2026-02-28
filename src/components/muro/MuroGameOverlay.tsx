@@ -96,6 +96,14 @@ export function MuroGameOverlay({
           playRevealSound();
           hasPlayedSound.current = false;
           setTimeout(() => setShowRule(true), 800);
+          // Update DB to "revelado" so panel knows spin is done
+          if (activeGameId) {
+            supabase
+              .from('juego_activo')
+              .update({ estado: 'revelado', updated_at: new Date().toISOString() })
+              .eq('id', activeGameId)
+              .then();
+          }
           return;
         }
 
