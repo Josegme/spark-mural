@@ -37,7 +37,7 @@ interface ActiveGameState {
   id: string;
   evento_id: string;
   juego_id: string;
-  estado: 'girando' | 'revelado' | 'cerrado';
+  estado: 'esperando' | 'girando' | 'revelado' | 'cerrado';
   fotos_seleccionadas: string[];
   nombre?: string;
   regla?: string;
@@ -139,7 +139,7 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
         id: ag.id,
         evento_id: ag.evento_id,
         juego_id: ag.juego_id,
-        estado: ag.estado as 'girando' | 'revelado',
+        estado: ag.estado as ActiveGameState['estado'],
         fotos_seleccionadas: (ag.fotos_seleccionadas as string[]) || [],
         nombre: gameData?.nombre || 'Juego',
         regla: gameData?.regla || '',
@@ -255,7 +255,7 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
             id: raw.id as string,
             evento_id: raw.evento_id as string,
             juego_id: raw.juego_id as string,
-            estado: estado as 'girando' | 'revelado',
+            estado: estado as ActiveGameState['estado'],
             fotos_seleccionadas: (raw.fotos_seleccionadas as string[]) || [],
             nombre: gameData?.nombre || 'Juego',
             regla: gameData?.regla || '',

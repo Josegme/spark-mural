@@ -108,6 +108,7 @@ export default function MuroPage() {
               allPhotoUrls={photoContents.filter(c => c.url_original).map(c => c.url_original!)}
               selectedPhotoUrls={activeGame.fotos_seleccionadas}
               estado={activeGame.estado}
+              activeGameId={activeGame.id}
             />
           )}
 

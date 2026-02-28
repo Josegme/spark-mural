@@ -1,7 +1,6 @@
 /**
  * PICKEVENT - Juegos del Evento
- * Configuración y lanzamiento de juegos interactivos en la pestaña Config
- * Sin límite de juegos. El botón "Lanzar" está dentro de cada juego guardado.
+ * Configuración y lanzamiento de juegos interactivos
  */
 
 import { useState } from 'react';
@@ -9,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Gamepad2, Save, Trash2, Plus, ChevronDown, ChevronUp, Rocket, X, AlertTriangle } from 'lucide-react';
+import { Gamepad2, Save, Trash2, Plus, ChevronDown, ChevronUp, Rocket, X, AlertTriangle, Dices } from 'lucide-react';
 import { useEventGames, type GameConfig } from '@/hooks/useEventGames';
 import type { EventContent } from '@/hooks/useEventDetails';
 
@@ -29,6 +28,7 @@ export function EventGames({ eventoId, content }: EventGamesProps) {
     addGame,
     removeGame,
     launchGame,
+    spinGame,
     closeGame,
   } = useEventGames(eventoId);
 
@@ -56,24 +56,46 @@ export function EventGames({ eventoId, content }: EventGamesProps) {
           Juegos del Evento
         </CardTitle>
         <CardDescription>
-          Configurá los juegos interactivos antes del evento. Durante el evento, usá el botón "Lanzar" de cada juego para dispararlos en el muro.
+          Configurá los juegos interactivos. Lanzá uno para mostrarlo en el muro y girá la ruleta cuando quieras.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Active game indicator */}
+        {/* Active game control panel */}
         {isGameActive && (
-          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Gamepad2 className="w-5 h-5 text-primary animate-pulse" />
-              <div>
-                <p className="font-medium text-sm">🎮 Juego activo: {activeGame?.nombre}</p>
-                <p className="text-xs text-muted-foreground">Se está mostrando en el muro</p>
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Gamepad2 className="w-5 h-5 text-primary animate-pulse" />
+                <div>
+                  <p className="font-medium text-sm">🎮 Juego activo: {activeGame?.nombre}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Estado: {activeGame?.estado === 'esperando' ? '⏳ Esperando giro' : activeGame?.estado === 'girando' ? '🎰 Girando...' : '🎉 Revelado'}
+                  </p>
+                </div>
               </div>
+              <Button size="sm" variant="destructive" onClick={closeGame}>
+                <X className="w-4 h-4 mr-1" />
+                Cerrar Juego
+              </Button>
             </div>
-            <Button size="sm" variant="destructive" onClick={closeGame}>
-              <X className="w-4 h-4 mr-1" />
-              Cerrar Juego
-            </Button>
+
+            {/* Spin button — available when esperando or revelado (re-spin) */}
+            {(activeGame?.estado === 'esperando' || activeGame?.estado === 'revelado') && (
+              <Button
+                onClick={() => spinGame(photoUrls)}
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-primary to-accent text-primary-foreground hover:shadow-lg transition-all animate-pulse"
+                disabled={photoUrls.length < 2}
+              >
+                <Dices className="w-6 h-6 mr-2" />
+                {activeGame?.estado === 'esperando' ? '🎰 ¡Girar Ruleta!' : '🔄 Volver a Girar'}
+              </Button>
+            )}
+
+            {activeGame?.estado === 'girando' && (
+              <p className="text-center text-sm text-muted-foreground animate-pulse">
+                🎰 La ruleta está girando...
+              </p>
+            )}
           </div>
         )}
 
@@ -199,7 +221,6 @@ function GameSlot({ game, index, isSaving, canLaunch, onUpdate, onSave, onRemove
             />
           </div>
 
-          {/* Launch button - only for saved games */}
           {isSaved && (
             <Button
               onClick={onLaunch}

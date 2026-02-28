@@ -19,7 +19,7 @@ export interface ActiveGame {
   id: string;
   evento_id: string;
   juego_id: string;
-  estado: 'girando' | 'revelado' | 'cerrado';
+  estado: 'esperando' | 'girando' | 'revelado' | 'cerrado';
   fotos_seleccionadas: string[];
   nombre?: string;
   regla?: string;
@@ -130,10 +130,9 @@ export function useEventGames(eventoId: string | undefined) {
     }
   }, [eventoId, toast]);
 
-  // Launch a game
+  // Launch a game — enters "esperando" state (shows name + button on wall)
   const launchGame = useCallback(async (game: GameConfig, photoUrls: string[]) => {
     if (!eventoId || !game.id) {
-      // Need to save first
       toast({ title: 'Guardá el juego primero', description: 'Hacé clic en "Guardar" antes de lanzar', variant: 'destructive' });
       return;
     }
@@ -142,10 +141,6 @@ export function useEventGames(eventoId: string | undefined) {
       toast({ title: 'Fotos insuficientes', description: 'Necesitás al menos 2 fotos de invitados para poder lanzar un juego', variant: 'destructive' });
       return;
     }
-
-    // Select random photos
-    const shuffled = [...photoUrls].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, game.cantidad_fotos);
 
     try {
       // Close any existing active game first
@@ -160,8 +155,8 @@ export function useEventGames(eventoId: string | undefined) {
         .insert({
           evento_id: eventoId,
           juego_id: game.id,
-          estado: 'girando',
-          fotos_seleccionadas: selected,
+          estado: 'esperando',
+          fotos_seleccionadas: [],
         })
         .select()
         .single();
@@ -172,18 +167,50 @@ export function useEventGames(eventoId: string | undefined) {
         id: data.id,
         evento_id: data.evento_id,
         juego_id: data.juego_id,
-        estado: 'girando',
-        fotos_seleccionadas: selected,
+        estado: 'esperando',
+        fotos_seleccionadas: [],
         nombre: game.nombre,
         regla: game.regla,
         cantidad_fotos: game.cantidad_fotos,
       });
 
-      toast({ title: '🎮 ¡Juego lanzado!', description: `"${game.nombre}" está en la pantalla` });
+      toast({ title: '🎮 ¡Juego lanzado!', description: `"${game.nombre}" aparece en el muro. ¡Girá la ruleta cuando quieras!` });
     } catch {
       toast({ title: 'Error', description: 'No se pudo lanzar el juego', variant: 'destructive' });
     }
   }, [eventoId, toast]);
+
+  // Spin the roulette — selects random photos and transitions to "girando"
+  const spinGame = useCallback(async (photoUrls: string[]) => {
+    if (!activeGame || !eventoId) return;
+
+    const game = games.find(g => g.id === activeGame.juego_id);
+    const cantidadFotos = game?.cantidad_fotos || activeGame.cantidad_fotos || 2;
+
+    const shuffled = [...photoUrls].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, cantidadFotos);
+
+    try {
+      const { error } = await supabase
+        .from('juego_activo')
+        .update({
+          estado: 'girando',
+          fotos_seleccionadas: selected,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', activeGame.id);
+
+      if (error) throw error;
+
+      setActiveGame(prev => prev ? {
+        ...prev,
+        estado: 'girando',
+        fotos_seleccionadas: selected,
+      } : null);
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo girar la ruleta', variant: 'destructive' });
+    }
+  }, [activeGame, eventoId, games, toast]);
 
   // Close game
   const closeGame = useCallback(async () => {
@@ -236,6 +263,7 @@ export function useEventGames(eventoId: string | undefined) {
     isSaving,
     saveGame,
     launchGame,
+    spinGame,
     closeGame,
     updateGameLocal,
     addGame,
