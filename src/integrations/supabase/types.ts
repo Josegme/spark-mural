@@ -1085,6 +1085,7 @@ export type Database = {
       }
     }
     Functions: {
+      can_read_public_event: { Args: { _evento_id: string }; Returns: boolean }
       event_accepts_uploads: { Args: { _evento_id: string }; Returns: boolean }
       evento_has_valid_token: {
         Args: { _evento_id: string; _token: string }
