@@ -3,7 +3,7 @@
  * Fases: esperando (nombre + botón ficticio) → girando (ruleta) → revelado (fotos + regla)
  */
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playRouletteSound, playRevealSound, stopAllAudio } from '@/lib/gameAudio';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,34 +35,43 @@ export function MuroGameOverlay({
   const [showRule, setShowRule] = useState(false);
   const spinRef = useRef<NodeJS.Timeout | null>(null);
   const hasPlayedSound = useRef(false);
+  const isSpinning = useRef(false);
 
-  const roulettePool = useMemo(() => {
-    return Array.from(
+  // Use ref for roulette pool to avoid restarting spin effect
+  const roulettePoolRef = useRef<string[]>([]);
+  useEffect(() => {
+    const pool = Array.from(
       new Set([...allPhotoUrls, ...selectedPhotoUrls].filter((url): url is string => !!url))
     );
+    roulettePoolRef.current = pool;
   }, [allPhotoUrls, selectedPhotoUrls]);
 
-  // Fake button — purely decorative, does nothing. The real spin is triggered from the dashboard panel.
-  const handleFakeButtonPress = useCallback(() => {
-    // Intentionally empty — this button is just for show during the event.
-    // The host "pretends" to press it while the operator triggers the spin from the panel.
-  }, []);
+  // Fake button — purely decorative
+  const handleFakeButtonPress = useCallback(() => {}, []);
 
-  // Sync phase with estado
+  // Sync phase with estado — only depend on estado, not on roulettePool
   useEffect(() => {
     if (estado === 'esperando') {
       setPhase('waiting');
       setShowRule(false);
       hasPlayedSound.current = false;
+      isSpinning.current = false;
       if (spinRef.current) clearTimeout(spinRef.current);
     } else if (estado === 'revelado') {
+      // Direct reveal (e.g. page reload while revealed)
+      isSpinning.current = false;
+      if (spinRef.current) clearTimeout(spinRef.current);
       setPhase('revealed');
       setShowRule(true);
       playRevealSound();
-    } else if (estado === 'girando') {
+    } else if (estado === 'girando' && !isSpinning.current) {
+      // Only start spin once
+      isSpinning.current = true;
       setPhase('spinning');
       setShowRule(false);
-      setCurrentSpinPhoto(Math.floor(Math.random() * Math.max(roulettePool.length, 1)));
+
+      const pool = roulettePoolRef.current;
+      setCurrentSpinPhoto(Math.floor(Math.random() * Math.max(pool.length, 1)));
 
       if (!hasPlayedSound.current) {
         playRouletteSound(SPIN_DURATION);
@@ -75,11 +84,12 @@ export function MuroGameOverlay({
         const elapsed = Date.now() - startTime;
 
         if (elapsed >= SPIN_DURATION) {
+          isSpinning.current = false;
           setPhase('revealed');
           playRevealSound();
           hasPlayedSound.current = false;
           setTimeout(() => setShowRule(true), 800);
-          // Update DB to "revelado" so panel knows spin is done
+          // Update DB to "revelado"
           if (activeGameId) {
             supabase
               .from('juego_activo')
@@ -92,11 +102,12 @@ export function MuroGameOverlay({
 
         const progress = elapsed / SPIN_DURATION;
         const interval = TICK_INTERVAL_START + (TICK_INTERVAL_END - TICK_INTERVAL_START) * Math.pow(progress, 1.7);
+        const currentPool = roulettePoolRef.current;
 
-        if (roulettePool.length > 1) {
+        if (currentPool.length > 1) {
           setCurrentSpinPhoto(prev => {
-            let next = Math.floor(Math.random() * roulettePool.length);
-            if (next === prev) next = (next + 1) % roulettePool.length;
+            let next = Math.floor(Math.random() * currentPool.length);
+            if (next === prev) next = (next + 1) % currentPool.length;
             return next;
           });
         }
@@ -110,43 +121,24 @@ export function MuroGameOverlay({
     return () => {
       if (spinRef.current) clearTimeout(spinRef.current);
     };
-  }, [estado, roulettePool]);
+  }, [estado, activeGameId]);
 
   useEffect(() => {
     return () => {
       hasPlayedSound.current = false;
+      isSpinning.current = false;
       stopAllAudio();
     };
   }, []);
 
   if (estado === 'cerrado') return null;
 
+  const pool = roulettePoolRef.current;
+
   return (
     <div className="absolute inset-0 z-50 bg-black flex flex-col items-center justify-center overflow-hidden">
       {/* Background particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-2 h-2 rounded-full bg-primary/30"
-            initial={{
-              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 800),
-              y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 600),
-              scale: 0,
-            }}
-            animate={{
-              y: [null, Math.random() * -200],
-              scale: [0, 1, 0],
-              opacity: [0, 0.6, 0],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
-            }}
-          />
-        ))}
-      </div>
+      <BackgroundParticles />
 
       {/* Game title — always visible */}
       <motion.h1
@@ -157,43 +149,54 @@ export function MuroGameOverlay({
         🎮 {gameName}
       </motion.h1>
 
-      {/* Phase: Waiting — show fake button */}
-      {phase === 'waiting' && (
-        <WaitingPhase onFakePress={handleFakeButtonPress} />
-      )}
+      {/* Phase: Waiting */}
+      {phase === 'waiting' && <WaitingPhase onFakePress={handleFakeButtonPress} />}
 
-      {/* Phase: Spinning — roulette */}
+      {/* Phase: Spinning */}
       {phase === 'spinning' && (
         <SpinningRoulette
-          photoUrl={roulettePool.length > 0 ? roulettePool[currentSpinPhoto % roulettePool.length] : undefined}
+          photoUrl={pool.length > 0 ? pool[currentSpinPhoto % pool.length] : undefined}
         />
       )}
 
-      {/* Phase: Revealed — selected photos */}
+      {/* Phase: Revealed — selected photos + rule */}
       {phase === 'revealed' && (
-        <RevealedPhotos photos={selectedPhotoUrls} />
+        <RevealedPhotos photos={selectedPhotoUrls} rule={gameRule} showRule={showRule} />
       )}
-
-      {/* Rule text */}
-      <AnimatePresence>
-        {showRule && (
-          <motion.div
-            initial={{ opacity: 0, y: 40, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="mt-8 max-w-4xl mx-auto px-8 z-10"
-          >
-            <div className="bg-primary/20 backdrop-blur-md border border-primary/40 rounded-2xl px-8 py-6">
-              <p className="text-2xl md:text-4xl font-bold text-white text-center leading-relaxed">
-                🎉 {gameRule}
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
 
+/* ── Background particles ── */
+function BackgroundParticles() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {Array.from({ length: 20 }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-2 h-2 rounded-full bg-primary/30"
+          initial={{
+            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 800),
+            y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 600),
+            scale: 0,
+          }}
+          animate={{
+            y: [null, Math.random() * -200],
+            scale: [0, 1, 0],
+            opacity: [0, 0.6, 0],
+          }}
+          transition={{
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── Waiting phase ── */
 function WaitingPhase({ onFakePress }: { onFakePress: () => void }) {
   return (
     <motion.div
@@ -228,6 +231,7 @@ function WaitingPhase({ onFakePress }: { onFakePress: () => void }) {
   );
 }
 
+/* ── Spinning roulette ── */
 function SpinningRoulette({ photoUrl }: { photoUrl?: string }) {
   if (!photoUrl) return null;
   return (
@@ -256,35 +260,115 @@ function SpinningRoulette({ photoUrl }: { photoUrl?: string }) {
   );
 }
 
-function RevealedPhotos({ photos }: { photos: string[] }) {
-  const gridClass = photos.length === 1 ? 'grid-cols-1' :
-    photos.length === 2 ? 'grid-cols-2' :
-    photos.length === 3 ? 'grid-cols-3' : 'grid-cols-2';
+/* ── Revealed photos with rule ── */
+function RevealedPhotos({ photos, rule, showRule }: { photos: string[]; rule: string; showRule: boolean }) {
+  const count = photos.length;
 
   return (
-    <div className={`grid ${gridClass} gap-4 z-10 px-8 max-w-5xl`}>
+    <div className="z-10 flex flex-col items-center justify-center w-full h-full px-4 max-w-[95vw] max-h-[80vh]">
+      {/* Photos layout */}
+      <div className="relative flex items-center justify-center w-full flex-1 min-h-0">
+        {count === 1 && <SinglePhoto url={photos[0]} />}
+        {count === 2 && <TwoPhotos photos={photos} />}
+        {count === 3 && <ThreePhotos photos={photos} />}
+        {count >= 4 && <FourPhotos photos={photos.slice(0, 4)} />}
+      </div>
+
+      {/* Rule overlay */}
+      <AnimatePresence>
+        {showRule && rule && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="mt-4 w-full max-w-4xl mx-auto"
+          >
+            <div className="bg-primary/20 backdrop-blur-md border border-primary/40 rounded-2xl px-8 py-6">
+              <p className="text-2xl md:text-5xl font-bold text-white text-center leading-relaxed">
+                🎉 {rule}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ── Photo with glow wrapper ── */
+function PhotoCard({ url, index, className }: { url: string; index: number; className?: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.5, rotateY: 180 }}
+      animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+      transition={{
+        delay: index * 0.3,
+        duration: 0.6,
+        type: 'spring',
+        stiffness: 200,
+      }}
+      className={className}
+    >
+      <div className="relative w-full h-full">
+        <div className="absolute -inset-2 bg-gradient-to-r from-primary to-accent rounded-2xl blur-md opacity-50" />
+        <img
+          src={url}
+          alt={`Ganador ${index + 1}`}
+          className="relative w-full h-full object-cover rounded-xl border-4 border-white/50 shadow-2xl"
+          crossOrigin="anonymous"
+        />
+      </div>
+    </motion.div>
+  );
+}
+
+/* 1 photo — big and centered */
+function SinglePhoto({ url }: { url: string }) {
+  return (
+    <div className="w-[70vh] max-w-[90vw] aspect-square">
+      <PhotoCard url={url} index={0} className="w-full h-full" />
+    </div>
+  );
+}
+
+/* 2 photos — side by side */
+function TwoPhotos({ photos }: { photos: string[] }) {
+  return (
+    <div className="flex gap-6 items-center justify-center w-full max-h-[65vh]">
       {photos.map((url, i) => (
-        <motion.div
-          key={url}
-          initial={{ opacity: 0, scale: 0.5, rotateY: 180 }}
-          animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-          transition={{
-            delay: i * 0.3,
-            duration: 0.6,
-            type: 'spring',
-            stiffness: 200,
-          }}
-        >
-          <div className="relative">
-            <div className="absolute -inset-2 bg-gradient-to-r from-primary to-accent rounded-2xl blur-md opacity-50" />
-            <img
-              src={url}
-              alt={`Ganador ${i + 1}`}
-              className="relative w-full aspect-square object-cover rounded-xl border-4 border-white/50 shadow-2xl"
-              crossOrigin="anonymous"
-            />
+        <div key={url} className="w-[40vw] max-w-[45vh] aspect-square">
+          <PhotoCard url={url} index={i} className="w-full h-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* 3 photos — triangle: 1 top center, 2 bottom */
+function ThreePhotos({ photos }: { photos: string[] }) {
+  return (
+    <div className="flex flex-col items-center gap-4 w-full">
+      <div className="w-[35vw] max-w-[35vh] aspect-square">
+        <PhotoCard url={photos[0]} index={0} className="w-full h-full" />
+      </div>
+      <div className="flex gap-6 items-center justify-center">
+        {photos.slice(1).map((url, i) => (
+          <div key={url} className="w-[35vw] max-w-[35vh] aspect-square">
+            <PhotoCard url={url} index={i + 1} className="w-full h-full" />
           </div>
-        </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* 4 photos — 2x2 grid */
+function FourPhotos({ photos }: { photos: string[] }) {
+  return (
+    <div className="grid grid-cols-2 gap-4 max-h-[65vh]">
+      {photos.map((url, i) => (
+        <div key={url} className="w-[35vw] max-w-[32vh] aspect-square">
+          <PhotoCard url={url} index={i} className="w-full h-full" />
+        </div>
       ))}
     </div>
   );

@@ -141,15 +141,17 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
           .eq('id', ag.juego_id)
           .single();
 
+        const newFotos = (ag.fotos_seleccionadas as string[]) || [];
         setActiveGame(prev => {
-          // Avoid unnecessary re-renders if state hasn't changed
-          if (prev?.id === ag.id && prev?.estado === ag.estado) return prev;
+          // Avoid unnecessary re-renders if nothing changed
+          if (prev?.id === ag.id && prev?.estado === ag.estado && 
+              JSON.stringify(prev?.fotos_seleccionadas) === JSON.stringify(newFotos)) return prev;
           return {
             id: ag.id,
             evento_id: ag.evento_id,
             juego_id: ag.juego_id,
             estado: ag.estado as ActiveGameState['estado'],
-            fotos_seleccionadas: (ag.fotos_seleccionadas as string[]) || [],
+            fotos_seleccionadas: newFotos,
             nombre: gameData?.nombre || 'Juego',
             regla: gameData?.regla || '',
           };
