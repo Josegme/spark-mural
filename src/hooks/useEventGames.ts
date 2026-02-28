@@ -101,6 +101,49 @@ export function useEventGames(eventoId: string | undefined) {
   useEffect(() => { fetchGames(); }, [fetchGames]);
   useEffect(() => { if (games.length > 0) fetchActiveGame(); }, [games, fetchActiveGame]);
 
+  // Realtime subscription for active game state changes (so dashboard panel stays in sync)
+  useEffect(() => {
+    if (!eventoId) return;
+
+    const channel = supabase
+      .channel(`games-panel-${eventoId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'juego_activo',
+          filter: `evento_id=eq.${eventoId}`,
+        },
+        (payload) => {
+          const raw = payload.new as Record<string, unknown>;
+          const estado = raw?.estado as string;
+
+          if (estado === 'cerrado' || payload.eventType === 'DELETE') {
+            setActiveGame(null);
+            return;
+          }
+
+          const game = games.find(g => g.id === (raw.juego_id as string));
+          setActiveGame({
+            id: raw.id as string,
+            evento_id: raw.evento_id as string,
+            juego_id: raw.juego_id as string,
+            estado: estado as ActiveGame['estado'],
+            fotos_seleccionadas: (raw.fotos_seleccionadas as string[]) || [],
+            nombre: game?.nombre,
+            regla: game?.regla,
+            cantidad_fotos: game?.cantidad_fotos,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [eventoId, games]);
+
   // Save a game config
   const saveGame = useCallback(async (game: GameConfig, index: number) => {
     if (!eventoId) return;
