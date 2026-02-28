@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Gamepad2, Save, Trash2, Plus, ChevronDown, ChevronUp, Rocket, X, AlertTriangle, Dices } from 'lucide-react';
+import { Gamepad2, Save, Trash2, Plus, ChevronDown, ChevronUp, Rocket, X, AlertTriangle, Dices, Square } from 'lucide-react';
 import { useEventGames, type GameConfig } from '@/hooks/useEventGames';
 import type { EventContent } from '@/hooks/useEventDetails';
 
@@ -29,6 +29,7 @@ export function EventGames({ eventoId, content }: EventGamesProps) {
     removeGame,
     launchGame,
     spinGame,
+    stopGame,
     closeGame,
   } = useEventGames(eventoId);
 
@@ -92,9 +93,13 @@ export function EventGames({ eventoId, content }: EventGamesProps) {
             )}
 
             {activeGame?.estado === 'girando' && (
-              <p className="text-center text-sm text-muted-foreground animate-pulse">
-                🎰 La ruleta está girando...
-              </p>
+              <Button
+                onClick={stopGame}
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground hover:shadow-lg transition-all animate-pulse"
+              >
+                <Square className="w-6 h-6 mr-2" />
+                🛑 ¡Detener Ruleta!
+              </Button>
             )}
           </div>
         )}

@@ -255,6 +255,24 @@ export function useEventGames(eventoId: string | undefined) {
     }
   }, [activeGame, eventoId, games, toast]);
 
+  // Stop the roulette — transitions to "revelado" showing the selected photos
+  const stopGame = useCallback(async () => {
+    if (!activeGame) return;
+
+    try {
+      const { error } = await supabase
+        .from('juego_activo')
+        .update({ estado: 'revelado', updated_at: new Date().toISOString() })
+        .eq('id', activeGame.id);
+
+      if (error) throw error;
+      setActiveGame(prev => prev ? { ...prev, estado: 'revelado' } : null);
+      toast({ title: '🎉 ¡Revelado!', description: 'Las fotos seleccionadas se muestran en el muro' });
+    } catch {
+      toast({ title: 'Error', description: 'No se pudo detener la ruleta', variant: 'destructive' });
+    }
+  }, [activeGame, toast]);
+
   // Close game
   const closeGame = useCallback(async () => {
     if (!activeGame) return;
@@ -307,6 +325,7 @@ export function useEventGames(eventoId: string | undefined) {
     saveGame,
     launchGame,
     spinGame,
+    stopGame,
     closeGame,
     updateGameLocal,
     addGame,
