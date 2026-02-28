@@ -260,15 +260,17 @@ export function useEventGames(eventoId: string | undefined) {
     }
   }, [activeGame, eventoId, games, toast]);
 
-  // Stop the roulette — transitions to "revelado" showing the selected photos
-  const stopGame = useCallback(async () => {
-    if (!activeGame) return;
+  // Stop the roulette — ONLY manual trigger from panel button
+  const stopGame = useCallback(async (trigger: 'manual' | 'system' = 'system') => {
+    if (trigger !== 'manual') return;
+    if (!activeGame || activeGame.estado !== 'girando') return;
 
     try {
       const { error } = await supabase
         .from('juego_activo')
         .update({ estado: 'revelado', updated_at: new Date().toISOString() })
-        .eq('id', activeGame.id);
+        .eq('id', activeGame.id)
+        .eq('estado', 'girando');
 
       if (error) throw error;
       setActiveGame(prev => prev ? { ...prev, estado: 'revelado' } : null);

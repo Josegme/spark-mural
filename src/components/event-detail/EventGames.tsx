@@ -94,7 +94,7 @@ export function EventGames({ eventoId, content }: EventGamesProps) {
 
             {activeGame?.estado === 'girando' && (
               <Button
-                onClick={stopGame}
+                onClick={() => stopGame('manual')}
                 className="w-full h-14 text-lg font-bold bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground hover:shadow-lg transition-all animate-pulse"
               >
                 <Square className="w-6 h-6 mr-2" />
