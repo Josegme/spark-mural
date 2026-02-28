@@ -125,6 +125,7 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
         .select('*')
         .eq('evento_id', eventId)
         .neq('estado', 'cerrado')
+        .order('updated_at', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -254,30 +255,21 @@ export function useMuroRealtime(token: string): UseMuroRealtimeReturn {
           filter: `evento_id=eq.${eventId}`,
         },
         async (payload) => {
-          const raw = payload.new as Record<string, unknown>;
-          const estado = raw.estado as string;
-
-          if (estado === 'cerrado' || payload.eventType === 'DELETE') {
-            setActiveGame(null);
+          // Always re-fetch canonical active game to avoid stale/duplicated rows issues
+          if (payload.eventType === 'DELETE') {
+            await fetchActiveGameState(eventId);
             return;
           }
 
-          // Fetch game config for name/rule
-          const { data: gameData } = await supabase
-            .from('juegos_evento')
-            .select('nombre, regla')
-            .eq('id', raw.juego_id as string)
-            .single();
+          const raw = payload.new as Record<string, unknown>;
+          const estado = raw?.estado as string | undefined;
 
-          setActiveGame({
-            id: raw.id as string,
-            evento_id: raw.evento_id as string,
-            juego_id: raw.juego_id as string,
-            estado: estado as ActiveGameState['estado'],
-            fotos_seleccionadas: (raw.fotos_seleccionadas as string[]) || [],
-            nombre: gameData?.nombre || 'Juego',
-            regla: gameData?.regla || '',
-          });
+          if (estado === 'cerrado') {
+            await fetchActiveGameState(eventId);
+            return;
+          }
+
+          await fetchActiveGameState(eventId);
         }
       )
       .subscribe((status) => {
