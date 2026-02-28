@@ -46,10 +46,7 @@ export function MuroGameOverlay({
     roulettePoolRef.current = pool;
   }, [allPhotoUrls, selectedPhotoUrls]);
 
-  // Fake button — purely decorative
-  const handleFakeButtonPress = useCallback(() => {}, []);
-
-  // Sync phase with estado — only depend on estado, not on roulettePool
+  // Sync phase with estado
   useEffect(() => {
     if (estado === 'esperando') {
       setPhase('waiting');
@@ -58,14 +55,15 @@ export function MuroGameOverlay({
       isSpinning.current = false;
       if (spinRef.current) clearTimeout(spinRef.current);
     } else if (estado === 'revelado') {
-      // Direct reveal (e.g. page reload while revealed)
+      // Stop spinning and reveal
       isSpinning.current = false;
       if (spinRef.current) clearTimeout(spinRef.current);
       setPhase('revealed');
-      setShowRule(true);
       playRevealSound();
+      hasPlayedSound.current = false;
+      setTimeout(() => setShowRule(true), 800);
     } else if (estado === 'girando' && !isSpinning.current) {
-      // Only start spin once
+      // Start spinning indefinitely — operator stops it manually from the panel
       isSpinning.current = true;
       setPhase('spinning');
       setShowRule(false);
@@ -74,36 +72,12 @@ export function MuroGameOverlay({
       setCurrentSpinPhoto(Math.floor(Math.random() * Math.max(pool.length, 1)));
 
       if (!hasPlayedSound.current) {
-        playRouletteSound(SPIN_DURATION);
+        playRouletteSound(60000); // Long duration — will be stopped manually
         hasPlayedSound.current = true;
       }
 
-      const startTime = Date.now();
-
       const tick = () => {
-        const elapsed = Date.now() - startTime;
-
-        if (elapsed >= SPIN_DURATION) {
-          isSpinning.current = false;
-          setPhase('revealed');
-          playRevealSound();
-          hasPlayedSound.current = false;
-          setTimeout(() => setShowRule(true), 800);
-          // Update DB to "revelado"
-          if (activeGameId) {
-            supabase
-              .from('juego_activo')
-              .update({ estado: 'revelado', updated_at: new Date().toISOString() })
-              .eq('id', activeGameId)
-              .then();
-          }
-          return;
-        }
-
-        const progress = elapsed / SPIN_DURATION;
-        const interval = TICK_INTERVAL_START + (TICK_INTERVAL_END - TICK_INTERVAL_START) * Math.pow(progress, 1.7);
         const currentPool = roulettePoolRef.current;
-
         if (currentPool.length > 1) {
           setCurrentSpinPhoto(prev => {
             let next = Math.floor(Math.random() * currentPool.length);
@@ -111,17 +85,17 @@ export function MuroGameOverlay({
             return next;
           });
         }
-
-        spinRef.current = setTimeout(tick, interval);
+        // Keep spinning with a consistent interval
+        spinRef.current = setTimeout(tick, 120);
       };
 
-      spinRef.current = setTimeout(tick, TICK_INTERVAL_START);
+      spinRef.current = setTimeout(tick, 80);
     }
 
     return () => {
       if (spinRef.current) clearTimeout(spinRef.current);
     };
-  }, [estado, activeGameId]);
+  }, [estado]);
 
   useEffect(() => {
     return () => {
@@ -150,7 +124,7 @@ export function MuroGameOverlay({
       </motion.h1>
 
       {/* Phase: Waiting */}
-      {phase === 'waiting' && <WaitingPhase onFakePress={handleFakeButtonPress} />}
+      {phase === 'waiting' && <WaitingPhase onFakePress={() => {}} />}
 
       {/* Phase: Spinning */}
       {phase === 'spinning' && (
