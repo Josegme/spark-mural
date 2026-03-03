@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { stepPersonalizationSchema, StepPersonalizationData } from '@/lib/validations/event';
-import { IA_STYLES } from '@/lib/constants';
+import { IA_STYLES, FEATURE_FLAGS } from '@/lib/constants';
 import { usePublicPrices } from '@/hooks/usePublicPrices';
 import { formatPrice, cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -139,9 +139,11 @@ export function StepPersonalization({ data, onNext, onBack }: StepPersonalizatio
         {/* Toggle Premium */}
         <div className={cn(
           'p-6 rounded-2xl border-2 transition-all duration-300',
-          esPremium
-            ? 'border-accent bg-gradient-to-br from-accent/10 to-primary/10 shadow-glow-accent'
-            : 'border-border bg-card'
+          !FEATURE_FLAGS.IA_ENABLED
+            ? 'border-border bg-card opacity-75'
+            : esPremium
+              ? 'border-accent bg-gradient-to-br from-accent/10 to-primary/10 shadow-glow-accent'
+              : 'border-border bg-card'
         )}>
           <FormField
             control={form.control}
@@ -151,19 +153,26 @@ export function StepPersonalization({ data, onNext, onBack }: StepPersonalizatio
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     'p-2 rounded-xl',
-                    esPremium ? 'bg-gradient-premium' : 'bg-muted'
+                    esPremium && FEATURE_FLAGS.IA_ENABLED ? 'bg-gradient-premium' : 'bg-muted'
                   )}>
                     <Wand2 className={cn(
                       'w-6 h-6',
-                      esPremium ? 'text-foreground' : 'text-muted-foreground'
+                      esPremium && FEATURE_FLAGS.IA_ENABLED ? 'text-foreground' : 'text-muted-foreground'
                     )} />
                   </div>
                   <div>
                     <FormLabel className="text-lg font-semibold cursor-pointer">
                       Modo Premium + IA
+                      {!FEATURE_FLAGS.IA_ENABLED && (
+                        <span className="ml-2 text-xs font-medium px-2 py-0.5 rounded-full bg-accent/20 text-accent-foreground">
+                          🚀 Próximamente
+                        </span>
+                      )}
                     </FormLabel>
                     <FormDescription className="text-sm">
-                      Transformá las fotos con inteligencia artificial
+                      {FEATURE_FLAGS.IA_ENABLED
+                        ? 'Transformá las fotos con inteligencia artificial'
+                        : 'Estamos preparando esta función. ¡Muy pronto podrás transformar fotos con IA!'}
                     </FormDescription>
                   </div>
                 </div>
@@ -173,8 +182,14 @@ export function StepPersonalization({ data, onNext, onBack }: StepPersonalizatio
                   </div>
                   <FormControl>
                     <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                      checked={FEATURE_FLAGS.IA_ENABLED ? field.value : false}
+                      onCheckedChange={(checked) => {
+                        if (!FEATURE_FLAGS.IA_ENABLED) {
+                          toast.info('🚀 La función de IA estará disponible muy pronto. ¡Mantenete atento!');
+                          return;
+                        }
+                        field.onChange(checked);
+                      }}
                     />
                   </FormControl>
                 </div>
@@ -182,8 +197,8 @@ export function StepPersonalization({ data, onNext, onBack }: StepPersonalizatio
             )}
           />
 
-          {/* Opciones de IA (solo si premium) */}
-          {esPremium && (
+          {/* Opciones de IA (solo si premium Y feature habilitado) */}
+          {esPremium && FEATURE_FLAGS.IA_ENABLED && (
             <div className="mt-6 pt-6 border-t border-border/50 space-y-6 animate-fade-in-up">
               {/* Tema IA */}
               <FormField
