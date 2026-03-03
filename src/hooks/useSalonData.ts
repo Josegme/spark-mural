@@ -108,7 +108,7 @@ export function useSalonData() {
         return null;
       }
 
-      // Obtener info del plan
+      // Obtener info del plan y precio real desde configuracion_global
       if (suscripcion?.plan_id) {
         const { data: plan } = await supabase
           .from('planes')
@@ -116,11 +116,31 @@ export function useSalonData() {
           .eq('id', suscripcion.plan_id)
           .single();
 
+        // Leer precio real desde configuracion_global (fuente de verdad del Super Admin)
+        let precioReal = plan?.precio_sugerido || suscripcion.precio_mensual;
+        const planNombre = (plan?.nombre || 'Plan').toLowerCase();
+
+        const { data: preciosGlobal } = await supabase.rpc('get_global_config', {
+          config_key: 'precios_suscripciones',
+        });
+
+        if (preciosGlobal) {
+          const precios = preciosGlobal as Record<string, number>;
+          // Mapear nombre del plan a clave de configuracion_global
+          if (planNombre.includes('starter') && precios.starter) {
+            precioReal = precios.starter;
+          } else if (planNombre.includes('profesional') && precios.profesional) {
+            precioReal = precios.profesional;
+          } else if (planNombre.includes('ilimitado') && precios.ilimitado) {
+            precioReal = precios.ilimitado;
+          }
+        }
+
         return {
           ...suscripcion,
           plan_nombre: plan?.nombre || 'Plan',
           limite_eventos_mes: plan?.limite_eventos_mes || 20,
-          precio_plan_actual: plan?.precio_sugerido || suscripcion.precio_mensual,
+          precio_plan_actual: precioReal,
         };
       }
 
