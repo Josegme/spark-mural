@@ -16,8 +16,7 @@ import {
   ExternalLink,
   Loader2
 } from 'lucide-react';
-import { formatPrice, formatDate } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
+import { formatPrice } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { SalonSubscription as SalonSubscriptionType, SalonStats } from '@/hooks/useSalonData';
 
@@ -36,8 +35,6 @@ export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscr
     setIsPayingSubscription(true);
     
     try {
-      // TODO: Implement subscription payment flow with Mercado Pago
-      // For now, show a message that they should contact support
       toast.info(
         'Para renovar tu suscripción, contactá a tu ejecutivo de cuenta o escribinos a soporte@pickevent.com',
         { duration: 6000 }
@@ -107,6 +104,36 @@ export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscr
     return <CheckCircle2 className="w-8 h-8 text-green-500" />;
   };
 
+  // Formatear fecha de timestamp ISO de forma segura
+  const formatSafeDate = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch {
+      return '—';
+    }
+  };
+
+  // Calcular período de validez
+  const getPeriodoValidez = () => {
+    try {
+      const inicio = new Date(suscripcion.fecha_inicio);
+      const fin = new Date(suscripcion.fecha_vencimiento);
+      if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) return null;
+      const diffMs = fin.getTime() - inicio.getTime();
+      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      const meses = Math.round(diffDays / 30);
+      return meses > 1 ? `${meses} meses` : '1 mes';
+    } catch {
+      return null;
+    }
+  };
+
+  // Precio a mostrar: precio real del plan (no el histórico de suscripciones)
+  const precioMostrar = suscripcion.precio_plan_actual || suscripcion.precio_mensual;
+  const periodoValidez = getPeriodoValidez();
+
   return (
     <Card className={`${stats.alertaCritica ? 'border-destructive/50' : stats.alertaVencimiento ? 'border-warning/50' : 'border-green-500/30'}`}>
       <CardHeader>
@@ -125,7 +152,7 @@ export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscr
           <div>
             <h3 className="text-2xl font-bold">Plan {suscripcion.plan_nombre || 'Premium'}</h3>
             <p className="text-muted-foreground">
-              {formatPrice(suscripcion.precio_mensual)}/mes
+              {formatPrice(precioMostrar)}/mes
             </p>
           </div>
         </div>
@@ -137,7 +164,7 @@ export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscr
             <div className="flex items-center gap-2 mt-1">
               <Calendar className="w-4 h-4 text-muted-foreground" />
               <span className="font-medium">
-                {formatDate(suscripcion.fecha_proximo_pago)}
+                {formatSafeDate(suscripcion.fecha_proximo_pago)}
               </span>
             </div>
           </div>
@@ -147,7 +174,7 @@ export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscr
             <div className="flex items-center gap-2 mt-1">
               <Calendar className="w-4 h-4 text-muted-foreground" />
               <span className="font-medium">
-                {formatDate(suscripcion.fecha_vencimiento)}
+                {formatSafeDate(suscripcion.fecha_vencimiento)}
               </span>
             </div>
           </div>
@@ -165,12 +192,24 @@ export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscr
           </div>
         )}
 
-        {/* Límite de eventos */}
-        <div className="p-3 bg-muted rounded-lg">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">Eventos incluidos</span>
-            <span className="font-bold">{suscripcion.limite_eventos_mes}/mes</span>
+        {/* Límite de eventos + Validez */}
+        <div className="space-y-2">
+          <div className="p-3 bg-muted rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Eventos incluidos</span>
+              <span className="font-bold">
+                {suscripcion.limite_eventos_mes === -1 ? '∞' : suscripcion.limite_eventos_mes}/mes
+              </span>
+            </div>
           </div>
+          {periodoValidez && (
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Validez del plan</span>
+                <span className="font-bold">{periodoValidez}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Botón de Pago */}

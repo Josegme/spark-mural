@@ -22,7 +22,8 @@ import {
   SalonEventos,
   SalonEventCards,
   SalonQuickActions,
-  SubscriptionPaymentWidget
+  SubscriptionPaymentWidget,
+  SalonGuide
 } from '@/components/salon';
 
 export default function SalonPage() {
@@ -124,12 +125,13 @@ export default function SalonPage() {
           </TabsContent>
 
           <TabsContent value="suscripcion">
-            <div className="max-w-md">
+            <div className="max-w-md space-y-6">
               <SalonSubscription 
                 suscripcion={suscripcion} 
                 stats={stats}
                 isLoading={isLoading} 
               />
+              <SalonGuide />
             </div>
           </TabsContent>
         </Tabs>
