@@ -7,9 +7,10 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MainLayout } from '@/components/layout';
-import { EVENT_TYPES } from '@/lib/constants';
+import { EVENT_TYPES, FEATURE_FLAGS } from '@/lib/constants';
 import { usePublicPrices } from '@/hooks/usePublicPrices';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { Check, Sparkles, QrCode, Tv, Download, Camera, MessageSquare, Heart, Gamepad2, Users, Trophy, Hand } from 'lucide-react';
 import { EnterpriseBanner } from '@/components/landing/EnterpriseBanner';
 
@@ -344,9 +345,9 @@ function PlansSection() {
           </Card>
 
           {/* Plan Premium */}
-          <Card className="relative overflow-hidden border-2 border-primary shadow-glow">
-            <div className="absolute top-0 right-0 badge-premium rounded-bl-xl rounded-tr-lg px-4 py-1">
-              ⭐ Recomendado
+          <Card className={cn("relative overflow-hidden border-2", FEATURE_FLAGS.IA_ENABLED ? "border-primary shadow-glow" : "border-border opacity-75")}>
+            <div className={cn("absolute top-0 right-0 rounded-bl-xl rounded-tr-lg px-4 py-1", FEATURE_FLAGS.IA_ENABLED ? "badge-premium" : "bg-muted text-muted-foreground text-sm font-medium")}>
+              {FEATURE_FLAGS.IA_ENABLED ? '⭐ Recomendado' : '🚀 Próximamente'}
             </div>
             <CardHeader className="pb-4">
               <CardTitle className="font-display text-2xl">{prices.premium.nombre}</CardTitle>
@@ -371,9 +372,19 @@ function PlansSection() {
                   </li>
                 ))}
               </ul>
-              <Button className="w-full btn-hero" asChild>
-                <Link to="/crear-evento?plan=premium">Elegir Premium</Link>
-              </Button>
+              {FEATURE_FLAGS.IA_ENABLED ? (
+                <Button className="w-full btn-hero" asChild>
+                  <Link to="/crear-evento?plan=premium">Elegir Premium</Link>
+                </Button>
+              ) : (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => toast.info('🚀 La función Premium + IA estará disponible muy pronto. ¡Mantenete atento!')}
+                >
+                  Próximamente
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>
