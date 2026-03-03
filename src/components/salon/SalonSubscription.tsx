@@ -133,6 +133,7 @@ export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscr
   // Precio a mostrar: precio real del plan (no el histórico de suscripciones)
   const precioMostrar = suscripcion.precio_plan_actual || suscripcion.precio_mensual;
   const periodoValidez = getPeriodoValidez();
+  const DURACION_SUSCRIPCION = 3; // trimestral
 
   return (
     <Card className={`${stats.alertaCritica ? 'border-destructive/50' : stats.alertaVencimiento ? 'border-warning/50' : 'border-green-500/30'}`}>
@@ -152,7 +153,7 @@ export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscr
           <div>
             <h3 className="text-2xl font-bold">Plan {suscripcion.plan_nombre || 'Premium'}</h3>
             <p className="text-muted-foreground">
-              {formatPrice(precioMostrar)}/mes
+              {formatPrice(precioMostrar)} / {DURACION_SUSCRIPCION} meses
             </p>
           </div>
         </div>
@@ -198,18 +199,16 @@ export function SalonSubscription({ suscripcion, stats, isLoading }: SalonSubscr
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Eventos incluidos</span>
               <span className="font-bold">
-                {suscripcion.limite_eventos_mes === -1 ? '∞' : suscripcion.limite_eventos_mes}/mes
+                {suscripcion.limite_eventos_mes === -1 ? '∞' : suscripcion.limite_eventos_mes} / {DURACION_SUSCRIPCION} meses
               </span>
             </div>
           </div>
-          {periodoValidez && (
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Validez del plan</span>
-                <span className="font-bold">{periodoValidez}</span>
-              </div>
+          <div className="p-3 bg-muted rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Validez del plan</span>
+              <span className="font-bold">{periodoValidez || `${DURACION_SUSCRIPCION} meses`}</span>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Botón de Pago */}

@@ -26,7 +26,7 @@ export function SalonGuide() {
   return (
     <Card className="border-border">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-display">📖 Guía Rápida</CardTitle>
+        <CardTitle className="text-lg font-display text-center">📖 Guía Rápida</CardTitle>
       </CardHeader>
       <CardContent>
         <Accordion type="multiple" className="w-full">
