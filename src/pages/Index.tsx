@@ -10,7 +10,7 @@ import { MainLayout } from '@/components/layout';
 import { EVENT_TYPES } from '@/lib/constants';
 import { usePublicPrices } from '@/hooks/usePublicPrices';
 import { formatPrice } from '@/lib/utils';
-import { Check, Sparkles, QrCode, Tv, Download, Camera, MessageSquare, Heart } from 'lucide-react';
+import { Check, Sparkles, QrCode, Tv, Download, Camera, MessageSquare, Heart, Gamepad2, Users, Trophy, Hand } from 'lucide-react';
 import { EnterpriseBanner } from '@/components/landing/EnterpriseBanner';
 
 export default function Index() {
@@ -18,6 +18,7 @@ export default function Index() {
     <MainLayout>
       <HeroSection />
       <HowItWorksSection />
+      <GamesSection />
       <FeaturesSection />
       <PlansSection />
       <UseCasesSection />
@@ -156,6 +157,84 @@ function HowItWorksSection() {
             </div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function GamesSection() {
+  const gameSteps = [
+    {
+      icon: Gamepad2,
+      title: 'Creá tus Juegos',
+      description: 'Desde el panel del evento, armá juegos con reglas divertidas como "El que sale acá paga la próxima ronda" o "Baila 30 segundos".',
+    },
+    {
+      icon: Users,
+      title: 'Los Invitados Participan',
+      description: 'Las fotos que suben los invitados al muro son las que entran en la ruleta. ¡Más fotos, más diversión!',
+    },
+    {
+      icon: Hand,
+      title: 'El Anfitrión Controla',
+      description: 'Vos decidís cuándo girar y cuándo frenar la ruleta. Todo desde tu celular, sin interrumpir la fiesta.',
+    },
+    {
+      icon: Trophy,
+      title: 'Se Revelan los Ganadores',
+      description: 'Las fotos ganadoras aparecen en pantalla gigante con la prenda asignada. ¡Risas aseguradas!',
+    },
+  ];
+
+  return (
+    <section className="py-20">
+      <div className="container">
+        <div className="text-center space-y-4 mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent-foreground text-sm font-medium">
+            <Gamepad2 className="w-4 h-4" />
+            <span>Nueva Funcionalidad</span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-display font-bold">
+            🎰 Juegos Interactivos en Vivo
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Lanzá una ruleta con las fotos de tus invitados y ponele onda a tu evento con prendas y desafíos
+          </p>
+        </div>
+
+        {/* Tarjeta larga explicativa */}
+        <Card className="max-w-5xl mx-auto border-2 border-primary/20 overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 p-8 md:p-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {gameSteps.map((step, index) => (
+                <div 
+                  key={step.title}
+                  className="flex gap-4 animate-fade-in-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center flex-shrink-0">
+                    <step.icon className="w-6 h-6 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-semibold mb-1">{step.title}</h3>
+                    <p className="text-sm text-muted-foreground">{step.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-10 text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                Incluido en todos los planes · Sin límite de juegos por evento
+              </p>
+              <Button className="btn-hero" asChild>
+                <Link to="/crear-evento">
+                  🎉 Probalo en tu Próximo Evento
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </Card>
       </div>
     </section>
   );
