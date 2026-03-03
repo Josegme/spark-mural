@@ -30,6 +30,7 @@ export interface SalonSubscription {
   plan_id: string;
   plan_nombre?: string;
   precio_mensual: number;
+  precio_plan_actual?: number;
   fecha_inicio: string;
   fecha_vencimiento: string;
   fecha_proximo_pago: string;
@@ -111,7 +112,7 @@ export function useSalonData() {
       if (suscripcion?.plan_id) {
         const { data: plan } = await supabase
           .from('planes')
-          .select('nombre, limite_eventos_mes')
+          .select('nombre, limite_eventos_mes, precio_sugerido')
           .eq('id', suscripcion.plan_id)
           .single();
 
@@ -119,6 +120,7 @@ export function useSalonData() {
           ...suscripcion,
           plan_nombre: plan?.nombre || 'Plan',
           limite_eventos_mes: plan?.limite_eventos_mes || 20,
+          precio_plan_actual: plan?.precio_sugerido || suscripcion.precio_mensual,
         };
       }
 

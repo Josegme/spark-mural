@@ -91,12 +91,13 @@ serve(async (req) => {
     if (payment.status === 'approved') {
       console.log('Payment approved! Activating subscription for salon:', salonId);
 
-      // Calcular fechas de suscripción
+      // Calcular fechas de suscripción (validez: 3 meses)
+      const SUBSCRIPTION_DURATION_MONTHS = 3;
       const now = new Date();
-      const nextMonth = new Date(now);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-      const nextPaymentDate = new Date(nextMonth);
-      nextPaymentDate.setDate(1); // Próximo pago el 1ro del siguiente mes
+      const expirationDate = new Date(now);
+      expirationDate.setMonth(expirationDate.getMonth() + SUBSCRIPTION_DURATION_MONTHS);
+      const nextPaymentDate = new Date(expirationDate);
+      nextPaymentDate.setDate(1); // Próximo pago el 1ro del mes de vencimiento
 
       // Actualizar el tenant con la nueva suscripción
       const { error: tenantError } = await supabase
@@ -105,7 +106,7 @@ serve(async (req) => {
           estado: 'activo',
           limite_eventos_mes: planEventsLimit,
           precio_mensual: payment.transaction_amount,
-          fecha_vencimiento: nextMonth.toISOString(),
+          fecha_vencimiento: expirationDate.toISOString(),
           updated_at: now.toISOString(),
         })
         .eq('id', salonId);
@@ -131,7 +132,7 @@ serve(async (req) => {
           .update({
             estado: 'activo',
             precio_mensual: payment.transaction_amount,
-            fecha_vencimiento: nextMonth.toISOString(),
+            fecha_vencimiento: expirationDate.toISOString(),
             fecha_proximo_pago: nextPaymentDate.toISOString(),
           })
           .eq('id', existingSub.id);
@@ -158,7 +159,7 @@ serve(async (req) => {
               plan_id: plan.id,
               precio_mensual: payment.transaction_amount,
               fecha_inicio: now.toISOString(),
-              fecha_vencimiento: nextMonth.toISOString(),
+              fecha_vencimiento: expirationDate.toISOString(),
               fecha_proximo_pago: nextPaymentDate.toISOString(),
               estado: 'activo',
             });

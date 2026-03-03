@@ -11,3 +11,4 @@ export { SalonEventCards } from './SalonEventCards';
 export { SalonQuickActions } from './SalonQuickActions';
 export { PlanSelector } from './PlanSelector';
 export { SubscriptionPaymentWidget } from './SubscriptionPaymentWidget';
+export { SalonGuide } from './SalonGuide';
