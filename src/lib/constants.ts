@@ -180,6 +180,7 @@ export const EVENT_PRICES = {
       'Fotos y videos ilimitados',
       'Mensajes flotantes',
       'Álbum descargable (30 días)',
+      'Juegos interactivos en vivo',
     ],
   },
   premium: {
