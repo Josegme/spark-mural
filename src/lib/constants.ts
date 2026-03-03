@@ -3,6 +3,11 @@
  */
 
 // URLs base (se actualizarán en producción)
+// Feature flags
+export const FEATURE_FLAGS = {
+  IA_ENABLED: false, // Cambiar a true cuando la IA esté lista
+} as const;
+
 export const APP_CONFIG = {
   APP_NAME: 'PickEvent',
   APP_DESCRIPTION: 'Sistema de Muros Interactivos para Eventos',
@@ -189,7 +194,7 @@ export const EVENT_PRICES = {
     descripcion: 'Con transformación de fotos',
     features: [
       'Todo lo del plan Básico',
-      'IA generativa para fotos',
+      'IA generativa para fotos (próximamente)',
       'Elegí tema y estilo',
       'Efecto transición en muro',
       'Fotos originales + transformadas',
