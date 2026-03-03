@@ -1,5 +1,5 @@
 /**
- * PICKEVENT - Informe para Stakeholders (PDF Exportable)
+ * PICKEVENT - Informe Completo (PDF Exportable)
  * Optimizado para impresión/exportación a PDF vía Ctrl+P
  */
 
@@ -31,97 +31,446 @@ export default function StakeholderReportPage() {
         <section className="report-cover">
           <div className="report-cover-content">
             <div className="report-logo-badge">PickEvent</div>
-            <h1 className="report-cover-title">Informe para Stakeholders</h1>
+            <h1 className="report-cover-title">Informe Completo de Producto</h1>
             <p className="report-cover-subtitle">
               Plataforma SaaS de Muros Interactivos para Eventos
             </p>
             <div className="report-cover-meta">
               <span>Versión 1.0</span>
               <span className="report-cover-divider">•</span>
-              <span>Febrero 2026</span>
+              <span>Marzo 2026</span>
               <span className="report-cover-divider">•</span>
-              <span>Confidencial</span>
+              <span>pickevent.site</span>
             </div>
           </div>
         </section>
 
-        {/* Page 1: Overview */}
+        {/* Section 1: ¿Qué es PickEvent? */}
         <section className="report-page">
-          <h2 className="report-h2">1. Resumen Ejecutivo</h2>
+          <h2 className="report-h2">1. ¿Qué es PickEvent?</h2>
           <p className="report-text">
-            <strong>PickEvent</strong> es una plataforma SaaS de <strong>muros interactivos en tiempo real</strong> para eventos. 
-            Los invitados escanean un código QR desde su celular (sin instalar ninguna app), suben fotos, videos y mensajes que 
-            aparecen <strong>instantáneamente</strong> en la pantalla del evento. Todo el contenido queda disponible como 
-            álbum digital descargable durante 30 días.
+            <strong>PickEvent</strong> es una plataforma digital que transforma cualquier evento en una 
+            experiencia interactiva y colaborativa. Funciona como un <strong>muro en tiempo real</strong> donde 
+            los invitados pueden subir fotos, videos y mensajes desde su celular — sin descargar ninguna aplicación — 
+            y todo aparece instantáneamente en la pantalla del evento.
+          </p>
+          <p className="report-text">
+            El organizador crea su evento en la plataforma, recibe <strong>3 códigos QR únicos</strong> y los comparte 
+            con sus invitados. A partir de ese momento, cada foto, video o mensaje que suban los invitados se proyecta 
+            en vivo en el muro del evento, creando una experiencia compartida, dinámica y memorable.
+          </p>
+          <p className="report-text">
+            Al finalizar el evento, todo el contenido queda disponible como un <strong>álbum digital descargable</strong> 
+            durante 30 días, permitiendo que todos los participantes conserven los recuerdos.
           </p>
 
-          <h3 className="report-h3">Propuesta de Valor</h3>
-          <div className="report-grid-3">
-            <div className="report-value-card">
-              <div className="report-value-icon">📱</div>
-              <strong>Sin App</strong>
-              <p>Solo QR + navegador</p>
-            </div>
-            <div className="report-value-card">
-              <div className="report-value-icon">⚡</div>
-              <strong>Tiempo Real</strong>
-              <p>WebSockets instantáneos</p>
-            </div>
-            <div className="report-value-card">
-              <div className="report-value-icon">🎨</div>
-              <strong>IA Generativa</strong>
-              <p>11 estilos artísticos</p>
-            </div>
-            <div className="report-value-card">
-              <div className="report-value-icon">🌎</div>
-              <strong>Multi-país</strong>
-              <p>AR, BR, PY + Global</p>
-            </div>
-            <div className="report-value-card">
-              <div className="report-value-icon">💼</div>
-              <strong>Multi-modelo</strong>
-              <p>B2C + B2B + Comisiones</p>
-            </div>
-            <div className="report-value-card">
-              <div className="report-value-icon">🔒</div>
-              <strong>Seguro</strong>
-              <p>RLS + Auth + Roles</p>
-            </div>
-          </div>
-
-          <h2 className="report-h2 mt-8">2. ¿Cómo Funciona?</h2>
+          <h3 className="report-h3">¿Cómo funciona en 4 pasos?</h3>
           <div className="report-flow">
             <div className="report-flow-step">
               <div className="report-flow-number">1</div>
               <strong>Crear Evento</strong>
-              <p>Fecha, duración, personalización</p>
+              <p>Nombre, fecha, duración y personalización</p>
             </div>
             <div className="report-flow-arrow">→</div>
             <div className="report-flow-step">
               <div className="report-flow-number">2</div>
               <strong>Recibir 3 QR</strong>
-              <p>Pantalla, Invitados, Descarga</p>
+              <p>Pantalla, Invitados y Descarga</p>
             </div>
             <div className="report-flow-arrow">→</div>
             <div className="report-flow-step">
               <div className="report-flow-number">3</div>
               <strong>Evento en Vivo</strong>
-              <p>Fotos y mensajes instantáneos</p>
+              <p>Los invitados suben contenido en tiempo real</p>
             </div>
             <div className="report-flow-arrow">→</div>
             <div className="report-flow-step">
               <div className="report-flow-number">4</div>
               <strong>Álbum Digital</strong>
-              <p>Descarga por 30 días</p>
+              <p>Descarga disponible por 30 días</p>
+            </div>
+          </div>
+
+          <h3 className="report-h3">Los 3 códigos QR</h3>
+          <table className="report-table">
+            <thead>
+              <tr>
+                <th>QR</th>
+                <th>Propósito</th>
+                <th>¿Quién lo usa?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>📺 QR Pantalla</strong></td>
+                <td>Abre el muro interactivo en la TV o proyector del evento</td>
+                <td>El organizador / DJ / salón</td>
+              </tr>
+              <tr>
+                <td><strong>📱 QR Invitados</strong></td>
+                <td>Permite a los invitados subir fotos, videos y mensajes</td>
+                <td>Todos los invitados</td>
+              </tr>
+              <tr>
+                <td><strong>📥 QR Descarga</strong></td>
+                <td>Accede al álbum digital para descargar todo el contenido</td>
+                <td>Invitados y organizador</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        {/* Section 2: Valor Agregado */}
+        <section className="report-page">
+          <h2 className="report-h2">2. Valor Agregado</h2>
+          <p className="report-text">
+            PickEvent no es solo una herramienta tecnológica, es una <strong>nueva forma de vivir los eventos</strong>. 
+            El valor que aporta se refleja en múltiples dimensiones:
+          </p>
+
+          <div className="report-grid-2">
+            <div className="report-feature-card">
+              <h4>🎉 Para el Organizador</h4>
+              <ul>
+                <li>Diferencial competitivo: ofrece algo único que otros eventos no tienen</li>
+                <li>Contenido generado por los invitados sin esfuerzo</li>
+                <li>Álbum digital automático con todo lo capturado</li>
+                <li>Estadísticas del evento: fotos, videos, mensajes, likes</li>
+                <li>Setup en minutos, sin técnicos ni equipamiento extra</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>📱 Para los Invitados</h4>
+              <ul>
+                <li>Participación activa: pasan de ser espectadores a protagonistas</li>
+                <li>No necesitan descargar ninguna app — solo escanean el QR</li>
+                <li>Ven sus fotos aparecer al instante en la pantalla del evento</li>
+                <li>Pueden dar likes y enviar mensajes animados</li>
+                <li>Acceden al álbum completo después del evento</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>🏢 Para Salones de Fiestas</h4>
+              <ul>
+                <li>Servicio premium que pueden ofrecer a sus clientes</li>
+                <li>Fuente de ingreso adicional o valor agregado incluido</li>
+                <li>Gestión centralizada de múltiples eventos</li>
+                <li>Calendario integrado con control de disponibilidad</li>
+                <li>Reportes de uso y estadísticas mensuales</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>💼 Para Vendedores (Asistentes)</h4>
+              <ul>
+                <li>Modelo de negocio propio con comisiones por venta</li>
+                <li>Generan links de pago para sus clientes</li>
+                <li>Dashboards con métricas de ventas y comisiones</li>
+                <li>Operan de forma independiente en su zona</li>
+                <li>Sin inversión inicial: solo venden y cobran</li>
+              </ul>
+            </div>
+          </div>
+
+          <h3 className="report-h3 mt-8">Beneficios Clave de la Plataforma</h3>
+          <div className="report-grid-3">
+            <div className="report-value-card">
+              <div className="report-value-icon">⚡</div>
+              <strong>Tiempo Real</strong>
+              <p>Las fotos aparecen en la pantalla en segundos</p>
+            </div>
+            <div className="report-value-card">
+              <div className="report-value-icon">📱</div>
+              <strong>Sin App</strong>
+              <p>Solo QR + navegador del celular</p>
+            </div>
+            <div className="report-value-card">
+              <div className="report-value-icon">🎨</div>
+              <strong>IA Generativa</strong>
+              <p>11 estilos artísticos para fotos (Premium)</p>
+            </div>
+            <div className="report-value-card">
+              <div className="report-value-icon">📥</div>
+              <strong>Álbum Digital</strong>
+              <p>Descarga por 30 días post-evento</p>
+            </div>
+            <div className="report-value-card">
+              <div className="report-value-icon">🎮</div>
+              <strong>Juegos en Vivo</strong>
+              <p>Mini-juegos interactivos durante el evento</p>
+            </div>
+            <div className="report-value-card">
+              <div className="report-value-icon">🔒</div>
+              <strong>Seguro</strong>
+              <p>Tokens únicos por evento, contenido protegido</p>
             </div>
           </div>
         </section>
 
-        {/* Page 2: Business Model */}
+        {/* Section 3: Diferenciación */}
         <section className="report-page">
-          <h2 className="report-h2">3. Modelo de Negocio</h2>
+          <h2 className="report-h2">3. ¿En qué se diferencia PickEvent?</h2>
+          <p className="report-text">
+            En el mercado existen alternativas como hashtags de Instagram, grupos de WhatsApp o fotógrafos tradicionales.
+            PickEvent se diferencia en varios aspectos fundamentales:
+          </p>
 
-          <h3 className="report-h3">3.1 Eventos Individuales (B2C)</h3>
+          <table className="report-table">
+            <thead>
+              <tr>
+                <th>Aspecto</th>
+                <th>Alternativas Tradicionales</th>
+                <th>PickEvent</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Participación</strong></td>
+                <td>Pasiva — cada uno sube a su red social</td>
+                <td>Activa — contenido en pantalla al instante</td>
+              </tr>
+              <tr>
+                <td><strong>Instalación</strong></td>
+                <td>Requiere apps, cuentas, permisos</td>
+                <td>Solo escanear QR, cero instalaciones</td>
+              </tr>
+              <tr>
+                <td><strong>Contenido unificado</strong></td>
+                <td>Disperso en múltiples plataformas</td>
+                <td>Todo centralizado en un álbum digital</td>
+              </tr>
+              <tr>
+                <td><strong>Experiencia en vivo</strong></td>
+                <td>No hay proyección ni interacción grupal</td>
+                <td>Muro en pantalla con fotos, mensajes y juegos</td>
+              </tr>
+              <tr>
+                <td><strong>IA creativa</strong></td>
+                <td>No disponible</td>
+                <td>11 estilos artísticos aplicados a las fotos</td>
+              </tr>
+              <tr>
+                <td><strong>Privacidad</strong></td>
+                <td>Contenido público en redes sociales</td>
+                <td>Contenido privado, accesible solo con token</td>
+              </tr>
+              <tr>
+                <td><strong>Recuerdos post-evento</strong></td>
+                <td>Fotos perdidas en chats y stories</td>
+                <td>Álbum descargable completo por 30 días</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 className="report-h3 mt-8">Ventajas Competitivas</h3>
+          <div className="report-grid-2">
+            <div className="report-feature-card">
+              <h4>🌎 Multi-país y Multi-moneda</h4>
+              <ul>
+                <li>Operación en Argentina, Brasil, Paraguay y mercados internacionales</li>
+                <li>Integración con Mercado Pago (LATAM) y Stripe (global)</li>
+                <li>Precios configurables por país y moneda</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>📊 Modelo de Negocio Escalable</h4>
+              <ul>
+                <li>3 modelos simultáneos: B2C, B2B y Revendedores</li>
+                <li>Red de vendedores independientes con comisiones</li>
+                <li>Suscripciones mensuales para salones de fiestas</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>🤖 Inteligencia Artificial</h4>
+              <ul>
+                <li>Transformación de fotos con 11 estilos artísticos</li>
+                <li>Procesamiento en tiempo real durante el evento</li>
+                <li>Se conservan original + versión artística</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>⚙️ Tecnología de Punta</h4>
+              <ul>
+                <li>WebSockets para contenido instantáneo</li>
+                <li>Arquitectura serverless, escalable automáticamente</li>
+                <li>Seguridad enterprise: RLS, autenticación, roles</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 4: Los Usuarios */}
+        <section className="report-page">
+          <h2 className="report-h2">4. ¿Quiénes son los Usuarios?</h2>
+          <p className="report-text">
+            PickEvent tiene <strong>5 tipos de usuarios</strong>, cada uno con un rol específico, un flujo de registro 
+            diferente y capacidades propias dentro de la plataforma:
+          </p>
+
+          <table className="report-table">
+            <thead>
+              <tr>
+                <th>Rol</th>
+                <th>¿Quién es?</th>
+                <th>¿Cómo se suma?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>🛡️ Super Admin</strong></td>
+                <td>El equipo PickEvent — gestión total de la plataforma</td>
+                <td>Asignado internamente. No disponible para registro público</td>
+              </tr>
+              <tr>
+                <td><strong>💼 Asistente / Revendedor</strong></td>
+                <td>Vendedor independiente que comercializa eventos por comisión</td>
+                <td>Invitado por el Super Admin. Se le crea un perfil con acceso al panel de ventas</td>
+              </tr>
+              <tr>
+                <td><strong>🏢 Salón de Fiestas</strong></td>
+                <td>Empresa que ofrece PickEvent como servicio a sus clientes</td>
+                <td>Se registra en la plataforma y contrata una suscripción mensual</td>
+              </tr>
+              <tr>
+                <td><strong>👤 Cliente Final</strong></td>
+                <td>Persona que organiza su evento (cumpleaños, casamiento, etc.)</td>
+                <td>Se registra en pickevent.site, crea su evento y paga online</td>
+              </tr>
+              <tr>
+                <td><strong>🎉 Invitado</strong></td>
+                <td>Persona que asiste al evento y sube contenido</td>
+                <td>Sin registro — escanea el QR del evento y participa al instante</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        {/* Section 5: Capacidades por Usuario */}
+        <section className="report-page">
+          <h2 className="report-h2">5. ¿Qué puede hacer cada Usuario?</h2>
+
+          <h3 className="report-h3">🛡️ Super Admin</h3>
+          <p className="report-text">Control total de la plataforma. Accede desde <strong>/admin</strong>.</p>
+          <div className="report-grid-2">
+            <div className="report-feature-card">
+              <h4>Gestión de la Plataforma</h4>
+              <ul>
+                <li>Ver métricas globales: eventos, usuarios, ingresos</li>
+                <li>Configurar precios de eventos y suscripciones</li>
+                <li>Gestionar configuración global del sistema</li>
+                <li>Ver logs de auditoría de toda la plataforma</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>Gestión de Usuarios y Tenants</h4>
+              <ul>
+                <li>Crear, editar y suspender Asistentes y Salones</li>
+                <li>Asignar usuarios a tenants (organizaciones)</li>
+                <li>Configurar comisiones por Asistente</li>
+                <li>Verificar y aprobar rendiciones de comisiones</li>
+              </ul>
+            </div>
+          </div>
+
+          <h3 className="report-h3 mt-8">💼 Asistente / Revendedor</h3>
+          <p className="report-text">Vendedor comercial independiente. Accede desde <strong>/asistente</strong>.</p>
+          <div className="report-grid-2">
+            <div className="report-feature-card">
+              <h4>Ventas y Comisiones</h4>
+              <ul>
+                <li>Crear eventos para sus clientes</li>
+                <li>Generar links de pago personalizados</li>
+                <li>Ver historial de ventas y comisiones acumuladas</li>
+                <li>Enviar rendiciones al Super Admin</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>Gestión de Clientes</h4>
+              <ul>
+                <li>Ver lista de clientes y sus eventos</li>
+                <li>Acceder a estadísticas de eventos vendidos</li>
+                <li>Operar en su país asignado (AR, BR, PY, etc.)</li>
+                <li>Eventos de cortesía disponibles según acuerdo</li>
+              </ul>
+            </div>
+          </div>
+
+          <h3 className="report-h3 mt-8">🏢 Salón de Fiestas</h3>
+          <p className="report-text">Empresa con suscripción mensual. Accede desde <strong>/salon</strong>.</p>
+          <div className="report-grid-2">
+            <div className="report-feature-card">
+              <h4>Gestión de Eventos</h4>
+              <ul>
+                <li>Crear eventos dentro de su límite mensual</li>
+                <li>Calendario visual con eventos programados</li>
+                <li>Personalizar cada evento (colores, logo)</li>
+                <li>Ver estadísticas de uso del mes</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>Suscripción y Pagos</h4>
+              <ul>
+                <li>Elegir plan: Starter, Profesional o Ilimitado</li>
+                <li>Pago mensual automático por Mercado Pago o Stripe</li>
+                <li>Upgrade o downgrade de plan en cualquier momento</li>
+                <li>Acceso a soporte según nivel de plan</li>
+              </ul>
+            </div>
+          </div>
+
+          <h3 className="report-h3 mt-8">👤 Cliente Final</h3>
+          <p className="report-text">Dueño del evento. Accede desde <strong>/dashboard</strong>.</p>
+          <div className="report-grid-2">
+            <div className="report-feature-card">
+              <h4>Crear y Gestionar su Evento</h4>
+              <ul>
+                <li>Wizard paso a paso para crear evento</li>
+                <li>Elegir tipo: Cumpleaños, Casamiento, Graduación, Corporativo, Fiesta Temática u Otro</li>
+                <li>Seleccionar duración (6, 12 o 24 horas)</li>
+                <li>Personalizar banner del muro (color, logo)</li>
+                <li>Elegir plan: Básico ($110.000) o Premium + IA ($153.000)</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>Durante y Después del Evento</h4>
+              <ul>
+                <li>Recibir 3 QR por email (Pantalla, Invitados, Descarga)</li>
+                <li>Ver estadísticas en tiempo real: fotos, videos, mensajes, likes</li>
+                <li>Activar/pausar el evento</li>
+                <li>Moderar contenido (aprobar/rechazar fotos y mensajes)</li>
+                <li>Descargar álbum completo en ZIP</li>
+              </ul>
+            </div>
+          </div>
+
+          <h3 className="report-h3 mt-8">🎉 Invitado</h3>
+          <p className="report-text">Participante del evento. Accede escaneando el <strong>QR Invitados</strong> desde <strong>/subir/:token</strong>. No necesita registrarse.</p>
+          <div className="report-grid-2">
+            <div className="report-feature-card">
+              <h4>Participación en el Evento</h4>
+              <ul>
+                <li>Subir fotos (JPG, PNG, HEIC, WebP — hasta 10MB)</li>
+                <li>Subir videos cortos (MP4, MOV, WebM — hasta 30 seg)</li>
+                <li>Enviar mensajes animados (hasta 150 caracteres)</li>
+                <li>Ver su contenido aparecer en la pantalla del evento</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>Interacción y Recuerdos</h4>
+              <ul>
+                <li>Dar likes a fotos de otros invitados</li>
+                <li>Participar en juegos interactivos en vivo</li>
+                <li>Acceder al álbum digital post-evento (30 días)</li>
+                <li>Descargar fotos individuales o el álbum completo</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 6: Planes y Precios */}
+        <section className="report-page">
+          <h2 className="report-h2">6. Planes y Precios</h2>
+
+          <h3 className="report-h3">6.1 Eventos Individuales (B2C)</h3>
           <table className="report-table">
             <thead>
               <tr>
@@ -134,23 +483,23 @@ export default function StakeholderReportPage() {
               <tr>
                 <td><strong>Básico</strong></td>
                 <td>ARS $110.000</td>
-                <td>Muro en vivo, 3 QR, fotos/videos ilimitados, mensajes flotantes, álbum 30 días</td>
+                <td>Muro en vivo, 3 QR, fotos/videos ilimitados, mensajes flotantes, juegos, álbum 30 días</td>
               </tr>
               <tr>
                 <td><strong>Premium + IA</strong></td>
                 <td>ARS $153.000</td>
-                <td>Todo lo básico + IA generativa (11 estilos artísticos)</td>
+                <td>Todo lo básico + IA generativa (11 estilos artísticos para fotos)</td>
               </tr>
             </tbody>
           </table>
 
-          <h3 className="report-h3">3.2 Suscripciones para Salones (B2B)</h3>
+          <h3 className="report-h3">6.2 Suscripciones para Salones (B2B)</h3>
           <table className="report-table">
             <thead>
               <tr>
                 <th>Plan</th>
                 <th>Precio/mes</th>
-                <th>Límite</th>
+                <th>Eventos/mes</th>
                 <th>Incluye</th>
               </tr>
             </thead>
@@ -158,13 +507,13 @@ export default function StakeholderReportPage() {
               <tr>
                 <td><strong>Starter</strong></td>
                 <td>ARS $150.000</td>
-                <td>10/mes</td>
+                <td>Hasta 10</td>
                 <td>Muro + QR + Álbum + Soporte email</td>
               </tr>
               <tr>
                 <td><strong>Profesional</strong></td>
                 <td>ARS $290.000</td>
-                <td>20/mes</td>
+                <td>Hasta 20</td>
                 <td>Starter + IA + Personalización + Soporte prioritario</td>
               </tr>
               <tr>
@@ -176,98 +525,31 @@ export default function StakeholderReportPage() {
             </tbody>
           </table>
 
-          <h3 className="report-h3">3.3 Modelo Asistente Comercial</h3>
+          <h3 className="report-h3">6.3 Modelo Asistente Comercial</h3>
           <p className="report-text">
-            Vendedores independientes con comisiones configurables (50-100%), sistema de rendiciones 
-            y capacidad de operar en múltiples países. Generan links de pago para clientes y reciben 
-            su comisión automáticamente.
+            Los Asistentes son vendedores independientes que comercializan eventos de PickEvent y reciben 
+            comisiones configurables (50-100%). Generan links de pago para sus clientes, llevan control de 
+            sus ventas y realizan rendiciones periódicas al Super Admin.
           </p>
         </section>
 
-        {/* Page 3: Roles & Features */}
+        {/* Section 7: Tipos de Evento */}
         <section className="report-page">
-          <h2 className="report-h2">4. Roles de Usuario</h2>
-          <table className="report-table">
-            <thead>
-              <tr>
-                <th>Rol</th>
-                <th>Descripción</th>
-                <th>Acceso</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Super Admin</strong></td>
-                <td>Control total: tenants, métricas globales, auditoría, rendiciones</td>
-                <td>/admin</td>
-              </tr>
-              <tr>
-                <td><strong>Asistente</strong></td>
-                <td>Vendedor comercial: venta de eventos, links de pago, comisiones</td>
-                <td>/asistente</td>
-              </tr>
-              <tr>
-                <td><strong>Salón</strong></td>
-                <td>Salón de fiestas: suscripción mensual, calendario, límite según plan</td>
-                <td>/salon</td>
-              </tr>
-              <tr>
-                <td><strong>Cliente</strong></td>
-                <td>Dueño del evento: QR codes, moderación, descarga álbum</td>
-                <td>/dashboard</td>
-              </tr>
-              <tr>
-                <td><strong>Invitado</strong></td>
-                <td>Sin registro: escanea QR, sube fotos/videos/mensajes, da likes</td>
-                <td>/subir/:token</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <h2 className="report-h2 mt-8">5. Funcionalidades Clave</h2>
-          <div className="report-grid-2">
-            <div className="report-feature-card">
-              <h4>🖥️ Muro Interactivo en Tiempo Real</h4>
-              <ul>
-                <li>Carrusel de fotos con transiciones (5s)</li>
-                <li>Mensajes flotantes animados (150 chars)</li>
-                <li>Likes interactivos</li>
-                <li>Full-screen para proyección</li>
-              </ul>
-            </div>
-            <div className="report-feature-card">
-              <h4>📲 Sistema de QR Codes</h4>
-              <ul>
-                <li>3 QR únicos por evento</li>
-                <li>Envío automático por email</li>
-                <li>Tokens de seguridad</li>
-                <li>Diseño branded en emails</li>
-              </ul>
-            </div>
-            <div className="report-feature-card">
-              <h4>🎨 IA Generativa (Premium)</h4>
-              <ul>
-                <li>11 estilos: Caricatura, Cómic, Anime...</li>
-                <li>Transformación de fotos en tiempo real</li>
-                <li>Powered by Google Gemini</li>
-                <li>Original + transformada disponibles</li>
-              </ul>
-            </div>
-            <div className="report-feature-card">
-              <h4>💳 Sistema de Pagos</h4>
-              <ul>
-                <li>Mercado Pago: AR, BR, PY</li>
-                <li>Stripe: Internacional</li>
-                <li>Webhooks automáticos</li>
-                <li>Gestión de suscripciones</li>
-              </ul>
-            </div>
+          <h2 className="report-h2">7. Tipos de Evento Soportados</h2>
+          <div className="report-event-types">
+            <span>🎂 Cumpleaños</span>
+            <span>💍 Casamiento</span>
+            <span>🎓 Graduación</span>
+            <span>🏢 Corporativo</span>
+            <span>🎉 Fiesta Temática</span>
+            <span>✨ Otro</span>
           </div>
-        </section>
+          <p className="report-text mt-4">
+            Cada tipo de evento puede personalizarse con colores, logo, duración (6, 12 o 24 horas) y, 
+            en el plan Premium, un estilo de IA específico para la transformación artística de las fotos.
+          </p>
 
-        {/* Page 4: Tech & Markets */}
-        <section className="report-page">
-          <h2 className="report-h2">6. Stack Tecnológico</h2>
+          <h2 className="report-h2 mt-8">8. Tecnología</h2>
           <table className="report-table">
             <thead>
               <tr>
@@ -277,63 +559,20 @@ export default function StakeholderReportPage() {
               </tr>
             </thead>
             <tbody>
-              <tr><td>Frontend</td><td>React 18 + TypeScript + Tailwind CSS</td><td>Interfaz de usuario</td></tr>
-              <tr><td>Backend</td><td>Lovable Cloud (PostgreSQL + Edge Functions)</td><td>API + Lógica + DB</td></tr>
-              <tr><td>Realtime</td><td>WebSockets</td><td>Contenido en vivo</td></tr>
+              <tr><td>Frontend</td><td>React 18 + TypeScript + Tailwind CSS</td><td>Interfaz de usuario responsiva</td></tr>
+              <tr><td>Backend</td><td>Lovable Cloud (PostgreSQL + Edge Functions)</td><td>API, lógica de negocio, base de datos</td></tr>
+              <tr><td>Realtime</td><td>WebSockets</td><td>Contenido en vivo instantáneo</td></tr>
               <tr><td>Pagos</td><td>Mercado Pago + Stripe</td><td>Cobros multi-país</td></tr>
-              <tr><td>Emails</td><td>Resend</td><td>Emails transaccionales</td></tr>
-              <tr><td>IA</td><td>Google Gemini</td><td>Transformación de fotos</td></tr>
+              <tr><td>Emails</td><td>Resend</td><td>Emails transaccionales (QR codes)</td></tr>
+              <tr><td>IA</td><td>Google Gemini</td><td>Transformación artística de fotos</td></tr>
+              <tr><td>Seguridad</td><td>RLS + Auth + RBAC</td><td>Protección de datos por rol</td></tr>
             </tbody>
           </table>
-
-          <h2 className="report-h2 mt-8">7. Tipos de Evento Soportados</h2>
-          <div className="report-event-types">
-            <span>🎂 Cumpleaños</span>
-            <span>💍 Casamiento</span>
-            <span>🎓 Graduación</span>
-            <span>🏢 Corporativo</span>
-            <span>🎉 Fiesta Temática</span>
-            <span>✨ Otro</span>
-          </div>
-
-          <h2 className="report-h2 mt-8">8. Mercados Objetivo</h2>
-          <table className="report-table">
-            <thead>
-              <tr>
-                <th>Segmento</th>
-                <th>Modelo</th>
-                <th>Ticket Promedio</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>Consumidor final</td><td>Pago por evento</td><td>$110K - $153K ARS</td></tr>
-              <tr><td>Salones de fiestas</td><td>Suscripción mensual</td><td>$150K - $457K ARS/mes</td></tr>
-              <tr><td>Organizadores</td><td>Comisiones por venta</td><td>50-100% del evento</td></tr>
-              <tr><td>Corporativo</td><td>Enterprise personalizado</td><td>A medida</td></tr>
-            </tbody>
-          </table>
-
-          <h2 className="report-h2 mt-8">9. Seguridad</h2>
-          <div className="report-grid-3">
-            <div className="report-security-item">
-              <strong>🔐 Row Level Security</strong>
-              <p>Políticas RLS en todas las tablas</p>
-            </div>
-            <div className="report-security-item">
-              <strong>🛡️ Autenticación</strong>
-              <p>Email verificado + sesiones seguras</p>
-            </div>
-            <div className="report-security-item">
-              <strong>👥 RBAC</strong>
-              <p>5 roles con permisos granulares</p>
-            </div>
-          </div>
         </section>
 
-        {/* Footer on every page */}
+        {/* Footer */}
         <div className="report-footer">
-          <span>PickEvent © 2026 — Confidencial</span>
-          <span>www.pickevent.com</span>
+          <span>PickEvent © 2026 — pickevent.site</span>
         </div>
       </div>
     </>
