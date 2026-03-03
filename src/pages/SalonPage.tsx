@@ -125,12 +125,14 @@ export default function SalonPage() {
           </TabsContent>
 
           <TabsContent value="suscripcion">
-            <div className="max-w-md space-y-6">
-              <SalonSubscription 
-                suscripcion={suscripcion} 
-                stats={stats}
-                isLoading={isLoading} 
-              />
+            <div className="space-y-6">
+              <div className="max-w-md">
+                <SalonSubscription 
+                  suscripcion={suscripcion} 
+                  stats={stats}
+                  isLoading={isLoading} 
+                />
+              </div>
               <SalonGuide />
             </div>
           </TabsContent>

@@ -126,8 +126,8 @@ export function SubscriptionPaymentWidget({
             ) : (
               <Sparkles className="w-5 h-5 text-primary" />
             )}
-            <CardTitle className="text-lg">
-              {isUrgent ? '¡Renovar Suscripción!' : 'Tu Plan Mensual'}
+              <CardTitle className="text-lg">
+              {isUrgent ? '¡Renovar Suscripción!' : 'Tu Plan Trimestral'}
             </CardTitle>
           </div>
           {stats.suscripcionActiva && !isUrgent && (
@@ -197,7 +197,7 @@ export function SubscriptionPaymentWidget({
                   <div>
                     <h4 className="font-semibold">{plan.nombre}</h4>
                     <p className="text-xs text-muted-foreground">
-                      {plan.limite_eventos === -1 ? '∞' : plan.limite_eventos} eventos/mes
+                      {plan.limite_eventos === -1 ? '∞' : plan.limite_eventos} eventos / 3 meses
                     </p>
                   </div>
 
@@ -206,7 +206,7 @@ export function SubscriptionPaymentWidget({
                     <span className="text-xl font-bold text-primary">
                       {formatPrice(plan.precio)}
                     </span>
-                    <span className="text-xs text-muted-foreground">/mes</span>
+                    <span className="text-xs text-muted-foreground">/3 meses</span>
                   </div>
 
                   {/* Button */}
