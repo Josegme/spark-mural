@@ -145,7 +145,7 @@ export default function StakeholderReportPage() {
                 <li>Participación activa: pasan de ser espectadores a protagonistas</li>
                 <li>No necesitan descargar ninguna app — solo escanean el QR</li>
                 <li>Ven sus fotos aparecer al instante en la pantalla del evento</li>
-                <li>Pueden dar likes y enviar mensajes animados</li>
+                <li>Los likes se generan automáticamente, creando un efecto visual dinámico</li>
                 <li>Acceden al álbum completo después del evento</li>
               </ul>
             </div>
@@ -434,7 +434,8 @@ export default function StakeholderReportPage() {
               <h4>Durante y Después del Evento</h4>
               <ul>
                 <li>Recibir 3 QR por email (Pantalla, Invitados, Descarga)</li>
-                <li>Ver estadísticas en tiempo real: fotos, videos, mensajes, likes</li>
+                <li>Ver estadísticas en tiempo real: fotos, videos, mensajes</li>
+                <li>Configurar y lanzar juegos interactivos (ruleta de fotos con reglas/prendas)</li>
                 <li>Activar/pausar el evento</li>
                 <li>Moderar contenido (aprobar/rechazar fotos y mensajes)</li>
                 <li>Descargar álbum completo en ZIP</li>
@@ -457,8 +458,8 @@ export default function StakeholderReportPage() {
             <div className="report-feature-card">
               <h4>Interacción y Recuerdos</h4>
               <ul>
-                <li>Dar likes a fotos de otros invitados</li>
-                <li>Participar en juegos interactivos en vivo</li>
+                <li>Los likes se generan automáticamente en el muro</li>
+                <li>Participar en juegos interactivos en vivo (ruleta de fotos)</li>
                 <li>Acceder al álbum digital post-evento (30 días)</li>
                 <li>Descargar fotos individuales o el álbum completo</li>
               </ul>
@@ -533,9 +534,44 @@ export default function StakeholderReportPage() {
           </p>
         </section>
 
-        {/* Section 7: Tipos de Evento */}
+        {/* Section 7: Juegos Interactivos */}
         <section className="report-page">
-          <h2 className="report-h2">7. Tipos de Evento Soportados</h2>
+          <h2 className="report-h2">7. Juegos Interactivos en Vivo</h2>
+          <p className="report-text">
+            Una de las funcionalidades más diferenciadoras de PickEvent es la posibilidad de crear y lanzar 
+            <strong> juegos interactivos</strong> durante el evento. El organizador configura dinámicas desde su panel 
+            y las controla en tiempo real desde cualquier dispositivo.
+          </p>
+
+          <h3 className="report-h3">¿Cómo funciona?</h3>
+          <div className="report-grid-3">
+            <div className="report-value-card">
+              <div className="report-value-icon">🎲</div>
+              <strong>Configurar</strong>
+              <p>El organizador crea juegos con nombre, cantidad de fotos ganadoras (1-4) y una regla o prenda</p>
+            </div>
+            <div className="report-value-card">
+              <div className="report-value-icon">🚀</div>
+              <strong>Lanzar</strong>
+              <p>Al activar el juego, aparece en el muro del evento con animaciones y el botón de girar la ruleta</p>
+            </div>
+            <div className="report-value-card">
+              <div className="report-value-icon">🎰</div>
+              <strong>Girar y Revelar</strong>
+              <p>La ruleta selecciona fotos al azar entre las subidas por los invitados. ¡Los elegidos cumplen la prenda!</p>
+            </div>
+          </div>
+
+          <p className="report-text mt-4">
+            <strong>Ejemplo:</strong> El organizador crea un juego llamado "Trensito Locardo" con la regla 
+            "Los seleccionados tienen que hacer un trensito con los ojos vendados". Al girar la ruleta, se eligen 
+            3 fotos al azar y los invitados correspondientes deben cumplir la prenda. ¡Diversión asegurada!
+          </p>
+        </section>
+
+        {/* Section 8: Tipos de Evento */}
+        <section className="report-page">
+          <h2 className="report-h2">8. Tipos de Evento Soportados</h2>
           <div className="report-event-types">
             <span>🎂 Cumpleaños</span>
             <span>💍 Casamiento</span>
@@ -549,7 +585,7 @@ export default function StakeholderReportPage() {
             en el plan Premium, un estilo de IA específico para la transformación artística de las fotos.
           </p>
 
-          <h2 className="report-h2 mt-8">8. Tecnología</h2>
+          <h2 className="report-h2 mt-8">9. Tecnología</h2>
           <table className="report-table">
             <thead>
               <tr>
@@ -568,6 +604,54 @@ export default function StakeholderReportPage() {
               <tr><td>Seguridad</td><td>RLS + Auth + RBAC</td><td>Protección de datos por rol</td></tr>
             </tbody>
           </table>
+        </section>
+
+        {/* Section 10: Próximamente */}
+        <section className="report-page">
+          <h2 className="report-h2">10. Próximamente — Roadmap</h2>
+          <p className="report-text">
+            PickEvent está en constante evolución. Estas son algunas de las funcionalidades que estamos desarrollando 
+            para los próximos meses:
+          </p>
+
+          <div className="report-grid-2">
+            <div className="report-feature-card">
+              <h4>🖼️ Muro Interactivo Temático</h4>
+              <ul>
+                <li>Fondos y marcos temáticos personalizados según tipo de evento</li>
+                <li>Animaciones exclusivas por temática (confeti, corazones, estrellas)</li>
+                <li>Transiciones y efectos visuales adaptados al estilo del evento</li>
+                <li>Modo "cine" con presentaciones automáticas de fotos</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>🤖 IA Generativa Avanzada</h4>
+              <ul>
+                <li>Más estilos artísticos: Pop Art, Pixel Art, Sketch, Art Deco</li>
+                <li>Generación de collages automáticos con IA</li>
+                <li>Caricaturas personalizadas de los invitados en tiempo real</li>
+                <li>Filtros temáticos inteligentes según el tipo de evento</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>🎮 Juegos Avanzados</h4>
+              <ul>
+                <li>Nuevos tipos de juegos: trivia, bingo de fotos, votaciones</li>
+                <li>Rankings en tiempo real en la pantalla del muro</li>
+                <li>Premios virtuales y físicos configurables</li>
+                <li>Desafíos por equipos con marcador en vivo</li>
+              </ul>
+            </div>
+            <div className="report-feature-card">
+              <h4>📊 Analíticas y Engagement</h4>
+              <ul>
+                <li>Dashboard avanzado de engagement post-evento</li>
+                <li>Heatmaps de participación por hora</li>
+                <li>Exportación de reportes profesionales para salones</li>
+                <li>Integración con redes sociales para compartir álbumes</li>
+              </ul>
+            </div>
+          </div>
         </section>
 
         {/* Footer */}
