@@ -427,6 +427,13 @@ function UseCasesSection() {
             </div>
           ))}
         </div>
+
+        <p className="text-center text-muted-foreground mt-8">
+          Para eventos grandes, recitales o competencias,{' '}
+          <a href="mailto:soporte@pickevent.site" className="text-primary font-medium hover:underline">
+            comunicate con el equipo de soporte de PickEvent
+          </a>.
+        </p>
       </div>
     </section>
   );
