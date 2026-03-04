@@ -63,9 +63,9 @@ function HeroSection() {
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="btn-hero-outline" asChild>
-              <Link to="/#como-funciona">
+              <a href="#como-funciona">
                 Ver Cómo Funciona
-              </Link>
+              </a>
             </Button>
           </div>
           
