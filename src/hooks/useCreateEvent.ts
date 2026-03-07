@@ -4,8 +4,8 @@
  * Incluye: flujos por rol (Cliente, Salón, Admin, Asistente)
  */
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateQRToken } from '@/lib/utils';
@@ -68,6 +68,17 @@ export function useCreateEvent() {
   // Payment link state for "Copy Link" feature
   const [paymentLink, setPaymentLink] = useState<string | null>(null);
   const [isPaymentLinkGenerated, setIsPaymentLinkGenerated] = useState(false);
+
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const plan = searchParams.get('plan');
+    if (plan === 'premium') {
+      setFormData(prev => ({ ...prev, es_premium: true }));
+    } else if (plan === 'basico') {
+      setFormData(prev => ({ ...prev, es_premium: false }));
+    }
+  }, []);
 
   const totalSteps = 4;
   const stepTitles = ['Información', 'Personalización', 'Configuración', 'Pago'];
