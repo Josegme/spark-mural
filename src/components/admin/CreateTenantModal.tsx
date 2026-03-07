@@ -41,7 +41,7 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
-    pais: 'Argentina',
+    pais: 'AR',
     // Usuario (opcional)
     user_email: '',
     user_password: '',
@@ -58,7 +58,7 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
     setFormData({
       nombre: '',
       email: '',
-      pais: 'Argentina',
+      pais: 'AR',
       user_email: '',
       user_password: '',
       user_nombre: '',

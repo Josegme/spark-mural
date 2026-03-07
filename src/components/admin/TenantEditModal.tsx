@@ -51,7 +51,7 @@ export function TenantEditModal({ tenant, open, onOpenChange, onSaved }: TenantE
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
-    pais: 'Argentina',
+    pais: 'AR',
     estado: 'activo',
     // Comisiones (solo asistentes)
     comision_asistente: 50,
