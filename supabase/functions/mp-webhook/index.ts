@@ -130,55 +130,59 @@ serve(async (req) => {
       }
     }
 
-    // Strategy 2: By external_reference in metadata
+    // Strategy 2: By external_reference filtered directly in Postgres JSONB
     if (!existingPayment && payment.external_reference) {
-      console.log('Strategy 2: Looking for payment with external_reference in metadata:', payment.external_reference);
+      console.log('Strategy 2: Looking for payment with external_reference in JSONB:', payment.external_reference);
       const result = await supabase
         .from('pagos')
         .select('*')
         .eq('estado', 'pendiente')
+        .filter('metadata->>external_reference', 'eq', payment.external_reference)
         .maybeSingle();
       
-      // Filter in memory for external_reference match
-      if (result.data && result.data.metadata?.external_reference === payment.external_reference) {
-        console.log('Found payment by external_reference match:', result.data.id);
+      if (result.data) {
+        console.log('Found payment by external_reference in JSONB:', result.data.id);
+        existingPayment = result.data;
+      } else if (result.error && result.error.code !== 'PGRST116') {
+        console.error('Strategy 2 error:', result.error);
+      }
+    }
+
+    // Strategy 3: Broader JSONB search across all states
+    if (!existingPayment && payment.external_reference) {
+      console.log('Strategy 3: Broad JSONB search for external_reference:', payment.external_reference);
+      const result = await supabase
+        .from('pagos')
+        .select('*')
+        .filter('metadata->>external_reference', 'eq', payment.external_reference)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (result.data) {
+        console.log('Strategy 3 match found:', result.data.id);
         existingPayment = result.data;
       }
     }
 
-    // Strategy 3: Get all pending payments and find by external_reference or user_id
+    // Strategy 4: Last resort — search by user_id extracted from external_reference
     if (!existingPayment && payment.external_reference) {
-      console.log('Strategy 3: Searching all pending payments for external_reference match');
-      const { data: pendingPayments, error: pendingError } = await supabase
-        .from('pagos')
-        .select('*')
-        .eq('estado', 'pendiente')
-        .order('created_at', { ascending: false })
-        .limit(50);
+      const refParts = payment.external_reference.split('_');
+      if (refParts.length >= 3 && refParts[0] === 'evt') {
+        const userId = refParts.slice(1, -1).join('_');
+        console.log('Strategy 4: Looking by user_id from external_reference:', userId);
+        const result = await supabase
+          .from('pagos')
+          .select('*')
+          .eq('estado', 'pendiente')
+          .filter('metadata->>user_id', 'eq', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (!pendingError && pendingPayments) {
-        console.log('Found', pendingPayments.length, 'pending payments to check');
-        
-        for (const pago of pendingPayments) {
-          const metadata = pago.metadata as any;
-          
-          // Check if external_reference matches
-          if (metadata?.external_reference === payment.external_reference) {
-            console.log('Match found by external_reference:', pago.id);
-            existingPayment = pago;
-            break;
-          }
-          
-          // Also check if user_id from external_reference matches
-          // External reference format: evt_{user_id}_{timestamp}
-          if (payment.external_reference && metadata?.user_id) {
-            const refParts = payment.external_reference.split('_');
-            if (refParts.length >= 2 && refParts[1] === metadata.user_id) {
-              console.log('Match found by user_id from external_reference:', pago.id);
-              existingPayment = pago;
-              break;
-            }
-          }
+        if (result.data) {
+          console.log('Strategy 4 match found by user_id:', result.data.id);
+          existingPayment = result.data;
         }
       }
     }
@@ -227,7 +231,7 @@ serve(async (req) => {
         // Get event data to access tenant_id
         const { data: eventoData, error: eventoError } = await supabase
           .from('eventos')
-          .select('id, tenant_id, nombre')
+          .select('id, tenant_id, nombre, cliente_user_id')
           .eq('id', existingPayment.evento_id)
           .single();
         
