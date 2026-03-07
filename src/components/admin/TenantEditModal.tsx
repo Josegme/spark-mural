@@ -236,10 +236,26 @@ export function TenantEditModal({ tenant, open, onOpenChange, onSaved }: TenantE
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>País</Label>
-                <Input
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={formData.pais}
                   onChange={(e) => setFormData(prev => ({ ...prev, pais: e.target.value }))}
-                />
+                >
+                  <option value="">Seleccioná el país</option>
+                  <option value="AR">🇦🇷 Argentina</option>
+                  <option value="BR">🇧🇷 Brasil</option>
+                  <option value="PY">🇵🇾 Paraguay</option>
+                  <option value="UY">🇺🇾 Uruguay</option>
+                  <option value="CL">🇨🇱 Chile</option>
+                  <option value="CO">🇨🇴 Colombia</option>
+                  <option value="MX">🇲🇽 México</option>
+                  <option value="PE">🇵🇪 Perú</option>
+                  <option value="NZ">🇳🇿 Nueva Zelanda</option>
+                  <option value="ES">🇪🇸 España</option>
+                  <option value="AU">🇦🇺 Australia</option>
+                  <option value="US">🇺🇸 Estados Unidos</option>
+                  <option value="GB">🇬🇧 Reino Unido</option>
+                </select>
               </div>
               <div className="space-y-2">
                 <Label>Estado</Label>
