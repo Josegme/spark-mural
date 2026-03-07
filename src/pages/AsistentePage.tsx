@@ -38,6 +38,32 @@ export default function AsistentePage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isLoading && !tenantInfo) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="max-w-md text-center space-y-4">
+          <div className="text-6xl">🤝</div>
+          <h2 className="text-2xl font-bold">Cuenta pendiente de activación</h2>
+          <p className="text-muted-foreground">
+            Tu cuenta de asistente aún no está configurada. 
+            Contactá a PickEvent para que activen tu perfil y comisiones.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            📧 Escribinos y te configuramos en menos de 24 horas.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <MainLayout showFooter={false}>
       <div className="container py-6">
