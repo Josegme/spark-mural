@@ -181,7 +181,7 @@ export function useCreateEvent() {
         return null;
       }
 
-      const checkoutUrl = data.sandbox_init_point || data.init_point;
+      const checkoutUrl = data.init_point || data.sandbox_init_point;
       setPaymentLink(checkoutUrl);
       setIsPaymentLinkGenerated(true);
       return checkoutUrl;
@@ -255,7 +255,7 @@ export function useCreateEvent() {
       return false;
     }
 
-    const checkoutUrl = data.sandbox_init_point || data.init_point;
+    const checkoutUrl = data.init_point || data.sandbox_init_point;
     setPaymentLink(checkoutUrl);
     toast.success('Redirigiendo a Mercado Pago...');
     
@@ -546,7 +546,7 @@ export function useCreateEvent() {
         return null;
       }
 
-      const checkoutUrl = data.sandbox_init_point || data.init_point;
+      const checkoutUrl = data.init_point || data.sandbox_init_point;
       setPaymentLink(checkoutUrl);
       setIsPaymentLinkGenerated(true);
       toast.success('¡Link de pago generado! Copialo y compartilo con el cliente.');
