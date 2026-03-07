@@ -41,7 +41,7 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
   const [formData, setFormData] = useState({
     nombre: '',
     email: '',
-    pais: 'Argentina',
+    pais: 'AR',
     // Usuario (opcional)
     user_email: '',
     user_password: '',
@@ -58,7 +58,7 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
     setFormData({
       nombre: '',
       email: '',
-      pais: 'Argentina',
+      pais: 'AR',
       user_email: '',
       user_password: '',
       user_nombre: '',
@@ -246,15 +246,24 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
                 <div className="space-y-2">
                   <Label>País</Label>
                   <select
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     value={formData.pais}
                     onChange={(e) => setFormData(prev => ({ ...prev, pais: e.target.value }))}
                   >
-                    <option value="Argentina">Argentina</option>
-                    <option value="Paraguay">Paraguay</option>
-                    <option value="Brasil">Brasil</option>
-                    <option value="España">España</option>
-                    <option value="Nueva Zelanda">Nueva Zelanda</option>
+                    <option value="">Seleccioná el país</option>
+                    <option value="AR">🇦🇷 Argentina</option>
+                    <option value="BR">🇧🇷 Brasil</option>
+                    <option value="PY">🇵🇾 Paraguay</option>
+                    <option value="UY">🇺🇾 Uruguay</option>
+                    <option value="CL">🇨🇱 Chile</option>
+                    <option value="CO">🇨🇴 Colombia</option>
+                    <option value="MX">🇲🇽 México</option>
+                    <option value="PE">🇵🇪 Perú</option>
+                    <option value="NZ">🇳🇿 Nueva Zelanda</option>
+                    <option value="ES">🇪🇸 España</option>
+                    <option value="AU">🇦🇺 Australia</option>
+                    <option value="US">🇺🇸 Estados Unidos</option>
+                    <option value="GB">🇬🇧 Reino Unido</option>
                   </select>
                 </div>
                 <div className="space-y-2">

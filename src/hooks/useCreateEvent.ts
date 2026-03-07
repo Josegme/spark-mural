@@ -27,27 +27,8 @@ export function getPaymentGateway(countryCode: string): PaymentGateway {
 }
 
 export function getCountryFromProfile(pais: string | null | undefined): string {
-  if (!pais) return 'AR'; // Default to Argentina
-  
-  // Map common country names to codes
-  const countryMap: Record<string, string> = {
-    'argentina': 'AR',
-    'brasil': 'BR',
-    'brazil': 'BR',
-    'paraguay': 'PY',
-    'new zealand': 'NZ',
-    'nueva zelanda': 'NZ',
-    'españa': 'ES',
-    'spain': 'ES',
-    'australia': 'AU',
-    'united states': 'US',
-    'estados unidos': 'US',
-    'united kingdom': 'GB',
-    'reino unido': 'GB',
-  };
-  
-  const normalized = pais.toLowerCase().trim();
-  return countryMap[normalized] || pais.toUpperCase().substring(0, 2);
+  if (!pais) return 'AR';
+  return pais.toUpperCase().trim();
 }
 
 export interface WizardFormData extends CreateEventData {
