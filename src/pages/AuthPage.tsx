@@ -40,12 +40,22 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
-  // Si ya está logueado, redirigir
-  if (user) {
-    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
-    navigate(from, { replace: true });
+  // Si ya está logueado, redirigir según rol
+  if (user && profile) {
+    const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
+    if (from) {
+      navigate(from, { replace: true });
+    } else {
+      const roleRoutes: Record<string, string> = {
+        super_admin: '/admin',
+        asistente: '/asistente',
+        salon: '/salon',
+        cliente: '/dashboard',
+      };
+      navigate(roleRoutes[profile.rol] || '/dashboard', { replace: true });
+    }
     return null;
   }
 
