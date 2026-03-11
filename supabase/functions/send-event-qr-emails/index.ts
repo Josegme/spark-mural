@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 function getBaseUrl(): string {
-  return Deno.env.get('APP_BASE_URL') || 'https://id-preview--3f67129c-818e-4d9b-8e17-29150f6ad5f5.lovable.app';
+  return Deno.env.get('APP_BASE_URL') || 'https://pickevent.site';
 }
 
 function getQRCodeUrl(data: string): string {
