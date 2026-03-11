@@ -140,7 +140,7 @@ serve(async (req) => {
     console.log('Sending emails to:', recipientEmails, paymentInfo ? 'with payment info' : 'without payment info');
 
     const { data: emailResult, error: emailError } = await resend.emails.send({
-      from: 'PickEvent <onboarding@resend.dev>',
+      from: 'PickEvent <noreply@pickevent.site>',
       to: recipientEmails,
       subject: `🎉 ¡Tu evento "${evento.nombre}" está listo!`,
       html: `
