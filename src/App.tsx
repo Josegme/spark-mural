@@ -147,11 +147,19 @@ const App = () => (
               }
             />
             
-            {/* Technical Report - Público para compartir */}
-            <Route path="/technical-report" element={<TechnicalReportPage />} />
+            {/* Technical Report - Solo super_admin */}
+            <Route path="/technical-report" element={
+              <ProtectedRoute allowedRoles={['super_admin']}>
+                <TechnicalReportPage />
+              </ProtectedRoute>
+            } />
             
-            {/* Stakeholder Report - PDF exportable */}
-            <Route path="/informe-stakeholders" element={<StakeholderReportPage />} />
+            {/* Stakeholder Report - Solo super_admin */}
+            <Route path="/informe-stakeholders" element={
+              <ProtectedRoute allowedRoles={['super_admin']}>
+                <StakeholderReportPage />
+              </ProtectedRoute>
+            } />
             
             
             {/* Catch-all */}
