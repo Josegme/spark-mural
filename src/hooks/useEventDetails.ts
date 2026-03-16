@@ -68,29 +68,35 @@ export function useEventDetails(eventId: string | undefined) {
         .from('eventos')
         .select('*')
         .eq('id', eventId)
-        .eq('cliente_user_id', user.id)
         .single();
 
       if (error) throw error;
       
-      // Buscar link de pago si el evento tiene pago pendiente
+      // Buscar estado de pago y link si existe un pago asociado
       let paymentLink: string | null = null;
-      if (data.precio_pagado > 0) {
+      let pagoEstado: string | null = null;
+      
+      try {
         const { data: pagoData } = await supabase
           .from('pagos')
-          .select('metadata')
+          .select('estado, metadata')
           .eq('evento_id', eventId)
           .order('created_at', { ascending: false })
           .limit(1)
           .single();
         
-        if (pagoData?.metadata) {
-          const metadata = pagoData.metadata as Record<string, unknown>;
-          paymentLink = (metadata.init_point as string) || (metadata.sandbox_init_point as string) || null;
+        if (pagoData) {
+          pagoEstado = pagoData.estado;
+          if (pagoData.metadata) {
+            const metadata = pagoData.metadata as Record<string, unknown>;
+            paymentLink = (metadata.init_point as string) || (metadata.sandbox_init_point as string) || null;
+          }
         }
+      } catch {
+        // Asistente may not have RLS access to pagos — graceful degradation
       }
 
-      return { ...data, payment_link: paymentLink };
+      return { ...data, payment_link: paymentLink, pago_estado: pagoEstado };
     },
     enabled: !!eventId && !!user?.id,
   });
