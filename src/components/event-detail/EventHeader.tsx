@@ -77,6 +77,13 @@ export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating, pagoP
         <span className="text-foreground">{event.nombre}</span>
       </div>
 
+      {pagoPendiente && (
+        <div className="mb-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200 flex items-center gap-2 text-sm text-yellow-800">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          Pago pendiente — el muro se activará cuando el cliente confirme el pago
+        </div>
+      )}
+
       {/* Header principal */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="space-y-2">

@@ -70,6 +70,7 @@ export default function EventDetailPage() {
           onChangeStatus={changeStatus}
           onOpenQR={() => setQrModalOpen(true)}
           isUpdating={isUpdating}
+          pagoPendiente={event.pago_estado === 'pendiente'}
         />
 
         <Tabs defaultValue="content" className="space-y-6">

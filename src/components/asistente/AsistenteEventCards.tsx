@@ -203,11 +203,6 @@ export function AsistenteEventCards({ eventos, isLoading, puedeCrear, onCreateEv
                           </a>
                         </Button>
                       </div>
-                    ) : isBlocked ? (
-                      <Button variant="outline" size="sm" className="w-full" disabled>
-                        <Lock className="w-4 h-4 mr-2" />
-                        Esperando pago
-                      </Button>
                     ) : (
                       <Button variant="outline" size="sm" className="w-full" asChild>
                         <Link to={`/evento/${evento.id}`}>

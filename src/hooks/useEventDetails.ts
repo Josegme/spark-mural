@@ -49,6 +49,7 @@ export interface EventDetails {
   created_at: string;
   precio_pagado: number;
   payment_link?: string | null;
+  pago_estado?: string | null;
 }
 
 export function useEventDetails(eventId: string | undefined) {
