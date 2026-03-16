@@ -33,6 +33,7 @@ interface EventHeaderProps {
   onChangeStatus: (status: string) => void;
   onOpenQR: () => void;
   isUpdating?: boolean;
+  pagoPendiente?: boolean;
 }
 
 const statusConfig: Record<string, { label: string; className: string; icon: React.ComponentType<{ className?: string }> }> = {
