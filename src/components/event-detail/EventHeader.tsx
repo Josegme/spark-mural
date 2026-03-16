@@ -54,7 +54,7 @@ const eventTypeLabels: Record<string, string> = {
   otro: '🎉 Evento',
 };
 
-export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating }: EventHeaderProps) {
+export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating, pagoPendiente }: EventHeaderProps) {
   const status = statusConfig[event.estado] || statusConfig.programado;
   const typeLabel = eventTypeLabels[event.tipo] || eventTypeLabels.otro;
   const StatusIcon = status.icon;
