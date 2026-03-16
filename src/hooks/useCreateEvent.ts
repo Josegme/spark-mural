@@ -464,59 +464,21 @@ export function useCreateEvent() {
 
     try {
       const precio = precioOverride !== undefined ? precioOverride : calculatePrice();
-      const qr_pantalla_token = generateQRToken();
-      const qr_invitados_token = generateQRToken();
-      const qr_descarga_token = generateQRToken();
 
       // Determine tenant_id
       const userRole = getUserFlowRole();
       const tenantId = ((userRole === 'salon' || userRole === 'asistente' || userRole === 'admin') && profile?.tenant_id) ? profile.tenant_id : null;
 
-      // Step 1: Create the event first with pending payment state
-      const eventData = {
-        cliente_user_id: user.id,
-        nombre: formData.nombre,
-        tipo: formData.tipo,
-        fecha_evento: formData.fecha_evento,
-        hora_inicio: formData.hora_inicio,
-        duracion_horas: formData.duracion_horas,
-        es_premium: formData.es_premium,
-        tema_ia: formData.es_premium && formData.tema_ia ? formData.tema_ia : null,
-        estilo_ia: formData.es_premium && formData.estilo_ia ? formData.estilo_ia : null,
-        logo_url: formData.logo_url || null,
-        color_banner: formData.color_banner || '#4c1d95',
-        limite_subidas_por_invitado: formData.limite_subidas_por_invitado || null,
-        moderacion_activa: formData.moderacion_activa,
-        precio_pagado: precio, // Set the expected price
-        qr_pantalla_token,
-        qr_invitados_token,
-        qr_descarga_token,
-        estado: 'programado' as const,
-        tenant_id: tenantId,
-      };
-
-      const { data: eventResult, error: eventError } = await supabase
-        .from('eventos')
-        .insert(eventData)
-        .select('id, qr_pantalla_token, qr_invitados_token, qr_descarga_token')
-        .single();
-
-      if (eventError) {
-        console.error('Error creating event:', eventError);
-        toast.error('Error al crear el evento');
-        return null;
-      }
-
-      // Step 2: Generate payment preference with the event_id
+      // Call create-payment-preference directly — the webhook will create the event upon payment approval
       const { data, error } = await supabase.functions.invoke('create-payment-preference', {
         body: {
-          evento_id: eventResult.id, // Associate with the created event
           nombre_evento: formData.nombre,
           tipo_evento: formData.tipo,
           es_premium: formData.es_premium,
           precio: precio,
           cliente_email: clienteEmail,
           cliente_nombre: 'Cliente',
+          tenant_id: tenantId,
           evento_data: {
             tipo: formData.tipo,
             fecha_evento: formData.fecha_evento,
