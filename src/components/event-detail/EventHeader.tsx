@@ -22,7 +22,8 @@ import {
   CheckCircle,
   MoreVertical,
   ExternalLink,
-  QrCode
+  QrCode,
+  AlertTriangle
 } from 'lucide-react';
 import { formatDate, formatTime, getMuroUrl } from '@/lib/utils';
 import type { EventDetails } from '@/hooks/useEventDetails';
