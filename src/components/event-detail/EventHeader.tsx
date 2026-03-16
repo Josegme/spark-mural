@@ -22,7 +22,8 @@ import {
   CheckCircle,
   MoreVertical,
   ExternalLink,
-  QrCode
+  QrCode,
+  AlertTriangle
 } from 'lucide-react';
 import { formatDate, formatTime, getMuroUrl } from '@/lib/utils';
 import type { EventDetails } from '@/hooks/useEventDetails';
@@ -32,6 +33,7 @@ interface EventHeaderProps {
   onChangeStatus: (status: string) => void;
   onOpenQR: () => void;
   isUpdating?: boolean;
+  pagoPendiente?: boolean;
 }
 
 const statusConfig: Record<string, { label: string; className: string; icon: React.ComponentType<{ className?: string }> }> = {
@@ -52,14 +54,14 @@ const eventTypeLabels: Record<string, string> = {
   otro: '🎉 Evento',
 };
 
-export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating }: EventHeaderProps) {
+export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating, pagoPendiente }: EventHeaderProps) {
   const status = statusConfig[event.estado] || statusConfig.programado;
   const typeLabel = eventTypeLabels[event.tipo] || eventTypeLabels.otro;
   const StatusIcon = status.icon;
 
   const muroUrl = getMuroUrl(event.qr_pantalla_token);
 
-  const canActivate = event.estado === 'programado' || event.estado === 'pausado';
+  const canActivate = (event.estado === 'programado' || event.estado === 'pausado') && !pagoPendiente;
   const canPause = event.estado === 'activo';
   const canFinish = event.estado === 'activo' || event.estado === 'pausado';
 
@@ -74,6 +76,13 @@ export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating }: Eve
         <span>/</span>
         <span className="text-foreground">{event.nombre}</span>
       </div>
+
+      {pagoPendiente && (
+        <div className="mb-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200 flex items-center gap-2 text-sm text-yellow-800">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          Pago pendiente — el muro se activará cuando el cliente confirme el pago
+        </div>
+      )}
 
       {/* Header principal */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
