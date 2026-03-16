@@ -61,7 +61,7 @@ export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating, pagoP
 
   const muroUrl = getMuroUrl(event.qr_pantalla_token);
 
-  const canActivate = event.estado === 'programado' || event.estado === 'pausado';
+  const canActivate = (event.estado === 'programado' || event.estado === 'pausado') && !pagoPendiente;
   const canPause = event.estado === 'activo';
   const canFinish = event.estado === 'activo' || event.estado === 'pausado';
 
