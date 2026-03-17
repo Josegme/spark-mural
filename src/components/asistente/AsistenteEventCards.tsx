@@ -181,8 +181,8 @@ export function AsistenteEventCards({ eventos, isLoading, puedeCrear, onCreateEv
                   )}
 
                   <div className="pt-2 space-y-2">
-                    {/* Si está bloqueado, mostrar acciones de link */}
-                    {isBlocked && evento.payment_link ? (
+                    {/* Botones de pago si hay link */}
+                    {isBlocked && evento.payment_link && (
                       <div className="flex gap-2">
                         <Button 
                           variant="default"
@@ -203,13 +203,13 @@ export function AsistenteEventCards({ eventos, isLoading, puedeCrear, onCreateEv
                           </a>
                         </Button>
                       </div>
-                    ) : (
-                      <Button variant="outline" size="sm" className="w-full" asChild>
-                        <Link to={`/evento/${evento.id}`}>
-                          Ver Detalles
-                        </Link>
-                      </Button>
                     )}
+                    {/* Siempre mostrar Ver Detalles */}
+                    <Button variant="outline" size="sm" className="w-full" asChild>
+                      <Link to={`/evento/${evento.id}`}>
+                        Ver Detalles
+                      </Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
