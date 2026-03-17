@@ -1,110 +1,64 @@
 
-# Plan de Correcciones - 5 Puntos Pendientes
 
-Entiendo perfectamente tus observaciones. Hay 5 problemas concretos que debo corregir:
+## Allow Asistente to Delete Events with Pending Payment
 
-## Resumen de Problemas Identificados
+### Problem
+The event has `precio_pagado = 100` set at creation, but the payment status is still `pendiente`. Both frontend and backend block deletion when `precio_pagado > 0`, regardless of whether the payment was actually completed.
 
-| # | Problema | Estado |
-|---|----------|--------|
-| 1 | "Acceso Empresarial" no lleva al banner, no hay flecha atrás | Pendiente |
-| 2 | Panel Config solo tiene precios de eventos, faltan suscripciones | Pendiente |
-| 3 | WhatsApp API error por formato incorrecto | Pendiente |
-| 4 | Precios no cambian en landing (RLS bloqueando lectura publica) | Pendiente |
-| 5 | Banner dice "mensuales o anuales" en vez de "empresariales o personalizadas" | Pendiente |
+### Changes (2 files)
 
----
+**1. `src/components/event-detail/EventSettings.tsx`**
+- Update the `canDeleteEvent` logic: allow deletion when `pago_estado === 'pendiente'` even if `precio_pagado > 0`
+- Update `deleteReason` accordingly
+- The `event` object already includes `pago_estado` from `useEventDetails`
 
-## Correcciones Detalladas
+```typescript
+const isPaid = event.precio_pagado > 0;
+const paymentPending = event.pago_estado === 'pendiente';
 
-### 1. Navegacion desde Login
-**Archivos**: `src/pages/AuthPage.tsx`
+// Allow deletion if: super_admin, salon, not paid, OR paid but payment still pending
+const canDeleteEvent = !isEventActive && (
+  isSuperAdmin || isSalon || !isPaid || paymentPending
+);
 
-- Agregar boton/flecha para volver al Home desde la pagina de login
-- Cambiar el link "Acceso Empresarial" para que navegue correctamente al `#banner-empresarial` usando `react-router-dom` navigate
-
-### 2. Panel de Precios de Suscripciones
-**Archivos**: `src/components/admin/GlobalConfigPanel.tsx`
-
-- Agregar seccion de "Precios de Suscripciones" con campos para Starter, Profesional e Ilimitado
-- Estos son los precios que el Super Admin puede ofrecer a los salones (modificables desde su dashboard)
-
-### 3. WhatsApp URL Fix
-**Archivos**: `src/components/landing/EnterpriseBanner.tsx`
-
-- El numero ya esta correcto (5493764606205) pero hay que validar el formato
-- Asegurar que el URL sea: `https://wa.me/5493764606205` (sin simbolos)
-
-### 4. RLS Policy para Precios Publicos
-**Migracion de BD requerida**
-
-- Agregar policy de SELECT publico a `configuracion_global` para claves especificas (`precios_eventos`)
-- Esto permite que usuarios no autenticados vean los precios en la landing
-
-### 5. Texto del Banner
-**Archivos**: `src/components/landing/EnterpriseBanner.tsx`
-
-- Cambiar "Suscripciones mensuales o anuales" por "Suscripciones empresariales o personalizadas"
-
----
-
-## Seccion Tecnica
-
-### Migracion de Base de Datos
-
-```text
-+-----------------------------+
-| configuracion_global        |
-+-----------------------------+
-| Agregar RLS policy:         |
-| - SELECT publico para       |
-|   clave = 'precios_eventos' |
-+-----------------------------+
+const deleteReason = isEventActive
+  ? 'No se puede eliminar un evento activo'
+  : isPaid && !paymentPending && !isSuperAdmin && !isSalon
+    ? 'No se puede eliminar un evento que ya fue pagado'
+    : null;
 ```
 
-### Cambios en AuthPage
+**2. `supabase/functions/delete-event/index.ts`**
+- Before blocking on `precio_pagado > 0`, check the `pagos` table for actual payment status
+- If the most recent payment is `pendiente`, allow deletion (also delete the pending payment record)
 
-```text
-+------------------------+
-|      Login Page        |
-+------------------------+
-| [<- Volver]     Logo   |
-|                        |
-| Formulario...          |
-|                        |
-| Acceso Empresarial ->  |
-|   (navega a banner)    |
-+------------------------+
+```typescript
+// After existing role checks, before the precio_pagado block:
+// Check if payment is actually completed or still pending
+let paymentActuallyPaid = evento.precio_pagado > 0;
+if (paymentActuallyPaid) {
+  const { data: latestPago } = await supabase
+    .from("pagos")
+    .select("estado")
+    .eq("evento_id", eventId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  
+  if (latestPago?.estado === "pendiente") {
+    paymentActuallyPaid = false; // Payment not confirmed yet
+  }
+}
+
+if (!isSuperAdmin) {
+  const isSalon = appRole === "salon" && isTenantManager;
+  if (!isSalon && paymentActuallyPaid) { // changed from evento.precio_pagado > 0
+    // ... existing 409 response
+  }
+}
 ```
 
-### GlobalConfigPanel - Nueva Seccion
+### Why both files
+- Frontend: enables the button so the asistente can click "Eliminar"
+- Backend: the edge function independently validates permissions and would still reject the request without its own fix
 
-```text
-+----------------------------------+
-| $ Precios de Suscripciones       |
-+----------------------------------+
-| Plan Starter   | Plan Profesional|
-| [___150000___] | [___250000____] |
-|                                  |
-| Plan Ilimitado                   |
-| [___500000___]                   |
-|                                  |
-| [Guardar Precios Suscripciones]  |
-+----------------------------------+
-```
-
----
-
-## Archivos a Modificar
-
-1. `src/pages/AuthPage.tsx` - Agregar flecha atras y corregir navegacion
-2. `src/components/landing/EnterpriseBanner.tsx` - Corregir texto banner
-3. `src/components/admin/GlobalConfigPanel.tsx` - Agregar precios suscripciones
-4. Nueva migracion SQL para RLS de lectura publica
-
-## Orden de Implementacion
-
-1. Migracion BD (RLS para precios publicos)
-2. GlobalConfigPanel (agregar seccion suscripciones)
-3. EnterpriseBanner (texto correcto + verificar WhatsApp)
-4. AuthPage (navegacion y flecha atras)
