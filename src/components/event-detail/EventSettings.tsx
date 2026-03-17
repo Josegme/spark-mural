@@ -63,17 +63,18 @@ export function EventSettings({ event, onUpdate, onDelete, isUpdating, isDeletin
   const isSalon = userRole === 'salon';
   const isEventActive = event.estado === 'activo';
   const isPaid = event.precio_pagado > 0;
+  const paymentPending = event.pago_estado === 'pendiente';
 
   // Super Admin: siempre (excepto activos)
   // Salón: siempre (excepto activos) - trabaja por cuota
-  // Asistente/Cliente: solo si no está pagado y no está activo
+  // Asistente/Cliente: solo si no está pagado, o si el pago sigue pendiente
   const canDeleteEvent = !isEventActive && (
-    isSuperAdmin || isSalon || !isPaid
+    isSuperAdmin || isSalon || !isPaid || paymentPending
   );
 
   const deleteReason = isEventActive
     ? 'No se puede eliminar un evento activo'
-    : isPaid && !isSuperAdmin && !isSalon
+    : isPaid && !paymentPending && !isSuperAdmin && !isSalon
       ? 'No se puede eliminar un evento que ya fue pagado'
       : null;
 
