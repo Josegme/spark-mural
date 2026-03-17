@@ -106,14 +106,29 @@ serve(async (req) => {
       );
     }
 
+    // Verificar si el pago fue realmente completado o sigue pendiente
+    let paymentActuallyPaid = evento.precio_pagado > 0;
+    if (paymentActuallyPaid) {
+      const { data: latestPago } = await supabase
+        .from("pagos")
+        .select("estado")
+        .eq("evento_id", eventId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!latestPago || latestPago.estado === "pendiente") {
+        paymentActuallyPaid = false; // Pago no confirmado aún
+      }
+    }
+
     // Reglas de eliminación por rol:
     // - Super Admin: siempre (excepto activos, ya validado arriba)
     // - Salón (tenant manager): siempre (excepto activos) - trabaja por cuota, no por pago
-    // - Asistente (tenant manager): solo si precio_pagado = 0
-    // - Cliente (owner): solo si precio_pagado = 0
+    // - Asistente/Cliente: solo si el pago no fue confirmado
     if (!isSuperAdmin) {
       const isSalon = appRole === "salon" && isTenantManager;
-      if (!isSalon && evento.precio_pagado > 0) {
+      if (!isSalon && paymentActuallyPaid) {
         return new Response(
           JSON.stringify({ ok: false, error: "No se puede eliminar un evento que ya fue pagado" }),
           { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
