@@ -392,27 +392,26 @@ export function useCreateEvent() {
         return false;
       }
 
-      // If promotional event by asistente, decrement courtesy counter
-      if (isPromotional && userRole === 'asistente' && tenantId) {
+      // If promotional event by asistente, decrement courtesy counter via edge function
+      if (isPromotional && (userRole === 'asistente' || userRole === 'admin') && tenantId) {
         try {
-          // Fetch current courtesy count and decrement
-          const { data: tenantData } = await supabase
-            .from('tenants')
-            .select('eventos_cortesia_disponibles')
-            .eq('id', tenantId)
-            .single();
-          
-          if (tenantData && tenantData.eventos_cortesia_disponibles > 0) {
-            await supabase
-              .from('tenants')
-              .update({ 
-                eventos_cortesia_disponibles: tenantData.eventos_cortesia_disponibles - 1 
-              })
-              .eq('id', tenantId);
+          const { data: decrementData, error: decrementError } = await supabase.functions.invoke(
+            'decrement-courtesy-counter',
+            { body: { tenantId } }
+          );
+
+          if (decrementError) {
+            console.error('Error decrementing courtesy counter:', decrementError);
+            toast.error('El evento se creó pero no se pudo actualizar el contador de cortesías.');
+          } else if (decrementData?.ok) {
+            console.log('Courtesy counter decremented to:', decrementData.nuevoCuenta);
+          } else {
+            console.warn('Courtesy decrement response:', decrementData);
+            toast.error('No se pudo descontar la cortesía: ' + (decrementData?.message || 'error desconocido'));
           }
         } catch (courtesyError) {
-          console.error('Error updating courtesy counter:', courtesyError);
-          // Don't fail the event creation if this fails
+          console.error('Error calling decrement-courtesy-counter:', courtesyError);
+          toast.error('Error al actualizar el contador de cortesías.');
         }
       }
 
