@@ -179,6 +179,16 @@ export function StepBasicInfo({ data, onNext }: StepBasicInfoProps) {
           />
         </div>
 
+        {/* Aviso informativo (no bloqueante) */}
+        {showTimeWarning && (
+          <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+            <Info className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-700 dark:text-amber-400 text-sm">
+              Recordá que el pago puede tardar unos minutos en confirmarse.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Duración */}
         <FormField
           control={form.control}
