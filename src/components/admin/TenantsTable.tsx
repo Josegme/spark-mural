@@ -434,7 +434,7 @@ export function TenantsTable({ tenants, isLoading, onRefresh }: TenantsTableProp
                               <Edit className="w-4 h-4 mr-2" />
                               Editar Configuración
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setSelectedTenantForEvents(tenant)}>
                               <Eye className="w-4 h-4 mr-2" />
                               Ver Eventos
                             </DropdownMenuItem>
