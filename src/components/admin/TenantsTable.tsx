@@ -500,6 +500,76 @@ export function TenantsTable({ tenants, isLoading, onRefresh }: TenantsTableProp
           onRefresh?.();
         }}
       />
+
+      {/* Dialog de eventos del tenant */}
+      <Dialog open={!!selectedTenantForEvents} onOpenChange={(open) => !open && setSelectedTenantForEvents(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Eventos de {selectedTenantForEvents?.nombre}
+            </DialogTitle>
+          </DialogHeader>
+          {loadingEvents ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : tenantEvents.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Este tenant no tiene eventos creados.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Evento</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Precio</TableHead>
+                  <TableHead className="w-10"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tenantEvents.map((evento) => {
+                  const eventStatusInfo = statusConfig[evento.estado] || { label: evento.estado, className: '' };
+                  return (
+                    <TableRow key={evento.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{evento.nombre}</p>
+                          {evento.es_premium && (
+                            <Badge variant="secondary" className="text-xs mt-0.5">Premium</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="capitalize text-sm">{evento.tipo?.replace('_', ' ')}</TableCell>
+                      <TableCell className="text-sm">{formatDate(evento.fecha_evento)}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${eventStatusInfo.className}`}>
+                          {eventStatusInfo.label || evento.estado}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm">{formatPrice(evento.precio_pagado)}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => navigate(`/evento/${evento.id}`)}
+                          title="Gestionar evento"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
