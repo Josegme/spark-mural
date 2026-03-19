@@ -76,12 +76,32 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 export function TenantsTable({ tenants, isLoading, onRefresh }: TenantsTableProps) {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [assignedUsers, setAssignedUsers] = useState<Record<string, { nombre: string; email: string }>>({});
+  const [selectedTenantForEvents, setSelectedTenantForEvents] = useState<Tenant | null>(null);
+  const [tenantEvents, setTenantEvents] = useState<any[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+
+  // Fetch events when a tenant is selected for viewing
+  useEffect(() => {
+    if (!selectedTenantForEvents) return;
+    setLoadingEvents(true);
+    supabase
+      .from('eventos')
+      .select('id, nombre, tipo, estado, fecha_evento, hora_inicio, precio_pagado, es_premium')
+      .eq('tenant_id', selectedTenantForEvents.id)
+      .order('fecha_evento', { ascending: false })
+      .then(({ data, error }) => {
+        setTenantEvents(data || []);
+        setLoadingEvents(false);
+        if (error) console.error('Error fetching tenant events:', error);
+      });
+  }, [selectedTenantForEvents]);
 
   // Fetch assigned user names for tenants that have usuario_asignado_id
   useEffect(() => {
