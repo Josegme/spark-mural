@@ -4,8 +4,9 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar, Clock, Timer, PartyPopper, Heart, GraduationCap, Building2, Sparkles, Star } from 'lucide-react';
+import { Calendar, Clock, Timer, PartyPopper, Heart, GraduationCap, Building2, Sparkles, Star, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
