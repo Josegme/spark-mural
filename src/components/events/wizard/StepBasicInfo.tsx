@@ -4,8 +4,9 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Calendar, Clock, Timer, PartyPopper, Heart, GraduationCap, Building2, Sparkles, Star } from 'lucide-react';
+import { Calendar, Clock, Timer, PartyPopper, Heart, GraduationCap, Building2, Sparkles, Star, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -43,10 +44,24 @@ export function StepBasicInfo({ data, onNext }: StepBasicInfoProps) {
     onNext(values);
   };
 
-  // Obtener fecha mínima (mañana)
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const minDate = tomorrow.toISOString().split('T')[0];
+  // Obtener fecha mínima (hoy — el cliente puede activar el muro cuando quiera)
+  const today = new Date();
+  const minDate = today.toISOString().split('T')[0];
+
+  // Aviso informativo cuando el evento es hoy y la hora es próxima
+  const watchedFecha = form.watch('fecha_evento');
+  const watchedHora = form.watch('hora_inicio');
+  const showTimeWarning = (() => {
+    if (!watchedFecha || !watchedHora) return false;
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (watchedFecha !== todayStr) return false;
+    const now = new Date();
+    const [h, m] = watchedHora.split(':').map(Number);
+    const eventTime = new Date();
+    eventTime.setHours(h, m, 0, 0);
+    const diffMs = eventTime.getTime() - now.getTime();
+    return diffMs < 60 * 60 * 1000; // menos de 1 hora
+  })();
 
   return (
     <Form {...form}>
@@ -163,6 +178,16 @@ export function StepBasicInfo({ data, onNext }: StepBasicInfoProps) {
             )}
           />
         </div>
+
+        {/* Aviso informativo (no bloqueante) */}
+        {showTimeWarning && (
+          <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+            <Info className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-700 dark:text-amber-400 text-sm">
+              Recordá que el pago puede tardar unos minutos en confirmarse.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Duración */}
         <FormField
