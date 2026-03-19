@@ -44,10 +44,24 @@ export function StepBasicInfo({ data, onNext }: StepBasicInfoProps) {
     onNext(values);
   };
 
-  // Obtener fecha mínima (mañana)
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const minDate = tomorrow.toISOString().split('T')[0];
+  // Obtener fecha mínima (hoy — el cliente puede activar el muro cuando quiera)
+  const today = new Date();
+  const minDate = today.toISOString().split('T')[0];
+
+  // Aviso informativo cuando el evento es hoy y la hora es próxima
+  const watchedFecha = form.watch('fecha_evento');
+  const watchedHora = form.watch('hora_inicio');
+  const showTimeWarning = (() => {
+    if (!watchedFecha || !watchedHora) return false;
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (watchedFecha !== todayStr) return false;
+    const now = new Date();
+    const [h, m] = watchedHora.split(':').map(Number);
+    const eventTime = new Date();
+    eventTime.setHours(h, m, 0, 0);
+    const diffMs = eventTime.getTime() - now.getTime();
+    return diffMs < 60 * 60 * 1000; // menos de 1 hora
+  })();
 
   return (
     <Form {...form}>
