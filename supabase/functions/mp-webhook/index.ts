@@ -349,6 +349,21 @@ serve(async (req) => {
       else if (nuevoEstado === 'aprobado' && !existingPayment.evento_id && metadata?.evento_data) {
         console.log('=== CREATING EVENT AFTER APPROVED PAYMENT ===');
         
+        // Double-check atómico: re-leer el pago desde DB en este instante
+        const { data: recheck } = await supabase
+          .from('pagos')
+          .select('evento_id')
+          .eq('id', existingPayment.id)
+          .single();
+
+        if (recheck?.evento_id) {
+          console.log('Race condition detected: event already created by concurrent webhook. Payment ID:', existingPayment.id);
+          return new Response(
+            JSON.stringify({ received: true, skipped: 'race_condition' }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
         let eventoData;
         try {
           eventoData = typeof metadata.evento_data === 'string' 
