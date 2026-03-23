@@ -107,6 +107,23 @@ serve(async (req) => {
     const nuevoEstado = statusMap[payment.status] || 'pendiente';
     console.log('Mapped status:', payment.status, '->', nuevoEstado);
 
+    // IDEMPOTENCY CHECK: si ya procesamos este payment_id exacto y creamos un evento, no hacer nada
+    if (payment.status === 'approved') {
+      const { data: yaExiste } = await supabase
+        .from('eventos')
+        .select('id')
+        .eq('payment_id', payment.id.toString())
+        .maybeSingle();
+
+      if (yaExiste) {
+        console.log('Event already exists for payment_id:', payment.id, '— skipping duplicate webhook');
+        return new Response(
+          JSON.stringify({ received: true, skipped: 'duplicate' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // IMPROVED: Find existing payment record using multiple strategies
     // Strategy 1: Try to find by preference_id (stored in payment_id_externo when created)
     // Strategy 2: Try to find by external_reference in metadata
@@ -173,11 +190,13 @@ serve(async (req) => {
       if (refParts.length >= 3 && refParts[0] === 'evt') {
         const userId = refParts.slice(1, -1).join('_');
         console.log('Strategy 4: Looking by user_id from external_reference:', userId);
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
         const result = await supabase
           .from('pagos')
           .select('*')
           .eq('estado', 'pendiente')
           .filter('metadata->>user_id', 'eq', userId)
+          .gte('created_at', thirtyMinutesAgo)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -330,6 +349,21 @@ serve(async (req) => {
       else if (nuevoEstado === 'aprobado' && !existingPayment.evento_id && metadata?.evento_data) {
         console.log('=== CREATING EVENT AFTER APPROVED PAYMENT ===');
         
+        // Double-check atómico: re-leer el pago desde DB en este instante
+        const { data: recheck } = await supabase
+          .from('pagos')
+          .select('evento_id')
+          .eq('id', existingPayment.id)
+          .single();
+
+        if (recheck?.evento_id) {
+          console.log('Race condition detected: event already created by concurrent webhook. Payment ID:', existingPayment.id);
+          return new Response(
+            JSON.stringify({ received: true, skipped: 'race_condition' }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
         let eventoData;
         try {
           eventoData = typeof metadata.evento_data === 'string' 
