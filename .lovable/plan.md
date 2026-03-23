@@ -1,34 +1,24 @@
 
 
-## Plan: 2 fixes — fecha mínima + "Ver Eventos" de tenant
+## Fix: Idempotencia y Race Condition en mp-webhook
 
-### Fix 1 — Fecha mínima en StepBasicInfo.tsx
+Evaluación Senior: Los 3 cambios son correctos, quirúrgicos y no rompen nada. El guard de idempotencia por `payment_id` en `eventos` es la defensa principal. El re-fetch atómico antes del INSERT en CASE 2 es la defensa secundaria contra race conditions. Acotar Strategy 4 a 30 minutos reduce falsos positivos. Ninguno altera el flujo normal — solo agregan guards que retornan 200 early si detectan duplicados.
 
-**Confirmado**: tenés razón. Líneas 46-49 fijan `minDate` en mañana. Un cliente que paga hoy no puede crear un evento para hoy.
+Una observación: el guard de idempotencia (Cambio 1) debe aplicarse solo cuando `payment.status === 'approved'`, porque los webhooks de `pending` no crean eventos y deben seguir actualizando el estado del pago normalmente. Esto ya está contemplado en tu especificación.
 
-**Cambios en `src/components/events/wizard/StepBasicInfo.tsx`:**
-- Reemplazar el bloque `tomorrow` por `today` para que `minDate` sea la fecha actual
-- Agregar un aviso informativo (no bloqueante) debajo del campo `hora_inicio` cuando la fecha seleccionada es hoy y la hora es menor a 1 hora desde ahora: "Recordá que el pago puede tardar unos minutos en confirmarse."
-- Se usa `form.watch` para observar `fecha_evento` y `hora_inicio` en tiempo real
+### Cambios en `supabase/functions/mp-webhook/index.ts`
 
-### Fix 2 — "Ver Eventos" en TenantsTable.tsx
+**Cambio 1 — Guard de idempotencia (línea ~108, después de los logs de MP PAYMENT DETAILS)**
+- Solo si `payment.status === 'approved'`: query `eventos` por `payment_id = payment.id.toString()`
+- Si ya existe → return 200 con `skipped: 'duplicate'`
 
-**Confirmado**: el `DropdownMenuItem` "Ver Eventos" (línea 408) no tiene `onClick` — es un botón muerto.
+**Cambio 2 — Re-fetch atómico en CASE 2 (línea ~346, antes del INSERT)**
+- Re-leer `pagos.evento_id` para el `existingPayment.id`
+- Si `evento_id` ya tiene valor → return 200 con `skipped: 'race_condition'`
 
-**Cambios en `src/components/admin/TenantsTable.tsx`:**
-- Agregar un estado `selectedTenantForEvents` (tipo `Tenant | null`) para rastrear qué tenant quiere ver eventos
-- Agregar `onClick` al item "Ver Eventos" que setea ese estado
-- Cuando hay un tenant seleccionado, renderizar un panel/modal debajo de la tabla (o un Dialog) que:
-  - Hace un query a `eventos` filtrado por `tenant_id = selectedTenant.id`
-  - Muestra nombre, fecha, estado, tipo, precio de cada evento
-  - Permite cerrar y volver a la tabla
-  - Incluye link a "Gestionar" cada evento (`/evento/{id}`)
+**Cambio 3 — Acotar Strategy 4 (línea ~176)**
+- Agregar `.gte('created_at', thirtyMinutesAgo)` al query de Strategy 4
 
-**Implementación**: Dialog con una lista simple de eventos del tenant, reutilizando los mismos estilos de `AdminEventsList`. Sin crear archivos nuevos — todo dentro de `TenantsTable.tsx` usando el Dialog de shadcn que ya está disponible.
-
-### Archivos tocados
-1. `src/components/events/wizard/StepBasicInfo.tsx`
-2. `src/components/admin/TenantsTable.tsx`
-
-Ningún otro archivo se modifica.
+### Archivo tocado
+Solo `supabase/functions/mp-webhook/index.ts` + deploy de la edge function.
 
