@@ -107,6 +107,23 @@ serve(async (req) => {
     const nuevoEstado = statusMap[payment.status] || 'pendiente';
     console.log('Mapped status:', payment.status, '->', nuevoEstado);
 
+    // IDEMPOTENCY CHECK: si ya procesamos este payment_id exacto y creamos un evento, no hacer nada
+    if (payment.status === 'approved') {
+      const { data: yaExiste } = await supabase
+        .from('eventos')
+        .select('id')
+        .eq('payment_id', payment.id.toString())
+        .maybeSingle();
+
+      if (yaExiste) {
+        console.log('Event already exists for payment_id:', payment.id, '— skipping duplicate webhook');
+        return new Response(
+          JSON.stringify({ received: true, skipped: 'duplicate' }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // IMPROVED: Find existing payment record using multiple strategies
     // Strategy 1: Try to find by preference_id (stored in payment_id_externo when created)
     // Strategy 2: Try to find by external_reference in metadata
