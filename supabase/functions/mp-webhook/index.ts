@@ -190,11 +190,13 @@ serve(async (req) => {
       if (refParts.length >= 3 && refParts[0] === 'evt') {
         const userId = refParts.slice(1, -1).join('_');
         console.log('Strategy 4: Looking by user_id from external_reference:', userId);
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
         const result = await supabase
           .from('pagos')
           .select('*')
           .eq('estado', 'pendiente')
           .filter('metadata->>user_id', 'eq', userId)
+          .gte('created_at', thirtyMinutesAgo)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
