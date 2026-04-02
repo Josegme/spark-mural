@@ -1,7 +1,7 @@
 /**
  * PICKEVENT - Edge Function para Descarga de Álbum en ZIP
  * Genera un archivo ZIP con todas las fotos y videos del evento
- * Usa descargas en lotes para evitar CPU timeout
+ * Optimizado para no exceder límites de memoria (~150MB) en Deno Edge Functions
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -13,8 +13,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const BATCH_SIZE = 5;
+const BATCH_SIZE = 3;
 const BUCKET_NAME = 'contenido-eventos';
+const MAX_FILES = 100;
+const MAX_VIDEOS = 5;
 
 interface DownloadRequest {
   token: string;
@@ -23,13 +25,11 @@ interface DownloadRequest {
 
 /**
  * Extrae el path de storage desde una URL pública de Supabase Storage.
- * Ejemplo: https://xxx.supabase.co/storage/v1/object/public/contenido-eventos/abc/foto.jpg
- * → abc/foto.jpg
  */
 function extractStoragePath(url: string, supabaseUrl: string): string | null {
   const publicPrefix = `${supabaseUrl}/storage/v1/object/public/${BUCKET_NAME}/`;
   const signedPrefix = `${supabaseUrl}/storage/v1/object/sign/${BUCKET_NAME}/`;
-  
+
   if (url.startsWith(publicPrefix)) {
     return decodeURIComponent(url.slice(publicPrefix.length).split('?')[0]);
   }
@@ -40,25 +40,35 @@ function extractStoragePath(url: string, supabaseUrl: string): string | null {
 }
 
 /**
- * Descarga un archivo, usando signed URL si es de Supabase Storage.
+ * Descarga un archivo. Para fotos de Supabase Storage usa transform (1920px, quality 80)
+ * para reducir memoria. Videos y URLs externas se descargan tal cual.
  */
 async function downloadFile(
   url: string,
   supabase: ReturnType<typeof createClient>,
   supabaseUrl: string,
+  isPhoto: boolean,
 ): Promise<ArrayBuffer | null> {
   try {
     const storagePath = extractStoragePath(url, supabaseUrl);
 
     if (storagePath) {
-      // Generar signed URL fresca (10 min) para evitar URLs expiradas
+      // Para fotos: usar render/image transform para reducir tamaño en memoria
+      if (isPhoto) {
+        const transformUrl = `${supabaseUrl}/storage/v1/render/image/public/${BUCKET_NAME}/${storagePath}?width=1920&quality=80`;
+        const res = await fetch(transformUrl);
+        if (res.ok) return await res.arrayBuffer();
+        // Si transform falla, fallback a signed URL
+        console.warn(`Transform failed for ${storagePath}, falling back to signed URL`);
+      }
+
+      // Signed URL para videos o fallback de fotos
       const { data: signedData, error: signError } = await supabase.storage
         .from(BUCKET_NAME)
         .createSignedUrl(storagePath, 600);
 
       if (signError || !signedData?.signedUrl) {
         console.warn(`Signed URL failed for ${storagePath}:`, signError?.message);
-        // Fallback: intentar URL original directamente
         const res = await fetch(url);
         return res.ok ? await res.arrayBuffer() : null;
       }
@@ -67,7 +77,7 @@ async function downloadFile(
       return res.ok ? await res.arrayBuffer() : null;
     }
 
-    // URL externa — fetch directo
+    // URL externa
     const res = await fetch(url);
     return res.ok ? await res.arrayBuffer() : null;
   } catch (err) {
@@ -146,7 +156,16 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Creating ZIP with ${contenidos.length} items (batches of ${BATCH_SIZE})`);
+    // Separar fotos y videos para aplicar límites
+    const allPhotos = contenidos.filter(c => c.tipo === 'foto');
+    const allVideos = contenidos.filter(c => c.tipo === 'video');
+    const videosExcluded = allVideos.length > MAX_VIDEOS;
+    const videosToInclude = videosExcluded ? [] : allVideos;
+
+    // Limitar total de archivos
+    const itemsToProcess = [...allPhotos, ...videosToInclude].slice(0, MAX_FILES);
+
+    console.log(`Creating ZIP: ${allPhotos.length} photos, ${allVideos.length} videos (including ${videosToInclude.length} videos). Batch size: ${BATCH_SIZE}. Total items: ${itemsToProcess.length}`);
 
     // Crear ZIP
     const zip = new JSZip();
@@ -154,43 +173,46 @@ serve(async (req) => {
     const videosFolder = zip.folder('videos');
     const iaFolder = evento.es_premium && body.include_ia ? zip.folder('fotos_ia') : null;
 
-    // Preparar lista de descargas
     interface DownloadTask {
       url: string;
       folder: JSZip | null;
       fileName: string;
+      isPhoto: boolean;
     }
 
     const tasks: DownloadTask[] = [];
     let fileIndex = 1;
 
-    for (const item of contenidos) {
+    for (const item of itemsToProcess) {
       const nombre = (item.invitado_nombre || 'Invitado').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '');
       const fecha = new Date(item.created_at).toISOString().split('T')[0];
       const idx = String(fileIndex).padStart(3, '0');
+      const isPhoto = item.tipo === 'foto';
 
       if (item.url_original) {
-        const extension = item.tipo === 'video' ? 'mp4' : 'jpg';
-        const folder = item.tipo === 'video' ? videosFolder : fotosFolder;
+        const extension = isPhoto ? 'jpg' : 'mp4';
+        const folder = isPhoto ? fotosFolder : videosFolder;
         tasks.push({
           url: item.url_original,
           folder,
           fileName: `${idx}_${nombre}_${fecha}.${extension}`,
+          isPhoto,
         });
       }
 
-      if (iaFolder && item.url_ia && item.tipo === 'foto') {
+      if (iaFolder && item.url_ia && isPhoto) {
         tasks.push({
           url: item.url_ia,
           folder: iaFolder,
           fileName: `${idx}_${nombre}_${fecha}_IA.png`,
+          isPhoto: true,
         });
       }
 
       fileIndex++;
     }
 
-    // Descargar en lotes de BATCH_SIZE
+    // Descargar en lotes pequeños
     let successCount = 0;
     let failCount = 0;
 
@@ -198,7 +220,7 @@ serve(async (req) => {
       const batch = tasks.slice(i, i + BATCH_SIZE);
       const results = await Promise.all(
         batch.map(async (task) => {
-          const data = await downloadFile(task.url, supabase, supabaseUrl);
+          const data = await downloadFile(task.url, supabase, supabaseUrl, task.isPhoto);
           if (data && task.folder) {
             task.folder.file(task.fileName, data);
             return true;
@@ -225,15 +247,24 @@ serve(async (req) => {
     }
 
     // README
+    const warnings: string[] = [];
+    if (videosExcluded) {
+      warnings.push(`⚠ Los ${allVideos.length} videos fueron excluidos del ZIP por límite de tamaño. Podés descargarlos individualmente desde la app.`);
+    }
+    if (itemsToProcess.length < contenidos.length) {
+      warnings.push(`⚠ Se incluyeron ${itemsToProcess.length} de ${contenidos.length} archivos totales por límite de tamaño.`);
+    }
+
     const readmeContent = `
 ÁLBUM DE EVENTO: ${evento.nombre}
 ================================
 
 Este álbum contiene ${successCount} archivos del evento.
 ${failCount > 0 ? `(${failCount} archivos no pudieron ser incluidos)` : ''}
+${warnings.length > 0 ? '\n' + warnings.join('\n') : ''}
 
 Estructura de carpetas:
-- /fotos - Fotos originales subidas por los invitados
+- /fotos - Fotos del evento (optimizadas a 1920px)
 - /videos - Videos subidos por los invitados
 ${iaFolder ? '- /fotos_ia - Fotos transformadas con Inteligencia Artificial' : ''}
 
@@ -243,7 +274,7 @@ https://pickevent.app
 
     zip.file('README.txt', readmeContent);
 
-    // Generar ZIP con compresión más liviana para no exceder CPU
+    // Generar ZIP con compresión mínima
     console.log('Generating ZIP file...');
     const zipBlob = await zip.generateAsync({
       type: 'arraybuffer',
