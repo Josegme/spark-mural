@@ -24,6 +24,7 @@ import TestingGuidePage from "./pages/TestingGuidePage";
 import TechnicalReportPage from "./pages/TechnicalReportPage";
 import StakeholderReportPage from "./pages/StakeholderReportPage";
 import NotFound from "./pages/NotFound";
+import ComingSoonPage from "./pages/ComingSoonPage";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,11 @@ const App = () => (
           <Routes>
             {/* Rutas públicas */}
             <Route path="/" element={<Index />} />
+            <Route path="/para-salones" element={<ComingSoonPage />} />
+            <Route path="/para-organizadores" element={<ComingSoonPage />} />
+            <Route path="/contacto" element={<ComingSoonPage />} />
+            <Route path="/terminos" element={<ComingSoonPage />} />
+            <Route path="/privacidad" element={<ComingSoonPage />} />
             <Route path="/login" element={<AuthPage />} />
             <Route path="/recuperar-password" element={<RecuperarPasswordPage />} />
             <Route path="/restablecer-password" element={<RestablecerPasswordPage />} />
