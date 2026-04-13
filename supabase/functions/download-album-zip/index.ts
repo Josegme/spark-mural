@@ -1,7 +1,7 @@
 /**
  * PICKEVENT - Edge Function para Descarga de Álbum en ZIP
- * Genera un archivo ZIP con todas las fotos y videos del evento
- * Optimizado para no exceder límites de memoria (~150MB) en Deno Edge Functions
+ * Genera un archivo ZIP con todas las fotos, videos y mensajes del evento
+ * Usa compresión STORE (sin comprimir) para evitar CPU Time exceeded en Deno Edge Functions
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -13,10 +13,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const BATCH_SIZE = 3;
+const BATCH_SIZE = 5;
 const BUCKET_NAME = 'contenido-eventos';
-const MAX_FILES = 100;
-const MAX_VIDEOS = 5;
 
 interface DownloadRequest {
   token: string;
@@ -40,29 +38,18 @@ function extractStoragePath(url: string, supabaseUrl: string): string | null {
 }
 
 /**
- * Descarga un archivo. Para fotos de Supabase Storage usa transform (1920px, quality 80)
- * para reducir memoria. Videos y URLs externas se descargan tal cual.
+ * Descarga un archivo usando signed URL o fetch directo.
+ * Archivos originales sin transformación ni compresión.
  */
 async function downloadFile(
   url: string,
   supabase: ReturnType<typeof createClient>,
   supabaseUrl: string,
-  isPhoto: boolean,
 ): Promise<ArrayBuffer | null> {
   try {
     const storagePath = extractStoragePath(url, supabaseUrl);
 
     if (storagePath) {
-      // Para fotos: usar render/image transform para reducir tamaño en memoria
-      if (isPhoto) {
-        const transformUrl = `${supabaseUrl}/storage/v1/render/image/public/${BUCKET_NAME}/${storagePath}?width=1920&quality=80`;
-        const res = await fetch(transformUrl);
-        if (res.ok) return await res.arrayBuffer();
-        // Si transform falla, fallback a signed URL
-        console.warn(`Transform failed for ${storagePath}, falling back to signed URL`);
-      }
-
-      // Signed URL para videos o fallback de fotos
       const { data: signedData, error: signError } = await supabase.storage
         .from(BUCKET_NAME)
         .createSignedUrl(storagePath, 600);
@@ -132,13 +119,13 @@ serve(async (req) => {
       }
     }
 
-    // Obtener contenido aprobado
+    // Obtener contenido aprobado (fotos, videos Y mensajes)
     const { data: contenidos, error: contenidoError } = await supabase
       .from('contenido')
-      .select('id, tipo, url_original, url_ia, invitado_nombre, created_at')
+      .select('id, tipo, url_original, url_ia, mensaje_texto, invitado_nombre, created_at')
       .eq('evento_id', evento.id)
       .eq('aprobado', true)
-      .in('tipo', ['foto', 'video'])
+      .in('tipo', ['foto', 'video', 'mensaje'])
       .order('created_at', { ascending: true });
 
     if (contenidoError) {
@@ -156,16 +143,13 @@ serve(async (req) => {
       );
     }
 
-    // Separar fotos y videos para aplicar límites
+    // Separar por tipo
     const allPhotos = contenidos.filter(c => c.tipo === 'foto');
     const allVideos = contenidos.filter(c => c.tipo === 'video');
-    const videosExcluded = allVideos.length > MAX_VIDEOS;
-    const videosToInclude = videosExcluded ? [] : allVideos;
+    const allMessages = contenidos.filter(c => c.tipo === 'mensaje');
+    const mediaItems = [...allPhotos, ...allVideos];
 
-    // Limitar total de archivos
-    const itemsToProcess = [...allPhotos, ...videosToInclude].slice(0, MAX_FILES);
-
-    console.log(`Creating ZIP: ${allPhotos.length} photos, ${allVideos.length} videos (including ${videosToInclude.length} videos). Batch size: ${BATCH_SIZE}. Total items: ${itemsToProcess.length}`);
+    console.log(`Creating ZIP: ${allPhotos.length} photos, ${allVideos.length} videos, ${allMessages.length} messages. Batch size: ${BATCH_SIZE}. Total media: ${mediaItems.length}`);
 
     // Crear ZIP
     const zip = new JSZip();
@@ -177,13 +161,12 @@ serve(async (req) => {
       url: string;
       folder: JSZip | null;
       fileName: string;
-      isPhoto: boolean;
     }
 
     const tasks: DownloadTask[] = [];
     let fileIndex = 1;
 
-    for (const item of itemsToProcess) {
+    for (const item of mediaItems) {
       const nombre = (item.invitado_nombre || 'Invitado').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '');
       const fecha = new Date(item.created_at).toISOString().split('T')[0];
       const idx = String(fileIndex).padStart(3, '0');
@@ -196,7 +179,6 @@ serve(async (req) => {
           url: item.url_original,
           folder,
           fileName: `${idx}_${nombre}_${fecha}.${extension}`,
-          isPhoto,
         });
       }
 
@@ -205,14 +187,25 @@ serve(async (req) => {
           url: item.url_ia,
           folder: iaFolder,
           fileName: `${idx}_${nombre}_${fecha}_IA.png`,
-          isPhoto: true,
         });
       }
 
       fileIndex++;
     }
 
-    // Descargar en lotes pequeños
+    // Agregar mensajes como archivo de texto
+    if (allMessages.length > 0) {
+      const mensajesFolder = zip.folder('mensajes');
+      const mensajesContent = allMessages.map((m, i) => {
+        const nombre = m.invitado_nombre || 'Invitado';
+        const fecha = new Date(m.created_at).toLocaleString('es-AR');
+        return `[${i + 1}] ${nombre} — ${fecha}\n${m.mensaje_texto || '(sin texto)'}\n`;
+      }).join('\n---\n\n');
+
+      mensajesFolder?.file('mensajes_del_evento.txt', mensajesContent);
+    }
+
+    // Descargar archivos multimedia en lotes
     let successCount = 0;
     let failCount = 0;
 
@@ -220,7 +213,7 @@ serve(async (req) => {
       const batch = tasks.slice(i, i + BATCH_SIZE);
       const results = await Promise.all(
         batch.map(async (task) => {
-          const data = await downloadFile(task.url, supabase, supabaseUrl, task.isPhoto);
+          const data = await downloadFile(task.url, supabase, supabaseUrl);
           if (data && task.folder) {
             task.folder.file(task.fileName, data);
             return true;
@@ -239,7 +232,7 @@ serve(async (req) => {
 
     console.log(`Downloads complete: ${successCount} ok, ${failCount} failed`);
 
-    if (successCount === 0) {
+    if (successCount === 0 && allMessages.length === 0) {
       return new Response(
         JSON.stringify({ error: 'No se pudo descargar ningún archivo' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -247,25 +240,17 @@ serve(async (req) => {
     }
 
     // README
-    const warnings: string[] = [];
-    if (videosExcluded) {
-      warnings.push(`⚠ Los ${allVideos.length} videos fueron excluidos del ZIP por límite de tamaño. Podés descargarlos individualmente desde la app.`);
-    }
-    if (itemsToProcess.length < contenidos.length) {
-      warnings.push(`⚠ Se incluyeron ${itemsToProcess.length} de ${contenidos.length} archivos totales por límite de tamaño.`);
-    }
-
     const readmeContent = `
 ÁLBUM DE EVENTO: ${evento.nombre}
 ================================
 
-Este álbum contiene ${successCount} archivos del evento.
+Este álbum contiene ${successCount} archivos multimedia${allMessages.length > 0 ? ` y ${allMessages.length} mensajes` : ''} del evento.
 ${failCount > 0 ? `(${failCount} archivos no pudieron ser incluidos)` : ''}
-${warnings.length > 0 ? '\n' + warnings.join('\n') : ''}
 
 Estructura de carpetas:
-- /fotos - Fotos del evento (optimizadas a 1920px)
+- /fotos - Fotos del evento (calidad original)
 - /videos - Videos subidos por los invitados
+${allMessages.length > 0 ? '- /mensajes - Mensajes de los invitados' : ''}
 ${iaFolder ? '- /fotos_ia - Fotos transformadas con Inteligencia Artificial' : ''}
 
 Generado por PickEvent
@@ -274,12 +259,11 @@ https://pickevent.app
 
     zip.file('README.txt', readmeContent);
 
-    // Generar ZIP con compresión mínima
-    console.log('Generating ZIP file...');
+    // Generar ZIP SIN compresión (STORE) para evitar CPU Time exceeded
+    console.log('Generating ZIP file (STORE mode, no compression)...');
     const zipBlob = await zip.generateAsync({
       type: 'arraybuffer',
-      compression: 'DEFLATE',
-      compressionOptions: { level: 1 },
+      compression: 'STORE',
     });
 
     const safeEventName = evento.nombre
