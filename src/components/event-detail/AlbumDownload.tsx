@@ -112,8 +112,8 @@ export const AlbumDownload = forwardRef<HTMLDivElement, AlbumDownloadProps>(
         return acc + n;
       }, 0);
 
-      type ZipFolder = ReturnType<InstanceType<typeof JSZip>['folder']>;
-      const downloadOne = async (url: string, folder: ZipFolder, fileName: string) => {
+      type ZipFolderLike = { file: (name: string, data: Blob) => unknown } | null;
+      const downloadOne = async (url: string, folder: ZipFolderLike, fileName: string) => {
         try {
           const res = await fetch(url);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
