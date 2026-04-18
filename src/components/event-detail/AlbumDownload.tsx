@@ -141,11 +141,11 @@ export const AlbumDownload = forwardRef<HTMLDivElement, AlbumDownloadProps>(
           const ext = isPhoto ? 'jpg' : 'mp4';
           const folder = isPhoto ? fotosFolder : videosFolder;
           const fileName = `${idx}_${nombre}_${fecha}.${ext}`;
-          tasks.push(() => downloadOne(item.url_original!, folder, fileName));
+          tasks.push(() => downloadOne(item.url_original!, folder as ZipFolderLike, fileName));
         }
         if (iaFolder && isPhoto && item.url_ia) {
           const fileName = `${idx}_${nombre}_${fecha}_IA.png`;
-          tasks.push(() => downloadOne(item.url_ia!, iaFolder, fileName));
+          tasks.push(() => downloadOne(item.url_ia!, iaFolder as unknown as ZipFolderLike, fileName));
         }
         fileIndex++;
       }
