@@ -112,7 +112,7 @@ export const AlbumDownload = forwardRef<HTMLDivElement, AlbumDownloadProps>(
         return acc + n;
       }, 0);
 
-      const downloadOne = async (url: string, folder: ReturnType<JSZip['folder']>, fileName: string) => {
+      const downloadOne = async (url: string, folder: ReturnType<InstanceType<typeof JSZip>['folder']>, fileName: string) => {
         try {
           const res = await fetch(url);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
