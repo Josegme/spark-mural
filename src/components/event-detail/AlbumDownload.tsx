@@ -42,7 +42,7 @@ export const AlbumDownload = forwardRef<HTMLDivElement, AlbumDownloadProps>(
     : null;
   const isExpired = albumExpiry && albumExpiry < new Date();
 
-  // Descarga ZIP usando fetch directo (para obtener el blob correctamente)
+  // Descarga ZIP generando todo en el navegador (sin límites de memoria del servidor)
   const handleDownloadZip = async () => {
     if (photos.length === 0 && videos.length === 0) {
       toast.error('No hay contenido para descargar');
@@ -50,13 +50,14 @@ export const AlbumDownload = forwardRef<HTMLDivElement, AlbumDownloadProps>(
     }
 
     setDownloadingZip(true);
+    setProgress(0);
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-      // Usar fetch directo para obtener el blob correctamente
-      const response = await fetch(`${supabaseUrl}/functions/v1/download-album-zip`, {
+      // 1. Pedir manifest al backend (URLs firmadas + mensajes)
+      const manifestRes = await fetch(`${supabaseUrl}/functions/v1/get-album-manifest`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -69,34 +70,128 @@ export const AlbumDownload = forwardRef<HTMLDivElement, AlbumDownloadProps>(
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Error ${response.status}`);
+      if (!manifestRes.ok) {
+        const err = await manifestRes.json().catch(() => ({}));
+        throw new Error(err.error || `Error ${manifestRes.status}`);
       }
 
-      // Obtener el blob directamente de la respuesta
-      const blob = await response.blob();
-      
-      if (blob.size === 0) {
-        throw new Error('El archivo ZIP está vacío');
+      const { items, include_ia: serverIncludeIA } = await manifestRes.json() as {
+        items: Array<{
+          id: string;
+          tipo: 'foto' | 'video' | 'mensaje';
+          url_original?: string;
+          url_ia?: string;
+          mensaje_texto?: string;
+          invitado_nombre: string;
+          created_at: string;
+        }>;
+        include_ia: boolean;
+      };
+
+      // 2. Cargar JSZip y file-saver dinámicamente
+      const [{ default: JSZip }, { saveAs }] = await Promise.all([
+        import('jszip'),
+        import('file-saver'),
+      ]);
+
+      const zip = new JSZip();
+      const fotosFolder = zip.folder('fotos');
+      const videosFolder = zip.folder('videos');
+      const iaFolder = serverIncludeIA ? zip.folder('fotos_ia') : null;
+      const mensajesItems = items.filter(i => i.tipo === 'mensaje');
+      const mediaItems = items.filter(i => i.tipo === 'foto' || i.tipo === 'video');
+
+      // 3. Descargar archivos en paralelo (lotes de 4) con progreso
+      const BATCH_SIZE = 4;
+      let downloaded = 0;
+      let successCount = 0;
+      let failCount = 0;
+      const totalDownloads = mediaItems.reduce((acc, it) => {
+        let n = it.url_original ? 1 : 0;
+        if (serverIncludeIA && it.tipo === 'foto' && it.url_ia) n += 1;
+        return acc + n;
+      }, 0);
+
+      const downloadOne = async (url: string, folder: ReturnType<JSZip['folder']>, fileName: string) => {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const blob = await res.blob();
+          folder?.file(fileName, blob);
+          successCount++;
+        } catch (e) {
+          console.warn(`Failed to download ${fileName}:`, e);
+          failCount++;
+        } finally {
+          downloaded++;
+          setProgress(Math.round((downloaded / Math.max(totalDownloads, 1)) * 100));
+        }
+      };
+
+      let fileIndex = 1;
+      const tasks: Array<() => Promise<void>> = [];
+      for (const item of mediaItems) {
+        const nombre = (item.invitado_nombre || 'Invitado').replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '');
+        const fecha = new Date(item.created_at).toISOString().split('T')[0];
+        const idx = String(fileIndex).padStart(3, '0');
+        const isPhoto = item.tipo === 'foto';
+
+        if (item.url_original) {
+          const ext = isPhoto ? 'jpg' : 'mp4';
+          const folder = isPhoto ? fotosFolder : videosFolder;
+          const fileName = `${idx}_${nombre}_${fecha}.${ext}`;
+          tasks.push(() => downloadOne(item.url_original!, folder, fileName));
+        }
+        if (iaFolder && isPhoto && item.url_ia) {
+          const fileName = `${idx}_${nombre}_${fecha}_IA.png`;
+          tasks.push(() => downloadOne(item.url_ia!, iaFolder, fileName));
+        }
+        fileIndex++;
       }
 
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `PickEvent_${event.nombre.replace(/[^a-zA-Z0-9]/g, '_')}_Album.zip`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      for (let i = 0; i < tasks.length; i += BATCH_SIZE) {
+        await Promise.all(tasks.slice(i, i + BATCH_SIZE).map(fn => fn()));
+      }
 
-      toast.success('¡Álbum descargado correctamente!');
+      // 4. Mensajes
+      if (mensajesItems.length > 0) {
+        const mensajesFolder = zip.folder('mensajes');
+        const txt = mensajesItems.map((m, i) => {
+          const fecha = new Date(m.created_at).toLocaleString('es-AR');
+          return `[${i + 1}] ${m.invitado_nombre} — ${fecha}\n${m.mensaje_texto || '(sin texto)'}\n`;
+        }).join('\n---\n\n');
+        mensajesFolder?.file('mensajes_del_evento.txt', txt);
+      }
+
+      // 5. README
+      const readme = `ÁLBUM DE EVENTO: ${event.nombre}\n================================\n\n` +
+        `Archivos incluidos: ${successCount}${mensajesItems.length > 0 ? ` y ${mensajesItems.length} mensajes` : ''}.\n` +
+        `${failCount > 0 ? `(${failCount} archivos no pudieron incluirse)\n` : ''}\n` +
+        `Estructura:\n- /fotos\n- /videos\n${mensajesItems.length > 0 ? '- /mensajes\n' : ''}${iaFolder ? '- /fotos_ia\n' : ''}\n` +
+        `Generado por PickEvent\nhttps://pickevent.app`;
+      zip.file('README.txt', readme);
+
+      // 6. Generar ZIP en el navegador (STORE = sin compresión, rápido)
+      const zipBlob = await zip.generateAsync(
+        { type: 'blob', compression: 'STORE' },
+        (meta) => setProgress(Math.round(meta.percent))
+      );
+
+      const safeName = event.nombre.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
+      saveAs(zipBlob, `PickEvent_${safeName}_Album.zip`);
+
+      if (failCount > 0) {
+        toast.warning(`Álbum descargado. ${failCount} archivo(s) no pudieron incluirse.`);
+      } else {
+        toast.success('¡Álbum descargado correctamente!');
+      }
     } catch (error: unknown) {
-      console.error('Error downloading ZIP:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      toast.error(`Error: ${errorMessage}`);
+      console.error('Error generating ZIP:', error);
+      const msg = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(`Error: ${msg}`);
     } finally {
       setDownloadingZip(false);
+      setProgress(0);
     }
   };
 
