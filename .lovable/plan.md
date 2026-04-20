@@ -1,52 +1,135 @@
 
+# Plan de Hardening de Seguridad — Ejecución Ordenada
 
-## Diagnóstico: Error ZIP del Asistente — Es MEMORIA, no RLS
+Aplico las correcciones en el orden estricto que indicaste, con checkpoint manual después del Área 2.
 
-### Lo que confirmé
+## FASE 1 — Cerrar privilege escalation en `profiles` (Área 1)
 
-1. **La edge function SÍ se ejecuta correctamente para el asistente.** Los logs muestran:
-   - Token recibido: `smGWuX3d...`
-   - 74 archivos descargados exitosamente en 15 batches
-   - `Downloads complete: 74 ok, 0 failed`
-   - **Crash: `Memory limit exceeded`** al generar el ZIP
+**Migración SQL:**
 
-2. **NO es un problema de RLS.** Las políticas de `contenido` ya incluyen acceso por tenant:
+1. Eliminar la política `Users can update own profile` actual (sin `WITH CHECK`).
+2. Recrearla con `WITH CHECK` que permite UPDATE solo si `rol` y `tenant_id` no cambian:
+   ```sql
+   USING (auth.uid() = id)
+   WITH CHECK (
+     auth.uid() = id 
+     AND rol = (SELECT rol FROM profiles WHERE id = auth.uid())
+     AND tenant_id IS NOT DISTINCT FROM (SELECT tenant_id FROM profiles WHERE id = auth.uid())
+   )
    ```
-   evento_id IN (SELECT e.id FROM eventos e 
-     WHERE e.tenant_id IN (SELECT tenant_id FROM profiles WHERE id = auth.uid()))
-   ```
-   El asistente puede ver el evento, el token `qr_descarga_token`, y el contenido. La edge function usa `SERVICE_ROLE_KEY` y bypasea RLS de todas formas.
+3. Crear trigger `BEFORE UPDATE` adicional como defensa en profundidad:
+   - Si el usuario NO es super_admin, bloquea cambios a `rol`, `tenant_id`, `email`.
+   - Si es super_admin, permite todo.
 
-3. **El problema es que 74 archivos (71 fotos + 3 videos) superan el límite de ~150MB de memoria de Deno Edge Functions.** Todos los archivos se acumulan como ArrayBuffers dentro del objeto JSZip en memoria antes de generar el ZIP.
+**Verificación:** Intentar `UPDATE profiles SET rol='super_admin'` desde una sesión no-admin → debe fallar.
 
-### Por qué el fix anterior de "batches de 5" no resolvió
-El batching solo controla cuántos archivos se descargan *simultáneamente*. Pero cada archivo descargado se guarda en memoria dentro de `JSZip`. Al terminar los 15 batches, los 74 archivos están todos en RAM → crash.
+**Resultado esperado:** Cierra el vector crítico. `is_super_admin()` sigue leyendo de `profiles` pero ahora `profiles.rol` es inmutable para no-admins.
 
-### Fix propuesto
+---
 
-**Archivo:** `supabase/functions/download-album-zip/index.ts`
+## CHECKPOINT 1 — Validación manual antes de Fase 2
 
-**Estrategia: Limitar resolución y tamaño de archivos en memoria**
+Antes de seguir, vos confirmás que:
+- Login de super_admin sigue funcionando.
+- Login de cliente/asistente/salon sigue funcionando.
+- Crear evento sigue funcionando.
 
-1. **Reducir tamaño de imágenes antes de agregarlas al ZIP.** No podemos procesar imágenes en Deno fácilmente, pero sí podemos usar los thumbnails de Supabase Storage (`/render/image`) con un ancho máximo de 1920px en vez de las fotos originales a máxima resolución. Esto reduce dramáticamente el uso de memoria.
+Si algo falla, rollback de la migración Fase 1 y stop.
 
-2. **Excluir videos del ZIP por defecto** (o limitar a los primeros 3 videos si son cortos). Los videos son los que más memoria consumen. Agregar un parámetro `include_videos` al request.
+---
 
-3. **Alternativa más robusta: generar el ZIP en Supabase Storage** en vez de en memoria. Usar un approach de streaming donde cada archivo se escribe al ZIP y se sube a Storage, luego devolver una URL firmada de descarga. Sin embargo, JSZip no soporta streaming nativo en Deno.
+## FASE 2 — Migrar `is_super_admin()` y `AuthContext` a `user_roles` (Área 2)
 
-4. **Solución pragmática inmediata:** Descargar los archivos ya comprimidos/reducidos usando `transform` de Supabase Storage para imágenes (máximo 1920px ancho, calidad 80%), y para videos descargar solo si el total es ≤ 5. Esto mantiene el approach actual pero reduce el footprint de memoria de ~150MB+ a ~30-50MB.
+**Pre-requisito (sync):** Antes de tocar la función, sincronizar `profiles.rol → user_roles` para todos los usuarios que tengan rol y NO tengan entrada en `user_roles`. Esto evita que algún super_admin existente quede locked-out.
 
-### Cambios concretos
+```sql
+INSERT INTO user_roles (user_id, role)
+SELECT id, rol::text::app_role FROM profiles
+WHERE NOT EXISTS (
+  SELECT 1 FROM user_roles ur WHERE ur.user_id = profiles.id AND ur.role::text = profiles.rol::text
+);
+```
 
-**`supabase/functions/download-album-zip/index.ts`:**
-- En `downloadFile()`: para archivos de tipo foto, usar la URL de transformación de Supabase Storage (`/render/image/public/contenido-eventos/{path}?width=1920&quality=80`) en vez de la imagen original completa
-- Agregar un límite: si hay más de 100 archivos, procesar solo los primeros 100
-- Para videos: si el total de videos es > 5, excluirlos del ZIP y agregar una nota en el README
-- Reducir el batch size a 3 para dar más tiempo al GC entre batches
+**Migración de la función:**
+```sql
+CREATE OR REPLACE FUNCTION public.is_super_admin(_user_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = _user_id AND role = 'super_admin'::app_role
+  )
+$$;
+```
 
-### Archivos tocados
-Solo `supabase/functions/download-album-zip/index.ts`
+**Frontend — `src/contexts/AuthContext.tsx`:**
+- Después de `fetchProfile`, hacer `select role from user_roles where user_id = ...`.
+- Calcular `isSuperAdmin()` desde el array de roles, no desde `profile.rol`.
+- Mantener `profile.rol` solo para UI (texto descriptivo), NO para autorización.
 
-### Riesgo
-Bajo. El cambio solo afecta la calidad/tamaño de las fotos en el ZIP (1920px sigue siendo alta calidad) y agrega un límite sensato para eventos con muchos archivos.
+**Edge function — `supabase/functions/delete-event/index.ts`:**
+- Eliminar el fallback `|| profile?.rol === 'super_admin'`. Solo confiar en `user_roles`.
 
+---
+
+## CHECKPOINT 2 — Validación manual obligatoria
+
+Vos validás:
+1. Login super_admin → entra a `/admin` correctamente.
+2. Login cliente → entra a `/dashboard`.
+3. Login asistente / salon → entran a sus respectivos paneles.
+4. Crear y eliminar evento como super_admin funciona.
+
+**Si el login de super_admin falla → rollback inmediato:**
+```sql
+-- revertir is_super_admin a leer de profiles
+CREATE OR REPLACE FUNCTION public.is_super_admin(_user_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = _user_id AND rol = 'super_admin') $$;
+```
+Y revertir el commit de `AuthContext.tsx`.
+
+Espero tu OK explícito antes de continuar con Fase 3.
+
+---
+
+## FASE 3 — Hardening restante (Áreas 3, 6, 8, 10)
+
+Solo arrancar después de tu OK del Checkpoint 2.
+
+### 3.1 Storage `contenido-eventos` (Área 7 / ALTO)
+- Política INSERT en `storage.objects`: exigir que `(storage.foldername(name))[1]::uuid` sea un evento que pasa `event_accepts_uploads()`.
+- SELECT sigue público (necesario para que los invitados vean el muro).
+
+### 3.2 `logs_auditoria` INSERT (Área 6 / MEDIO)
+- Cambiar la policy INSERT a `auth.role() = 'service_role'` únicamente.
+- Auditar dónde el cliente React inserta logs directamente; mover esos casos a una edge function si los hay.
+
+### 3.3 Validar `contenido.url_original` (Área 4 residual / MEDIO)
+- Agregar CHECK constraint: `url_original IS NULL OR url_original ~ '^https://aahxmxgmmgfymhenlqdy\.supabase\.co/storage/'`.
+
+### 3.4 HMAC en `mp-webhook` (Área 8 / ALTO)
+- Implementar verificación `x-signature` con secret `MP_WEBHOOK_SECRET` (pedirlo si no existe).
+- Si falla la firma → 401, no procesar.
+- Aplicar también a `mp-webhook-subscription`.
+
+### 3.5 HIBP en Auth (Área 10 / MEDIO)
+- Activar `password_hibp_enabled: true`.
+
+---
+
+## Archivos tocados
+
+| Fase | Archivos |
+|------|----------|
+| 1 | migración SQL (RLS profiles + trigger) |
+| 2 | migración SQL (sync user_roles + is_super_admin) · `src/contexts/AuthContext.tsx` · `supabase/functions/delete-event/index.ts` |
+| 3 | migración SQL (storage policy + logs_auditoria + check constraint) · `supabase/functions/mp-webhook/index.ts` · `supabase/functions/mp-webhook-subscription/index.ts` · auth config |
+
+## Riesgo y rollback
+
+- **Fase 1:** Riesgo bajo. Rollback = recrear policy original sin `WITH CHECK`.
+- **Fase 2:** Riesgo medio (toca el camino crítico de auth). Rollback documentado arriba. Por eso el checkpoint manual.
+- **Fase 3:** Riesgo bajo, son cambios aislados. Cada sub-paso es revertible independientemente.
+
+Sin downtime esperado en ninguna fase. La app sigue operando durante las migraciones.
