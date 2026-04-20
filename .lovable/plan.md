@@ -1,81 +1,60 @@
 
 
-# Auditoría UX/UI Responsive — PickEvent (Abril 2026)
+## Plan Fase B — Refinamiento UX 2026
 
-## Evaluación como Senior UX/UI
+### 1. Fluid typography (`src/index.css` + `tailwind.config.ts`)
+Agregar utilidades `text-fluid-*` con `clamp()`:
+- `text-fluid-sm`: `clamp(0.875rem, 0.8rem + 0.3vw, 1rem)`
+- `text-fluid-base`: `clamp(1rem, 0.9rem + 0.5vw, 1.125rem)`
+- `text-fluid-lg`: `clamp(1.125rem, 1rem + 0.6vw, 1.375rem)`
+- `text-fluid-xl`: `clamp(1.25rem, 1.1rem + 0.8vw, 1.75rem)`
+- `text-fluid-2xl`: `clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem)`
+- `text-fluid-3xl`: `clamp(1.875rem, 1.4rem + 2.4vw, 3rem)`
+- `text-fluid-4xl`: `clamp(2.25rem, 1.6rem + 3.2vw, 4rem)`
 
-### Lo que está BIEN ✅
-- **Sistema de diseño sólido**: tokens HSL semánticos, gradientes definidos, dark mode preparado, tipografías Space Grotesk + Inter (moderno).
-- **Identidad visual coherente**: paleta magenta/púrpura/coral con personalidad.
-- **Mobile-first parcial**: uso correcto de breakpoints `md:` y `sm:` en wizard, dashboard cards, modal QR (recién corregido).
-- **Patrones modernos**: sticky header con backdrop-blur, sheets, drawers, dropdown menus de shadcn — alineado con estándares 2026.
+Aplicarlas en los **H1/H2 principales** de:
+- `Index.tsx` (hero landing)
+- `EventHeader.tsx` (título del evento)
+- `DashboardPage.tsx`, `AdminPage.tsx`, `SalonPage.tsx`, `AsistentePage.tsx` (títulos de página)
 
-### Problemas detectados 🔴
+No tocamos textos de body ni componentes UI internos (badges, cards) para evitar cambios visuales no deseados.
 
-**1. Header no responsive (CRÍTICO)** — `MainLayout.tsx`
-- En mobile (390px), conviven: logo + "Panel Admin" + "Mi Dashboard" + "Crear Evento" → desborda horizontalmente.
-- No hay menú hamburguesa. La nav `hidden md:flex` oculta links pero los CTAs siguen apilados.
-- **Estándar 2026**: hamburger + Sheet lateral en <768px.
+### 2. Touch feedback global
+Editar `src/components/ui/button.tsx`: agregar al `cva` base `active:scale-[0.97] transition-transform touch-manipulation`. Aplica automáticamente a **todos los botones de la app** sin tocar archivos uno por uno.
 
-**2. EventHeader desbordamiento en mobile (ALTO)**
-- Línea de meta (tipo + fecha + hora + estado) usa `flex-wrap` pero los badges grandes generan saltos feos a 390px.
-- Acciones (QR + Ver Muro + ⋮) no se reagrupan; en mobile compiten con el título.
+Agregar también a `src/index.css` regla global:
+```css
+button, a[role="button"] { touch-action: manipulation; }
+```
 
-**3. Tabs del EventDetail demasiadas para mobile (ALTO)**
-- 5 tabs con `grid-cols-5` y solo iconos en <sm:. Touch targets de ~50px están en el límite mínimo de Apple HIG (44px) pero sin labels el usuario no sabe qué es cada uno.
-- **Mejor**: scrollable tabs horizontal o bottom navigation en mobile.
+### 3. Footer accordion en mobile
+Editar `src/components/layout/MainLayout.tsx` (donde vive el footer):
+- En `<md` (mobile): renderizar las 4 columnas (Producto, Empresa, Soporte, Legal) dentro de un `<Accordion type="single" collapsible>` (Radix, ya disponible en `src/components/ui/accordion.tsx`).
+- En `≥md` (desktop): mantener el grid de 4 columnas actual sin cambios.
+- Implementación con un único componente que detecta breakpoint vía clases Tailwind (`md:hidden` y `hidden md:grid`).
 
-**4. Footer 4 columnas colapsa pero pesado (MEDIO)**
-- En mobile se ve bien (`grid-cols-1`) pero los 12 links apilados generan scroll innecesario. Podría ser accordion.
+### Archivos a modificar
+| Archivo | Cambio |
+|---|---|
+| `src/index.css` | Utilidades `.text-fluid-*` + `touch-action` global |
+| `tailwind.config.ts` | Registrar las clases `text-fluid-*` en theme.extend.fontSize |
+| `src/components/ui/button.tsx` | Agregar `active:scale-[0.97] transition-transform touch-manipulation` |
+| `src/components/layout/MainLayout.tsx` | Footer con Accordion mobile / grid desktop |
+| `src/pages/Index.tsx` | Aplicar `text-fluid-*` en hero |
+| `src/components/event-detail/EventHeader.tsx` | Aplicar `text-fluid-*` en título |
+| `src/pages/DashboardPage.tsx` · `AdminPage.tsx` · `SalonPage.tsx` · `AsistentePage.tsx` | Aplicar `text-fluid-*` en títulos H1 |
 
-**5. Modal QR (recién corregido) — falta refinamiento (MEDIO)**
-- Se cortaba — ya arreglado, pero según screenshot 196 aún se ve borde recortado a la derecha. El `max-w-2xl` + `w-[calc(100vw-2rem)]` deja ~16px que el preview de Lovable desborda.
-- Falta `overflow-x-hidden` en el body del modal y el grid de tabs mobile podría ser solo 3 iconos centrados grandes.
+### Riesgo y rollback
+- **Riesgo BAJO en los 3 puntos**. Son cambios puramente visuales, no tocan lógica, datos ni rutas.
+- **Rollback fluid typography**: revertir las clases en cada archivo (puramente reemplazo de strings).
+- **Rollback touch feedback**: quitar las 3 clases del `cva` de `button.tsx`.
+- **Rollback footer accordion**: revertir `MainLayout.tsx` a la versión actual.
 
-**6. Falta de feedback táctil moderno (MEDIO)**
-- Sin estados `active:scale-95` en botones (esperado en mobile 2026).
-- Sin `touch-manipulation` CSS para evitar delays en taps.
+### Lo que NO hago en esta fase
+- No agrego safe-areas iOS (lo dejamos para Fase C si querés, junto con theme toggle y skeletons).
+- No toco tipografía de body, cards, badges, ni componentes UI internos — solo títulos principales.
+- No modifico los demás botones custom (`.btn-hero`, `.btn-hero-outline` en `index.css`) — solo el `<Button>` de shadcn que es el 95% de los botones de la app.
 
-**7. Tipografía no escala fluida (BAJO)**
-- Uso de breakpoints discretos `text-2xl md:text-3xl`. Estándar 2026 es `clamp()` para fluid typography.
-
-**8. Container sin max-width en mobile (BAJO)**
-- Padding lateral inconsistente entre páginas (`py-6` sin `px-` explícito en algunas vistas).
-
-**9. Falta safe-area para notch/home-indicator (MEDIO)**
-- Si se usa como PWA o web en iOS, falta `env(safe-area-inset-*)` en header sticky y footer.
-
-**10. Dark mode definido pero no togglable (BAJO)**
-- Variables `.dark` existen pero no hay switch. Tendencia 2026: respetar `prefers-color-scheme`.
-
----
-
-## Propuesta de Mejora (3 fases)
-
-### Fase A — Correcciones críticas mobile (esfuerzo: BAJO)
-1. **Header con menú hamburguesa** (Sheet lateral) en `<md:`.
-2. **EventHeader compacto en mobile**: título arriba, meta en grid 2x2, acciones colapsadas en menú "⋮" único con QR + Ver Muro + estado.
-3. **Tabs scrollables horizontal** en EventDetail con labels visibles siempre (overflow-x-auto + snap).
-4. **Modal QR**: forzar `overflow-x-hidden`, ajustar `max-w-[calc(100vw-1rem)]` y centrar mejor.
-
-### Fase B — Refinamiento UX 2026 (esfuerzo: MEDIO)
-5. **Fluid typography**: introducir clases `text-fluid-*` con `clamp()` para H1/H2.
-6. **Touch feedback**: agregar `active:scale-[0.98] transition-transform` global en botones + `touch-manipulation`.
-7. **Safe areas iOS**: padding dinámico en header sticky / FABs / footer.
-8. **Footer accordion** en mobile (Radix Accordion) para colapsar las 4 columnas.
-
-### Fase C — Polish opcional (esfuerzo: BAJO)
-9. **Theme toggle** (light/dark/system) en header.
-10. **Skeleton loaders** consistentes en lugar del spinner único actual.
-11. **Bottom sheet en mobile** para acciones contextuales (ej: dropdown del evento).
-
-### Archivos que tocaría (Fase A únicamente)
-- `src/components/layout/MainLayout.tsx` — hamburger menu
-- `src/components/event-detail/EventHeader.tsx` — reorg mobile
-- `src/pages/EventDetailPage.tsx` — tabs scrollables
-- `src/components/dashboard/QRCodesModal.tsx` — fix overflow residual
-- `src/index.css` — utilidades touch + safe-area
-
-### Recomendación
-**Empezar por Fase A** (1-2 horas, alto impacto visible inmediatamente en los 3 puntos críticos del screenshot que mostraste). Validás, y después decidimos si vamos por B y C.
+### Tiempo estimado
+~30-45 minutos de implementación. Sin downtime. Validable visualmente al instante recargando preview.
 
