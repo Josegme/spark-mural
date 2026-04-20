@@ -77,25 +77,26 @@ serve(async (req) => {
       );
     }
 
-    // Determinar rol y permisos del solicitante
-    const { data: roleRow } = await supabase
+    // Determinar rol desde user_roles (fuente de verdad). 
+    // profile solo se usa para tenant_id, no para autorización.
+    const { data: rolesRows } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
+      .eq("user_id", user.id);
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("rol, tenant_id")
+      .select("tenant_id")
       .eq("id", user.id)
       .maybeSingle();
 
-    const appRole = roleRow?.role || profile?.rol || "cliente";
+    const userRoles = (rolesRows ?? []).map((r: { role: string }) => r.role);
+    const isSuperAdminUser = userRoles.includes("super_admin");
+    const appRole = userRoles[0] || "cliente";
     const userTenantId = profile?.tenant_id;
     const isOwner = evento.cliente_user_id === user.id;
-    const isSuperAdmin = appRole === "super_admin";
-    const isTenantManager = (appRole === "asistente" || appRole === "salon") && 
+    const isSuperAdmin = isSuperAdminUser;
+    const isTenantManager = (userRoles.includes("asistente") || userRoles.includes("salon")) &&
                             userTenantId && evento.tenant_id === userTenantId;
 
     // Verificar que el usuario tiene relación con el evento

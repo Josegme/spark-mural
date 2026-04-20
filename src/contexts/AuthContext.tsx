@@ -19,10 +19,13 @@ interface Profile {
   avatar_url?: string;
 }
 
+type AppRole = 'super_admin' | 'asistente' | 'salon' | 'cliente';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  roles: AppRole[];
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, nombre: string) => Promise<{ error: Error | null }>;
@@ -37,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,13 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
 
-        // Cargar perfil de forma diferida para evitar deadlock
+        // Cargar perfil + roles de forma diferida para evitar deadlock
         if (session?.user) {
           setTimeout(() => {
-            fetchProfile(session.user.id);
+            fetchProfileAndRoles(session.user.id);
           }, 0);
         } else {
           setProfile(null);
+          setRoles([]);
         }
       }
     );
@@ -63,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfileAndRoles(session.user.id);
       } else {
         setLoading(false);
       }
@@ -72,21 +77,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfileAndRoles = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      const [profileRes, rolesRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId).single(),
+        supabase.from('user_roles').select('role').eq('user_id', userId),
+      ]);
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-      } else if (data) {
-        setProfile(data as Profile);
+      if (profileRes.error) {
+        console.error('Error fetching profile:', profileRes.error);
+      } else if (profileRes.data) {
+        setProfile(profileRes.data as Profile);
+      }
+
+      if (rolesRes.error) {
+        console.error('Error fetching roles:', rolesRes.error);
+        setRoles([]);
+      } else {
+        setRoles((rolesRes.data ?? []).map(r => r.role as AppRole));
       }
     } catch (err) {
-      console.error('Error in fetchProfile:', err);
+      console.error('Error in fetchProfileAndRoles:', err);
     } finally {
       setLoading(false);
     }
@@ -129,14 +140,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setProfile(null);
+    setRoles([]);
   };
 
+  // isRole sigue usando profile.rol solo para UI (texto descriptivo).
+  // La autorización real se hace contra `roles` (user_roles).
   const isRole = (role: UserRole) => {
-    return profile?.rol === role;
+    return roles.includes(role as AppRole) || profile?.rol === role;
   };
 
+  // Fuente de verdad para super_admin: tabla user_roles.
   const isSuperAdmin = () => {
-    return profile?.rol === 'super_admin';
+    return roles.includes('super_admin');
   };
 
   return (
@@ -145,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         session,
         profile,
+        roles,
         loading,
         signIn,
         signUp,
