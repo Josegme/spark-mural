@@ -7,6 +7,12 @@ import { ReactNode, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Shield, Menu, LayoutDashboard, PartyPopper, LogIn, X } from 'lucide-react';
 
@@ -211,52 +217,95 @@ function Header() {
 function Footer() {
   const currentYear = new Date().getFullYear();
 
+  const sections = [
+    {
+      title: 'Producto',
+      links: [
+        { label: 'Cómo Funciona', href: '/#como-funciona', external: false, isAnchor: true },
+        { label: 'Planes y Precios', href: '/#planes', external: false, isAnchor: true },
+        { label: 'Casos de Uso', href: '/#casos-de-uso', external: false, isAnchor: true },
+      ],
+    },
+    {
+      title: 'Empresa',
+      links: [
+        { label: 'Para Salones', href: '/para-salones', external: false, isAnchor: false },
+        { label: 'Para Organizadores', href: '/para-organizadores', external: false, isAnchor: false },
+        { label: 'Contacto', href: '/contacto', external: false, isAnchor: false },
+      ],
+    },
+    {
+      title: 'Legal',
+      links: [
+        { label: 'Términos y Condiciones', href: '/terminos', external: false, isAnchor: false },
+        { label: 'Política de Privacidad', href: '/privacidad', external: false, isAnchor: false },
+      ],
+    },
+  ];
+
+  const renderLink = (link: { label: string; href: string; isAnchor: boolean }) =>
+    link.isAnchor ? (
+      <a href={link.href} className="hover:text-foreground transition-colors">
+        {link.label}
+      </a>
+    ) : (
+      <Link to={link.href} className="hover:text-foreground transition-colors">
+        {link.label}
+      </Link>
+    );
+
   return (
     <footer className="border-t bg-muted/30 safe-bottom">
-      <div className="container py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="col-span-2 md:col-span-1 space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🎉</span>
-              <span className="font-display text-xl font-bold">PickEvent</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Muros interactivos en tiempo real para eventos inolvidables.
-            </p>
+      <div className="container py-10 md:py-12">
+        {/* Brand siempre visible */}
+        <div className="space-y-3 md:space-y-4 md:mb-0 mb-6">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🎉</span>
+            <span className="font-display text-xl font-bold">PickEvent</span>
           </div>
-
-          {/* Producto */}
-          <div className="space-y-4">
-            <h4 className="font-display font-semibold">Producto</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="/#como-funciona" className="hover:text-foreground transition-colors">Cómo Funciona</a></li>
-              <li><a href="/#planes" className="hover:text-foreground transition-colors">Planes y Precios</a></li>
-              <li><a href="/#casos-de-uso" className="hover:text-foreground transition-colors">Casos de Uso</a></li>
-            </ul>
-          </div>
-
-          {/* Empresa */}
-          <div className="space-y-4">
-            <h4 className="font-display font-semibold">Empresa</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/para-salones" className="hover:text-foreground transition-colors">Para Salones</Link></li>
-              <li><Link to="/para-organizadores" className="hover:text-foreground transition-colors">Para Organizadores</Link></li>
-              <li><Link to="/contacto" className="hover:text-foreground transition-colors">Contacto</Link></li>
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div className="col-span-2 md:col-span-1 space-y-4">
-            <h4 className="font-display font-semibold">Legal</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/terminos" className="hover:text-foreground transition-colors">Términos y Condiciones</Link></li>
-              <li><Link to="/privacidad" className="hover:text-foreground transition-colors">Política de Privacidad</Link></li>
-            </ul>
-          </div>
+          <p className="text-sm text-muted-foreground max-w-md">
+            Muros interactivos en tiempo real para eventos inolvidables.
+          </p>
         </div>
 
-        <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
+        {/* Mobile: accordion */}
+        <div className="md:hidden mt-2">
+          <Accordion type="single" collapsible className="w-full">
+            {sections.map((section) => (
+              <AccordionItem key={section.title} value={section.title}>
+                <AccordionTrigger className="font-display font-semibold text-sm py-3">
+                  {section.title}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <ul className="space-y-2 text-sm text-muted-foreground pl-1">
+                    {section.links.map((link) => (
+                      <li key={link.label}>{renderLink(link)}</li>
+                    ))}
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+
+        {/* Desktop: grid 4 columnas */}
+        <div className="hidden md:grid grid-cols-4 gap-8 mt-8">
+          <div className="space-y-4">
+            {/* placeholder para alinear con el brand de arriba */}
+          </div>
+          {sections.map((section) => (
+            <div key={section.title} className="space-y-4">
+              <h4 className="font-display font-semibold">{section.title}</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {section.links.map((link) => (
+                  <li key={link.label}>{renderLink(link)}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t text-center text-sm text-muted-foreground">
           <p>© {currentYear} PickEvent. Todos los derechos reservados.</p>
         </div>
       </div>
