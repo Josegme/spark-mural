@@ -46,12 +46,12 @@ function HeroSection() {
             <span>Ahora con IA Generativa</span>
           </div>
           
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold tracking-tight">
+          <h1 className="text-fluid-4xl lg:text-7xl font-display font-bold tracking-tight">
             Hacé tu Evento{' '}
             <span className="text-gradient-primary">Inolvidable</span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-fluid-lg md:text-2xl text-muted-foreground max-w-2xl mx-auto">
             Muro interactivo en tiempo real donde tus invitados comparten fotos, 
             videos y mensajes que aparecen al instante en la pantalla.
           </p>
@@ -121,7 +121,7 @@ function HowItWorksSection() {
     <section id="como-funciona" className="py-20 bg-muted/30">
       <div className="container">
         <div className="text-center space-y-4 mb-16">
-          <h2 className="text-3xl md:text-4xl font-display font-bold">
+          <h2 className="text-fluid-3xl font-display font-bold">
             ¿Cómo Funciona?
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">

@@ -88,7 +88,7 @@ export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating, pagoP
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="space-y-3 min-w-0">
           <div className="flex items-start gap-2 flex-wrap">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-bold leading-tight break-words">
+            <h1 className="text-fluid-2xl font-display font-bold leading-tight break-words">
               {event.nombre}
             </h1>
             {event.es_premium && (
