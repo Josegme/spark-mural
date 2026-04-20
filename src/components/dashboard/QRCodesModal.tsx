@@ -2,7 +2,6 @@
  * Modal para mostrar los códigos QR del evento
  */
 
-import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
