@@ -1,135 +1,81 @@
 
-# Plan de Hardening de Seguridad — Ejecución Ordenada
 
-Aplico las correcciones en el orden estricto que indicaste, con checkpoint manual después del Área 2.
+# Auditoría UX/UI Responsive — PickEvent (Abril 2026)
 
-## FASE 1 — Cerrar privilege escalation en `profiles` (Área 1)
+## Evaluación como Senior UX/UI
 
-**Migración SQL:**
+### Lo que está BIEN ✅
+- **Sistema de diseño sólido**: tokens HSL semánticos, gradientes definidos, dark mode preparado, tipografías Space Grotesk + Inter (moderno).
+- **Identidad visual coherente**: paleta magenta/púrpura/coral con personalidad.
+- **Mobile-first parcial**: uso correcto de breakpoints `md:` y `sm:` en wizard, dashboard cards, modal QR (recién corregido).
+- **Patrones modernos**: sticky header con backdrop-blur, sheets, drawers, dropdown menus de shadcn — alineado con estándares 2026.
 
-1. Eliminar la política `Users can update own profile` actual (sin `WITH CHECK`).
-2. Recrearla con `WITH CHECK` que permite UPDATE solo si `rol` y `tenant_id` no cambian:
-   ```sql
-   USING (auth.uid() = id)
-   WITH CHECK (
-     auth.uid() = id 
-     AND rol = (SELECT rol FROM profiles WHERE id = auth.uid())
-     AND tenant_id IS NOT DISTINCT FROM (SELECT tenant_id FROM profiles WHERE id = auth.uid())
-   )
-   ```
-3. Crear trigger `BEFORE UPDATE` adicional como defensa en profundidad:
-   - Si el usuario NO es super_admin, bloquea cambios a `rol`, `tenant_id`, `email`.
-   - Si es super_admin, permite todo.
+### Problemas detectados 🔴
 
-**Verificación:** Intentar `UPDATE profiles SET rol='super_admin'` desde una sesión no-admin → debe fallar.
+**1. Header no responsive (CRÍTICO)** — `MainLayout.tsx`
+- En mobile (390px), conviven: logo + "Panel Admin" + "Mi Dashboard" + "Crear Evento" → desborda horizontalmente.
+- No hay menú hamburguesa. La nav `hidden md:flex` oculta links pero los CTAs siguen apilados.
+- **Estándar 2026**: hamburger + Sheet lateral en <768px.
 
-**Resultado esperado:** Cierra el vector crítico. `is_super_admin()` sigue leyendo de `profiles` pero ahora `profiles.rol` es inmutable para no-admins.
+**2. EventHeader desbordamiento en mobile (ALTO)**
+- Línea de meta (tipo + fecha + hora + estado) usa `flex-wrap` pero los badges grandes generan saltos feos a 390px.
+- Acciones (QR + Ver Muro + ⋮) no se reagrupan; en mobile compiten con el título.
 
----
+**3. Tabs del EventDetail demasiadas para mobile (ALTO)**
+- 5 tabs con `grid-cols-5` y solo iconos en <sm:. Touch targets de ~50px están en el límite mínimo de Apple HIG (44px) pero sin labels el usuario no sabe qué es cada uno.
+- **Mejor**: scrollable tabs horizontal o bottom navigation en mobile.
 
-## CHECKPOINT 1 — Validación manual antes de Fase 2
+**4. Footer 4 columnas colapsa pero pesado (MEDIO)**
+- En mobile se ve bien (`grid-cols-1`) pero los 12 links apilados generan scroll innecesario. Podría ser accordion.
 
-Antes de seguir, vos confirmás que:
-- Login de super_admin sigue funcionando.
-- Login de cliente/asistente/salon sigue funcionando.
-- Crear evento sigue funcionando.
+**5. Modal QR (recién corregido) — falta refinamiento (MEDIO)**
+- Se cortaba — ya arreglado, pero según screenshot 196 aún se ve borde recortado a la derecha. El `max-w-2xl` + `w-[calc(100vw-2rem)]` deja ~16px que el preview de Lovable desborda.
+- Falta `overflow-x-hidden` en el body del modal y el grid de tabs mobile podría ser solo 3 iconos centrados grandes.
 
-Si algo falla, rollback de la migración Fase 1 y stop.
+**6. Falta de feedback táctil moderno (MEDIO)**
+- Sin estados `active:scale-95` en botones (esperado en mobile 2026).
+- Sin `touch-manipulation` CSS para evitar delays en taps.
 
----
+**7. Tipografía no escala fluida (BAJO)**
+- Uso de breakpoints discretos `text-2xl md:text-3xl`. Estándar 2026 es `clamp()` para fluid typography.
 
-## FASE 2 — Migrar `is_super_admin()` y `AuthContext` a `user_roles` (Área 2)
+**8. Container sin max-width en mobile (BAJO)**
+- Padding lateral inconsistente entre páginas (`py-6` sin `px-` explícito en algunas vistas).
 
-**Pre-requisito (sync):** Antes de tocar la función, sincronizar `profiles.rol → user_roles` para todos los usuarios que tengan rol y NO tengan entrada en `user_roles`. Esto evita que algún super_admin existente quede locked-out.
+**9. Falta safe-area para notch/home-indicator (MEDIO)**
+- Si se usa como PWA o web en iOS, falta `env(safe-area-inset-*)` en header sticky y footer.
 
-```sql
-INSERT INTO user_roles (user_id, role)
-SELECT id, rol::text::app_role FROM profiles
-WHERE NOT EXISTS (
-  SELECT 1 FROM user_roles ur WHERE ur.user_id = profiles.id AND ur.role::text = profiles.rol::text
-);
-```
-
-**Migración de la función:**
-```sql
-CREATE OR REPLACE FUNCTION public.is_super_admin(_user_id uuid)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = 'super_admin'::app_role
-  )
-$$;
-```
-
-**Frontend — `src/contexts/AuthContext.tsx`:**
-- Después de `fetchProfile`, hacer `select role from user_roles where user_id = ...`.
-- Calcular `isSuperAdmin()` desde el array de roles, no desde `profile.rol`.
-- Mantener `profile.rol` solo para UI (texto descriptivo), NO para autorización.
-
-**Edge function — `supabase/functions/delete-event/index.ts`:**
-- Eliminar el fallback `|| profile?.rol === 'super_admin'`. Solo confiar en `user_roles`.
+**10. Dark mode definido pero no togglable (BAJO)**
+- Variables `.dark` existen pero no hay switch. Tendencia 2026: respetar `prefers-color-scheme`.
 
 ---
 
-## CHECKPOINT 2 — Validación manual obligatoria
+## Propuesta de Mejora (3 fases)
 
-Vos validás:
-1. Login super_admin → entra a `/admin` correctamente.
-2. Login cliente → entra a `/dashboard`.
-3. Login asistente / salon → entran a sus respectivos paneles.
-4. Crear y eliminar evento como super_admin funciona.
+### Fase A — Correcciones críticas mobile (esfuerzo: BAJO)
+1. **Header con menú hamburguesa** (Sheet lateral) en `<md:`.
+2. **EventHeader compacto en mobile**: título arriba, meta en grid 2x2, acciones colapsadas en menú "⋮" único con QR + Ver Muro + estado.
+3. **Tabs scrollables horizontal** en EventDetail con labels visibles siempre (overflow-x-auto + snap).
+4. **Modal QR**: forzar `overflow-x-hidden`, ajustar `max-w-[calc(100vw-1rem)]` y centrar mejor.
 
-**Si el login de super_admin falla → rollback inmediato:**
-```sql
--- revertir is_super_admin a leer de profiles
-CREATE OR REPLACE FUNCTION public.is_super_admin(_user_id uuid)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$ SELECT EXISTS (SELECT 1 FROM public.profiles WHERE id = _user_id AND rol = 'super_admin') $$;
-```
-Y revertir el commit de `AuthContext.tsx`.
+### Fase B — Refinamiento UX 2026 (esfuerzo: MEDIO)
+5. **Fluid typography**: introducir clases `text-fluid-*` con `clamp()` para H1/H2.
+6. **Touch feedback**: agregar `active:scale-[0.98] transition-transform` global en botones + `touch-manipulation`.
+7. **Safe areas iOS**: padding dinámico en header sticky / FABs / footer.
+8. **Footer accordion** en mobile (Radix Accordion) para colapsar las 4 columnas.
 
-Espero tu OK explícito antes de continuar con Fase 3.
+### Fase C — Polish opcional (esfuerzo: BAJO)
+9. **Theme toggle** (light/dark/system) en header.
+10. **Skeleton loaders** consistentes en lugar del spinner único actual.
+11. **Bottom sheet en mobile** para acciones contextuales (ej: dropdown del evento).
 
----
+### Archivos que tocaría (Fase A únicamente)
+- `src/components/layout/MainLayout.tsx` — hamburger menu
+- `src/components/event-detail/EventHeader.tsx` — reorg mobile
+- `src/pages/EventDetailPage.tsx` — tabs scrollables
+- `src/components/dashboard/QRCodesModal.tsx` — fix overflow residual
+- `src/index.css` — utilidades touch + safe-area
 
-## FASE 3 — Hardening restante (Áreas 3, 6, 8, 10)
+### Recomendación
+**Empezar por Fase A** (1-2 horas, alto impacto visible inmediatamente en los 3 puntos críticos del screenshot que mostraste). Validás, y después decidimos si vamos por B y C.
 
-Solo arrancar después de tu OK del Checkpoint 2.
-
-### 3.1 Storage `contenido-eventos` (Área 7 / ALTO)
-- Política INSERT en `storage.objects`: exigir que `(storage.foldername(name))[1]::uuid` sea un evento que pasa `event_accepts_uploads()`.
-- SELECT sigue público (necesario para que los invitados vean el muro).
-
-### 3.2 `logs_auditoria` INSERT (Área 6 / MEDIO)
-- Cambiar la policy INSERT a `auth.role() = 'service_role'` únicamente.
-- Auditar dónde el cliente React inserta logs directamente; mover esos casos a una edge function si los hay.
-
-### 3.3 Validar `contenido.url_original` (Área 4 residual / MEDIO)
-- Agregar CHECK constraint: `url_original IS NULL OR url_original ~ '^https://aahxmxgmmgfymhenlqdy\.supabase\.co/storage/'`.
-
-### 3.4 HMAC en `mp-webhook` (Área 8 / ALTO)
-- Implementar verificación `x-signature` con secret `MP_WEBHOOK_SECRET` (pedirlo si no existe).
-- Si falla la firma → 401, no procesar.
-- Aplicar también a `mp-webhook-subscription`.
-
-### 3.5 HIBP en Auth (Área 10 / MEDIO)
-- Activar `password_hibp_enabled: true`.
-
----
-
-## Archivos tocados
-
-| Fase | Archivos |
-|------|----------|
-| 1 | migración SQL (RLS profiles + trigger) |
-| 2 | migración SQL (sync user_roles + is_super_admin) · `src/contexts/AuthContext.tsx` · `supabase/functions/delete-event/index.ts` |
-| 3 | migración SQL (storage policy + logs_auditoria + check constraint) · `supabase/functions/mp-webhook/index.ts` · `supabase/functions/mp-webhook-subscription/index.ts` · auth config |
-
-## Riesgo y rollback
-
-- **Fase 1:** Riesgo bajo. Rollback = recrear policy original sin `WITH CHECK`.
-- **Fase 2:** Riesgo medio (toca el camino crítico de auth). Rollback documentado arriba. Por eso el checkpoint manual.
-- **Fase 3:** Riesgo bajo, son cambios aislados. Cada sub-paso es revertible independientemente.
-
-Sin downtime esperado en ninguna fase. La app sigue operando durante las migraciones.
