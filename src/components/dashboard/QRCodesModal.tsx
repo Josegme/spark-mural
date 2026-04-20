@@ -2,7 +2,6 @@
  * Modal para mostrar los códigos QR del evento
  */
 
-import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -105,7 +104,7 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] sm:w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-2xl w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] overflow-y-auto overflow-x-hidden p-3 sm:p-6">
         <DialogHeader>
           <DialogTitle className="font-display text-lg sm:text-xl pr-6">
             Códigos QR - {event.nombre}

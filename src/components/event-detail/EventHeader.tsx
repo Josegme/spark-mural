@@ -86,53 +86,55 @@ export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating, pagoP
 
       {/* Header principal */}
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-display font-bold">
+        <div className="space-y-3 min-w-0">
+          <div className="flex items-start gap-2 flex-wrap">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-bold leading-tight break-words">
               {event.nombre}
             </h1>
             {event.es_premium && (
-              <Badge className="badge-premium">
+              <Badge className="badge-premium shrink-0">
                 <Sparkles className="w-3 h-3 mr-1" />
                 Premium
               </Badge>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <span className="text-muted-foreground">{typeLabel}</span>
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Calendar className="w-4 h-4" />
-              <span>{formatDate(event.fecha_evento)}</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Clock className="w-4 h-4" />
-              <span>{formatTime(event.hora_inicio)}</span>
-            </div>
-            <span className={`${status.className} flex items-center gap-1`}>
+          {/* Mobile: grid 2x2; Desktop: flex wrap */}
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 md:flex md:flex-wrap md:items-center md:gap-4 text-xs sm:text-sm">
+            <span className="text-muted-foreground truncate">{typeLabel}</span>
+            <span className={`${status.className} flex items-center gap-1 justify-self-start md:order-last`}>
               <StatusIcon className="w-3 h-3" />
               {status.label}
             </span>
+            <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+              <Calendar className="w-4 h-4 shrink-0" />
+              <span className="truncate">{formatDate(event.fecha_evento)}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+              <Clock className="w-4 h-4 shrink-0" />
+              <span className="truncate">{formatTime(event.hora_inicio)}</span>
+            </div>
           </div>
         </div>
 
-        {/* Acciones */}
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={onOpenQR}>
+        {/* Acciones — full width en mobile */}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <Button variant="outline" size="sm" onClick={onOpenQR} className="flex-1 md:flex-none touch-feedback">
             <QrCode className="w-4 h-4 mr-2" />
-            QR Codes
+            <span className="sm:inline">QR</span>
+            <span className="hidden sm:inline ml-1">Codes</span>
           </Button>
 
-          <Button size="sm" asChild>
+          <Button size="sm" asChild className="flex-1 md:flex-none touch-feedback">
             <a href={muroUrl} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="w-4 h-4 mr-2" />
-              Ver Muro
+              <span>Ver Muro</span>
             </a>
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" disabled={isUpdating}>
+              <Button variant="outline" size="icon" disabled={isUpdating} className="shrink-0 touch-feedback">
                 <MoreVertical className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
