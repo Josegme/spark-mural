@@ -128,7 +128,7 @@ serve(async (req) => {
     // - Salón (tenant manager): siempre (excepto activos) - trabaja por cuota, no por pago
     // - Asistente/Cliente: solo si el pago no fue confirmado
     if (!isSuperAdmin) {
-      const isSalon = appRole === "salon" && isTenantManager;
+      const isSalon = userRoles.includes("salon") && isTenantManager;
       if (!isSalon && paymentActuallyPaid) {
         return new Response(
           JSON.stringify({ ok: false, error: "No se puede eliminar un evento que ya fue pagado" }),
