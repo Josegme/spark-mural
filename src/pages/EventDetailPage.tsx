@@ -74,28 +74,31 @@ export default function EventDetailPage() {
         />
 
         <Tabs defaultValue="content" className="space-y-6">
-          <TabsList className="grid w-full max-w-lg grid-cols-5">
-            <TabsTrigger value="content" className="gap-2">
-              <LayoutGrid className="w-4 h-4" />
-              <span className="hidden sm:inline">Contenido</span>
-            </TabsTrigger>
-            <TabsTrigger value="moderation" className="gap-2">
-              <Shield className="w-4 h-4" />
-              <span className="hidden sm:inline">Moderación</span>
-            </TabsTrigger>
-            <TabsTrigger value="games" className="gap-2">
-              <Gamepad2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Juegos</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2">
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Config</span>
-            </TabsTrigger>
-            <TabsTrigger value="download" className="gap-2">
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Álbum</span>
-            </TabsTrigger>
-          </TabsList>
+          {/* Scrollable horizontal con labels siempre visibles */}
+          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar">
+            <TabsList className="inline-flex w-auto sm:w-full sm:max-w-lg sm:grid sm:grid-cols-5 h-auto p-1">
+              <TabsTrigger value="content" className="gap-2 px-3 py-2 touch-feedback">
+                <LayoutGrid className="w-4 h-4 shrink-0" />
+                <span>Contenido</span>
+              </TabsTrigger>
+              <TabsTrigger value="moderation" className="gap-2 px-3 py-2 touch-feedback">
+                <Shield className="w-4 h-4 shrink-0" />
+                <span>Moderación</span>
+              </TabsTrigger>
+              <TabsTrigger value="games" className="gap-2 px-3 py-2 touch-feedback">
+                <Gamepad2 className="w-4 h-4 shrink-0" />
+                <span>Juegos</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="gap-2 px-3 py-2 touch-feedback">
+                <Settings className="w-4 h-4 shrink-0" />
+                <span>Config</span>
+              </TabsTrigger>
+              <TabsTrigger value="download" className="gap-2 px-3 py-2 touch-feedback">
+                <Download className="w-4 h-4 shrink-0" />
+                <span>Álbum</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="content">
             <ContentGrid

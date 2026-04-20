@@ -286,6 +286,28 @@
 }
 
 @layer utilities {
+  /* === MOBILE / TOUCH HELPERS === */
+  .touch-feedback {
+    @apply transition-transform active:scale-[0.97];
+    touch-action: manipulation;
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Scroll horizontal sin scrollbar visible (para tabs) */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   /* === ANIMACIONES === */
   @keyframes bubble-float {
     0%, 100% {
