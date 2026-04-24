@@ -5,8 +5,9 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, Loader2 } from 'lucide-react';
+import { Calendar, Plus } from 'lucide-react';
 import { EventCard } from './EventCard';
+import { EventsGridSkeleton } from '@/components/ui/skeletons';
 import type { UserEvent } from '@/hooks/useUserEvents';
 
 interface EventsListProps {
@@ -17,11 +18,7 @@ interface EventsListProps {
 
 export function EventsList({ events, isLoading, onViewQR }: EventsListProps) {
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <EventsGridSkeleton count={3} />;
   }
 
   if (events.length === 0) {
