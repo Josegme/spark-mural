@@ -1,5 +1,13 @@
 /**
- * Modal para mostrar los códigos QR del evento
+ * Modal de Códigos QR — rediseñado con heurísticas de diseño 2026:
+ * - Jerarquía visual clara (título grande, descripción muted, separación con tokens)
+ * - Tabs full-width con label visible siempre (ícono + texto en mobile y desktop)
+ * - QR centrado con tarjeta blanca y sombra suave
+ * - URL en bloque code con scroll horizontal interno (no rompe layout)
+ * - Acciones primaria (Abrir) destacada, secundarias (Copiar/Descargar) outline
+ * - Mobile: bottom sheet 100% ancho real
+ * - Desktop: dialog max-w-xl centrado
+ * - Sin overflow, sin elementos cortados
  */
 
 import {
@@ -11,8 +19,7 @@ import {
 } from '@/components/ui/responsive-modal';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Copy, Download, ExternalLink, Monitor, Upload, Image } from 'lucide-react';
+import { Copy, Download, ExternalLink, Monitor, Upload, Image as ImageIcon } from 'lucide-react';
 import { getMuroUrl, getUploadUrl, getDownloadUrl } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import type { UserEvent } from '@/hooks/useUserEvents';
@@ -31,30 +38,27 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
   const qrCodes = [
     {
       id: 'pantalla',
-      title: 'Muro en Pantalla',
-      description: 'Para mostrar en la pantalla del evento',
+      title: 'Muro',
+      fullTitle: 'Muro en Pantalla',
+      description: 'Mostrá el muro en la pantalla del evento',
       icon: Monitor,
-      token: event.qr_pantalla_token,
       url: getMuroUrl(event.qr_pantalla_token),
-      color: 'primary',
     },
     {
       id: 'invitados',
-      title: 'Subir Contenido',
+      title: 'Subir',
+      fullTitle: 'Subir Contenido',
       description: 'Para que los invitados suban fotos y mensajes',
       icon: Upload,
-      token: event.qr_invitados_token,
       url: getUploadUrl(event.qr_invitados_token),
-      color: 'accent',
     },
     {
       id: 'descarga',
-      title: 'Descargar Álbum',
-      description: 'Para descargar todas las fotos del evento',
-      icon: Image,
-      token: event.qr_descarga_token,
+      title: 'Álbum',
+      fullTitle: 'Descargar Álbum',
+      description: 'Para que descarguen las fotos del evento',
+      icon: ImageIcon,
       url: getDownloadUrl(event.qr_descarga_token),
-      color: 'secondary',
     },
   ];
 
@@ -74,9 +78,8 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
     }
   };
 
-  const generateQRImageUrl = (data: string) => {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data)}`;
-  };
+  const generateQRImageUrl = (data: string) =>
+    `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=${encodeURIComponent(data)}`;
 
   const downloadQR = async (url: string, label: string) => {
     try {
@@ -86,13 +89,10 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
       const link = document.createElement('a');
       const safeName = event.nombre.toLowerCase().replace(/\s+/g, '-');
       link.href = blobUrl;
-      link.download = `${label}-${safeName}.png`;
+      link.download = `qr-${label}-${safeName}.png`;
       link.click();
       URL.revokeObjectURL(blobUrl);
-      toast({
-        title: '¡Descargado!',
-        description: `QR de ${label} descargado`,
-      });
+      toast({ title: '¡Descargado!', description: `QR de ${label} descargado` });
     } catch {
       toast({
         title: 'Error',
@@ -104,93 +104,102 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
 
   return (
     <ResponsiveModal open={open} onOpenChange={onOpenChange}>
-      <ResponsiveModalContent desktopClassName="max-w-2xl">
-        <ResponsiveModalHeader>
-          <ResponsiveModalTitle className="font-display text-lg sm:text-xl pr-6">
-            Códigos QR - {event.nombre}
+      <ResponsiveModalContent desktopClassName="max-w-xl">
+        <ResponsiveModalHeader className="pr-8">
+          <ResponsiveModalTitle className="font-display text-xl sm:text-2xl">
+            Códigos QR
           </ResponsiveModalTitle>
-          <ResponsiveModalDescription className="text-sm">
-            Compartí estos códigos con tus invitados para que participen del evento
+          <ResponsiveModalDescription className="text-sm text-muted-foreground">
+            Compartí estos códigos con tus invitados —{' '}
+            <span className="font-medium text-foreground">{event.nombre}</span>
           </ResponsiveModalDescription>
         </ResponsiveModalHeader>
 
-        <Tabs defaultValue="pantalla" className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
-            {qrCodes.map((qr) => (
-              <TabsTrigger key={qr.id} value={qr.id} className="text-xs sm:text-sm px-1 sm:px-3">
-                <qr.icon className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">{qr.title.split(' ')[0]}</span>
-              </TabsTrigger>
-            ))}
+        <Tabs defaultValue="pantalla" className="mt-5 w-full">
+          <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+            {qrCodes.map((qr) => {
+              const Icon = qr.icon;
+              return (
+                <TabsTrigger
+                  key={qr.id}
+                  value={qr.id}
+                  className="flex-col gap-1 py-2 px-1 text-xs touch-feedback data-[state=active]:shadow-sm"
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{qr.title}</span>
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
 
           {qrCodes.map((qr) => (
-            <TabsContent key={qr.id} value={qr.id} className="mt-4">
-              <Card>
-                <CardHeader className="text-center pb-2 px-3 sm:px-6">
-                  <CardTitle className="text-base sm:text-lg">{qr.title}</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">{qr.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 px-3 sm:px-6">
-                  {/* QR Code Image */}
-                  <div className="flex justify-center">
-                    <div className="p-3 sm:p-4 bg-white rounded-xl shadow-inner">
-                      <img
-                        src={generateQRImageUrl(qr.url)}
-                        alt={`QR Code ${qr.title}`}
-                        className="w-40 h-40 sm:w-48 sm:h-48"
-                      />
-                    </div>
-                  </div>
+            <TabsContent key={qr.id} value={qr.id} className="mt-5 space-y-4 focus-visible:outline-none">
+              {/* Título contextual */}
+              <div className="text-center space-y-1">
+                <h3 className="font-display font-semibold text-base">{qr.fullTitle}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">{qr.description}</p>
+              </div>
 
-                  {/* URL */}
-                  <div className="flex items-center gap-2 p-2 sm:p-3 bg-muted rounded-lg min-w-0">
-                    <code className="flex-1 text-xs sm:text-sm truncate min-w-0">
-                      {qr.url}
-                    </code>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="flex-shrink-0 h-8 w-8"
-                      onClick={() => copyToClipboard(qr.url, qr.title)}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
+              {/* QR */}
+              <div className="flex justify-center">
+                <div className="p-3 bg-white rounded-2xl shadow-lg ring-1 ring-border">
+                  <img
+                    src={generateQRImageUrl(qr.url)}
+                    alt={`QR Code ${qr.fullTitle}`}
+                    className="w-44 h-44 sm:w-56 sm:h-56 block"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      size="sm"
-                      onClick={() => copyToClipboard(qr.url, qr.title)}
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copiar Link
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      size="sm"
-                      onClick={() => downloadQR(qr.url, qr.id)}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Descargar QR
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      size="sm"
-                      asChild
-                    >
-                      <a href={qr.url} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Abrir
-                      </a>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* URL — bloque scrollable horizontal */}
+              <div className="rounded-lg bg-muted/60 border border-border p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 font-medium">
+                  Link directo
+                </p>
+                <div className="flex items-center gap-2 min-w-0">
+                  <code className="flex-1 text-xs font-mono text-foreground/80 truncate min-w-0">
+                    {qr.url}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => copyToClipboard(qr.url, qr.fullTitle)}
+                    aria-label="Copiar link"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Acciones — apiladas en mobile, en fila en sm+ */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="touch-feedback"
+                  onClick={() => copyToClipboard(qr.url, qr.fullTitle)}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="touch-feedback"
+                  onClick={() => downloadQR(qr.url, qr.id)}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Descargar
+                </Button>
+                <Button size="sm" className="btn-hero touch-feedback" asChild>
+                  <a href={qr.url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Abrir
+                  </a>
+                </Button>
+              </div>
             </TabsContent>
           ))}
         </Tabs>

@@ -49,77 +49,85 @@ export function ResponsiveModal({ open, onOpenChange, children }: RootProps) {
 }
 
 interface ContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Max width on desktop. Defaults to max-w-lg */
   desktopClassName?: string;
 }
 
-export function ResponsiveModalContent({
-  className,
-  desktopClassName,
-  children,
-  ...props
-}: ContentProps) {
-  const isMobile = React.useContext(MobileCtx);
-  if (isMobile) {
+export const ResponsiveModalContent = React.forwardRef<HTMLDivElement, ContentProps>(
+  ({ className, desktopClassName, children, ...props }, ref) => {
+    const isMobile = React.useContext(MobileCtx);
+    if (isMobile) {
+      return (
+        <DrawerContent
+          ref={ref}
+          className={cn('max-h-[92vh] safe-bottom', className)}
+        >
+          <div className="overflow-y-auto overflow-x-hidden px-4 pb-6 pt-2">
+            {children}
+          </div>
+        </DrawerContent>
+      );
+    }
     return (
-      <DrawerContent
+      <DialogContent
+        ref={ref}
         className={cn(
-          'max-h-[92vh] safe-bottom',
+          'max-h-[92vh] overflow-y-auto overflow-x-hidden',
+          desktopClassName ?? 'max-w-lg',
           className,
         )}
+        {...props}
       >
-        <div className="overflow-y-auto overflow-x-hidden px-4 pb-6 pt-2">
-          {children}
-        </div>
-      </DrawerContent>
+        {children}
+      </DialogContent>
     );
-  }
-  return (
-    <DialogContent
-      className={cn(
-        'max-h-[92vh] overflow-y-auto overflow-x-hidden',
-        desktopClassName ?? 'max-w-lg',
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </DialogContent>
-  );
-}
+  },
+);
+ResponsiveModalContent.displayName = 'ResponsiveModalContent';
 
-export function ResponsiveModalHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  const isMobile = React.useContext(MobileCtx);
-  return isMobile ? (
-    <DrawerHeader className={cn('text-left px-0 pt-2', className)} {...props} />
-  ) : (
-    <DialogHeader className={className} {...props} />
-  );
-}
+export const ResponsiveModalHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => {
+    const isMobile = React.useContext(MobileCtx);
+    return isMobile ? (
+      <DrawerHeader className={cn('text-left px-0 pt-2', className)} {...props} />
+    ) : (
+      <div ref={ref} className={cn('flex flex-col space-y-1.5 text-center sm:text-left', className)} {...props} />
+    );
+  },
+);
+ResponsiveModalHeader.displayName = 'ResponsiveModalHeader';
 
-export function ResponsiveModalTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  const isMobile = React.useContext(MobileCtx);
-  return isMobile ? (
-    <DrawerTitle className={cn('font-display text-lg', className)} {...props} />
-  ) : (
-    <DialogTitle className={className} {...props} />
-  );
-}
+export const ResponsiveModalTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
+  ({ className, ...props }, ref) => {
+    const isMobile = React.useContext(MobileCtx);
+    return isMobile ? (
+      <DrawerTitle ref={ref} className={cn('font-display text-lg', className)} {...props} />
+    ) : (
+      <DialogTitle ref={ref} className={className} {...props} />
+    );
+  },
+);
+ResponsiveModalTitle.displayName = 'ResponsiveModalTitle';
 
-export function ResponsiveModalDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  const isMobile = React.useContext(MobileCtx);
-  return isMobile ? (
-    <DrawerDescription className={className} {...props} />
-  ) : (
-    <DialogDescription className={className} {...props} />
-  );
-}
+export const ResponsiveModalDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+  ({ className, ...props }, ref) => {
+    const isMobile = React.useContext(MobileCtx);
+    return isMobile ? (
+      <DrawerDescription ref={ref} className={className} {...props} />
+    ) : (
+      <DialogDescription ref={ref} className={className} {...props} />
+    );
+  },
+);
+ResponsiveModalDescription.displayName = 'ResponsiveModalDescription';
 
-export function ResponsiveModalFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  const isMobile = React.useContext(MobileCtx);
-  return isMobile ? (
-    <DrawerFooter className={cn('px-0 pt-4', className)} {...props} />
-  ) : (
-    <DialogFooter className={className} {...props} />
-  );
-}
+export const ResponsiveModalFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => {
+    const isMobile = React.useContext(MobileCtx);
+    return isMobile ? (
+      <DrawerFooter className={cn('px-0 pt-4', className)} {...props} />
+    ) : (
+      <DialogFooter className={className} {...props} />
+    );
+  },
+);
+ResponsiveModalFooter.displayName = 'ResponsiveModalFooter';
