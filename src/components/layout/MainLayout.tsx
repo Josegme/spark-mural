@@ -13,6 +13,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { Shield, Menu, LayoutDashboard, PartyPopper, LogIn, X } from 'lucide-react';
 
@@ -83,6 +84,7 @@ function Header() {
 
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
           {showAdminButton && (
             <Button variant="outline" size="sm" asChild className="gap-2 border-accent text-accent hover:bg-accent/10">
               <Link to="/admin">
@@ -193,6 +195,13 @@ function Header() {
                   </a>
                 </SheetClose>
               </nav>
+
+              <div className="px-4 py-3 border-t space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Tema
+                </p>
+                <ThemeToggle variant="inline" />
+              </div>
 
               {!isLoggedIn && (
                 <div className="p-4 border-t">

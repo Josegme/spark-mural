@@ -28,18 +28,18 @@ export function UploadTabs({
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-3 mb-6">
-        <TabsTrigger value="foto" className="gap-2">
+      <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1">
+        <TabsTrigger value="foto" className="flex-col sm:flex-row gap-1 sm:gap-2 py-2 sm:py-1.5 touch-feedback">
           <Camera className="w-4 h-4" />
-          <span className="hidden sm:inline">Foto</span>
+          <span className="text-xs sm:text-sm">Foto</span>
         </TabsTrigger>
-        <TabsTrigger value="video" className="gap-2">
+        <TabsTrigger value="video" className="flex-col sm:flex-row gap-1 sm:gap-2 py-2 sm:py-1.5 touch-feedback">
           <Video className="w-4 h-4" />
-          <span className="hidden sm:inline">Video</span>
+          <span className="text-xs sm:text-sm">Video</span>
         </TabsTrigger>
-        <TabsTrigger value="mensaje" className="gap-2">
+        <TabsTrigger value="mensaje" className="flex-col sm:flex-row gap-1 sm:gap-2 py-2 sm:py-1.5 touch-feedback">
           <MessageCircle className="w-4 h-4" />
-          <span className="hidden sm:inline">Mensaje</span>
+          <span className="text-xs sm:text-sm">Mensaje</span>
         </TabsTrigger>
       </TabsList>
 

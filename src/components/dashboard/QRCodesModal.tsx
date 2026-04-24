@@ -3,12 +3,12 @@
  */
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from '@/components/ui/responsive-modal';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -103,16 +103,16 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-1rem)] sm:w-full max-h-[92vh] overflow-y-auto overflow-x-hidden p-3 sm:p-6">
-        <DialogHeader>
-          <DialogTitle className="font-display text-lg sm:text-xl pr-6">
+    <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+      <ResponsiveModalContent desktopClassName="max-w-2xl">
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle className="font-display text-lg sm:text-xl pr-6">
             Códigos QR - {event.nombre}
-          </DialogTitle>
-          <DialogDescription className="text-sm">
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription className="text-sm">
             Compartí estos códigos con tus invitados para que participen del evento
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
 
         <Tabs defaultValue="pantalla" className="mt-4">
           <TabsList className="grid w-full grid-cols-3">
@@ -194,7 +194,7 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
             </TabsContent>
           ))}
         </Tabs>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 }

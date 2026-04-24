@@ -8,7 +8,8 @@ import { useParams, Navigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, LayoutGrid, Shield, Settings, Download, Gamepad2 } from 'lucide-react';
+import { LayoutGrid, Shield, Settings, Download, Gamepad2 } from 'lucide-react';
+import { EventHeaderSkeleton, EventsGridSkeleton } from '@/components/ui/skeletons';
 import { useEventDetails } from '@/hooks/useEventDetails';
 import { QRCodesModal } from '@/components/dashboard/QRCodesModal';
 import {
@@ -28,8 +29,9 @@ export default function EventDetailPage() {
   if (isLoading) {
     return (
       <MainLayout showFooter={false}>
-        <div className="container py-16 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="container py-6 space-y-6">
+          <EventHeaderSkeleton />
+          <EventsGridSkeleton count={6} />
         </div>
       </MainLayout>
     );

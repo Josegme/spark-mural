@@ -26,6 +26,7 @@ import {
   AsistenteClientes,
   AsistenteRendiciones,
 } from '@/components/asistente';
+import { PageSkeleton } from '@/components/ui/skeletons';
 
 export default function AsistentePage() {
   const navigate = useNavigate();
@@ -40,9 +41,9 @@ export default function AsistentePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+      <MainLayout showFooter={false}>
+        <PageSkeleton />
+      </MainLayout>
     );
   }
 
