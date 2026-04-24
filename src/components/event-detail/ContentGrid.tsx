@@ -45,34 +45,36 @@ export function ContentGrid({ content, onModerate, showModeration = false }: Con
   return (
     <>
       <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all" className="gap-2">
-            Todos
-            <Badge variant="secondary" className="text-xs">{content.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="photos" className="gap-2">
-            <Camera className="w-4 h-4" />
-            Fotos
-            <Badge variant="secondary" className="text-xs">{photos.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="videos" className="gap-2">
-            <Video className="w-4 h-4" />
-            Videos
-            <Badge variant="secondary" className="text-xs">{videos.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="messages" className="gap-2">
-            <MessageSquare className="w-4 h-4" />
-            Mensajes
-            <Badge variant="secondary" className="text-xs">{messages.length}</Badge>
-          </TabsTrigger>
-          {showModeration && pendingCount > 0 && (
-            <TabsTrigger value="pending" className="gap-2">
-              <Clock className="w-4 h-4" />
-              Pendientes
-              <Badge variant="destructive" className="text-xs">{pendingCount}</Badge>
+        <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar">
+          <TabsList className="inline-flex w-auto">
+            <TabsTrigger value="all" className="gap-2">
+              Todos
+              <Badge variant="secondary" className="text-xs">{content.length}</Badge>
             </TabsTrigger>
-          )}
-        </TabsList>
+            <TabsTrigger value="photos" className="gap-2">
+              <Camera className="w-4 h-4" />
+              Fotos
+              <Badge variant="secondary" className="text-xs">{photos.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="videos" className="gap-2">
+              <Video className="w-4 h-4" />
+              Videos
+              <Badge variant="secondary" className="text-xs">{videos.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Mensajes
+              <Badge variant="secondary" className="text-xs">{messages.length}</Badge>
+            </TabsTrigger>
+            {showModeration && pendingCount > 0 && (
+              <TabsTrigger value="pending" className="gap-2">
+                <Clock className="w-4 h-4" />
+                Pendientes
+                <Badge variant="destructive" className="text-xs">{pendingCount}</Badge>
+              </TabsTrigger>
+            )}
+          </TabsList>
+        </div>
 
         <TabsContent value="all">
           <ContentItems 

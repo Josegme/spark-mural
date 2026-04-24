@@ -66,7 +66,7 @@ export default function EventDetailPage() {
 
   return (
     <MainLayout showFooter={false}>
-      <div className="container py-6">
+      <div className="container py-6 overflow-x-hidden">
         <EventHeader
           event={event}
           onChangeStatus={changeStatus}
