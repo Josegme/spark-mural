@@ -5,13 +5,13 @@
 
 import { useState } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from '@/components/ui/responsive-modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -194,17 +194,17 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+      <ResponsiveModalContent desktopClassName="max-w-lg">
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle className="flex items-center gap-2">
             <Plus className="w-5 h-5" />
             Crear Nuevo Tenant
-          </DialogTitle>
-          <DialogDescription>
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription>
             Creá un asistente o salón, opcionalmente con usuario asignado
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
 
         {/* Tipo de Tenant */}
         <Tabs value={tipo} onValueChange={(v) => setTipo(v as TenantType)} className="mt-4">
@@ -375,7 +375,7 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="mt-6">
+        <ResponsiveModalFooter className="mt-6">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
@@ -387,8 +387,8 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
             )}
             Crear {tipo === 'asistente' ? 'Asistente' : 'Salón'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveModalFooter>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 }
