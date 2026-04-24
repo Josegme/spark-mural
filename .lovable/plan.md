@@ -1,60 +1,103 @@
+# Plan Fase C — Theme, Skeletons, Bottom Sheets + Fix QR Mobile
 
+## Diagnóstico del bug del QR (imagen)
 
-## Plan Fase B — Refinamiento UX 2026
+En la captura se ve que el modal de "Códigos QR" se desplaza hacia la derecha y se corta. Causa raíz:
 
-### 1. Fluid typography (`src/index.css` + `tailwind.config.ts`)
-Agregar utilidades `text-fluid-*` con `clamp()`:
-- `text-fluid-sm`: `clamp(0.875rem, 0.8rem + 0.3vw, 1rem)`
-- `text-fluid-base`: `clamp(1rem, 0.9rem + 0.5vw, 1.125rem)`
-- `text-fluid-lg`: `clamp(1.125rem, 1rem + 0.6vw, 1.375rem)`
-- `text-fluid-xl`: `clamp(1.25rem, 1.1rem + 0.8vw, 1.75rem)`
-- `text-fluid-2xl`: `clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem)`
-- `text-fluid-3xl`: `clamp(1.875rem, 1.4rem + 2.4vw, 3rem)`
-- `text-fluid-4xl`: `clamp(2.25rem, 1.6rem + 3.2vw, 4rem)`
+- El `Dialog` de shadcn está posicionado con `left:50% + translate-x:-50%` y un `max-w-lg` por defecto.
+- Le pasamos `max-w-2xl w-[calc(100vw-1rem)]`, pero en navegadores móviles (Samsung Internet, Chrome con barra dinámica) `100vw` **incluye la barra de scroll vertical**, por lo que el contenido es 8-15px más ancho que el viewport visible y el modal queda corrido hacia la derecha.
+- Además, `max-w-2xl` (672px) gana sobre `w-[calc(100vw-1rem)]` cuando hay sub-elementos con ancho mínimo (códigos URL largos), provocando overflow horizontal.
 
-Aplicarlas en los **H1/H2 principales** de:
-- `Index.tsx` (hero landing)
-- `EventHeader.tsx` (título del evento)
-- `DashboardPage.tsx`, `AdminPage.tsx`, `SalonPage.tsx`, `AsistentePage.tsx` (títulos de página)
+**Fix definitivo**: en mobile usar un **Drawer (vaul)** que sube desde abajo, ocupa todo el ancho real del viewport, se cierra arrastrando hacia abajo. En desktop seguir usando Dialog.
 
-No tocamos textos de body ni componentes UI internos (badges, cards) para evitar cambios visuales no deseados.
+---
 
-### 2. Touch feedback global
-Editar `src/components/ui/button.tsx`: agregar al `cva` base `active:scale-[0.97] transition-transform touch-manipulation`. Aplica automáticamente a **todos los botones de la app** sin tocar archivos uno por uno.
+## 1. ResponsiveModal — wrapper Dialog/Drawer
 
-Agregar también a `src/index.css` regla global:
-```css
-button, a[role="button"] { touch-action: manipulation; }
-```
+**Nuevo**: `src/components/ui/responsive-modal.tsx`
+- Detecta viewport con `useIsMobile()` (ya existe).
+- En mobile renderiza `Drawer` (vaul) con `DrawerContent` que ocupa `100%` de ancho real.
+- En desktop renderiza `Dialog` normal.
+- API espejo de Dialog: `<ResponsiveModal>`, `<ResponsiveModalContent>`, `<ResponsiveModalHeader>`, `<ResponsiveModalTitle>`, `<ResponsiveModalDescription>`.
 
-### 3. Footer accordion en mobile
-Editar `src/components/layout/MainLayout.tsx` (donde vive el footer):
-- En `<md` (mobile): renderizar las 4 columnas (Producto, Empresa, Soporte, Legal) dentro de un `<Accordion type="single" collapsible>` (Radix, ya disponible en `src/components/ui/accordion.tsx`).
-- En `≥md` (desktop): mantener el grid de 4 columnas actual sin cambios.
-- Implementación con un único componente que detecta breakpoint vía clases Tailwind (`md:hidden` y `hidden md:grid`).
+**Aplicado en**:
+- `QRCodesModal.tsx` → fix definitivo del bug de la imagen.
+- `CreateTenantModal.tsx`, `TenantEditModal.tsx` → mejor UX en mobile para el admin.
 
-### Archivos a modificar
-| Archivo | Cambio |
-|---|---|
-| `src/index.css` | Utilidades `.text-fluid-*` + `touch-action` global |
-| `tailwind.config.ts` | Registrar las clases `text-fluid-*` en theme.extend.fontSize |
-| `src/components/ui/button.tsx` | Agregar `active:scale-[0.97] transition-transform touch-manipulation` |
-| `src/components/layout/MainLayout.tsx` | Footer con Accordion mobile / grid desktop |
-| `src/pages/Index.tsx` | Aplicar `text-fluid-*` en hero |
-| `src/components/event-detail/EventHeader.tsx` | Aplicar `text-fluid-*` en título |
-| `src/pages/DashboardPage.tsx` · `AdminPage.tsx` · `SalonPage.tsx` · `AsistentePage.tsx` | Aplicar `text-fluid-*` en títulos H1 |
+## 2. Theme Toggle (light / dark / system)
 
-### Riesgo y rollback
-- **Riesgo BAJO en los 3 puntos**. Son cambios puramente visuales, no tocan lógica, datos ni rutas.
-- **Rollback fluid typography**: revertir las clases en cada archivo (puramente reemplazo de strings).
-- **Rollback touch feedback**: quitar las 3 clases del `cva` de `button.tsx`.
-- **Rollback footer accordion**: revertir `MainLayout.tsx` a la versión actual.
+- Instalar `next-themes`.
+- Envolver app en `<ThemeProvider attribute="class" defaultTheme="system" enableSystem>` en `src/main.tsx`.
+- Crear `src/components/ui/theme-toggle.tsx`: botón con dropdown (sol/luna/monitor).
+- Insertar en:
+  - Header desktop de `MainLayout.tsx` (al lado del avatar/login).
+  - Sheet mobile de `MainLayout.tsx` (sección dedicada).
+- Validar tokens `.dark` ya existentes en `index.css` (líneas 96+) — ajustar si algún componente usa color hardcoded.
+- Auditar y reemplazar cualquier `bg-white`, `text-black`, `bg-black` que encuentre por tokens semánticos en el camino.
 
-### Lo que NO hago en esta fase
-- No agrego safe-areas iOS (lo dejamos para Fase C si querés, junto con theme toggle y skeletons).
-- No toco tipografía de body, cards, badges, ni componentes UI internos — solo títulos principales.
-- No modifico los demás botones custom (`.btn-hero`, `.btn-hero-outline` en `index.css`) — solo el `<Button>` de shadcn que es el 95% de los botones de la app.
+## 3. Skeleton Loaders consistentes
 
-### Tiempo estimado
-~30-45 minutos de implementación. Sin downtime. Validable visualmente al instante recargando preview.
+**Nuevo**: `src/components/ui/skeletons.tsx` con variantes:
+- `StatsCardSkeleton` (4 cards de stats)
+- `EventCardSkeleton` (card de evento)
+- `TableRowSkeleton` (filas de tabla admin)
+- `EventHeaderSkeleton` (header de detalle de evento)
+- `ListSkeleton` (lista genérica n items)
 
+**Reemplazar spinners en**:
+- `AdminPage.tsx` → tabs Stats/Tenants/Users/Events
+- `DashboardPage.tsx` → stats + lista de eventos
+- `SalonPage.tsx`, `AsistentePage.tsx` → mismas secciones
+- `EventDetailPage.tsx` → header + grids
+- `StatsCards.tsx`, `EventsList.tsx` → skeletons internos cuando `isLoading`
+
+## 4. Bottom Sheets contextuales (consecuencia de #1)
+
+- `QRCodesModal` ya queda como bottom sheet en mobile (resuelve el bug).
+- `UploadTabs.tsx`: en mobile, el selector de tipo (Foto/Video/Mensaje) queda como tabs full-width grandes con íconos visibles + label (hoy oculta el label en mobile, lo cual confunde).
+
+---
+
+## Archivos a modificar/crear
+
+| # | Archivo | Tipo |
+|---|---|---|
+| 1 | `package.json` | + `next-themes` |
+| 2 | `src/main.tsx` | envolver con ThemeProvider |
+| 3 | `src/components/ui/theme-toggle.tsx` | nuevo |
+| 4 | `src/components/ui/responsive-modal.tsx` | nuevo |
+| 5 | `src/components/ui/skeletons.tsx` | nuevo |
+| 6 | `src/components/layout/MainLayout.tsx` | + ThemeToggle en header y sheet |
+| 7 | `src/components/dashboard/QRCodesModal.tsx` | usar ResponsiveModal (fix bug) |
+| 8 | `src/components/upload/UploadTabs.tsx` | tabs con label visible en mobile |
+| 9 | `src/components/admin/CreateTenantModal.tsx` | ResponsiveModal |
+| 10 | `src/components/admin/TenantEditModal.tsx` | ResponsiveModal |
+| 11 | `src/pages/AdminPage.tsx` | spinners → skeletons |
+| 12 | `src/pages/DashboardPage.tsx` | spinners → skeletons |
+| 13 | `src/pages/SalonPage.tsx` | spinners → skeletons |
+| 14 | `src/pages/AsistentePage.tsx` | spinners → skeletons |
+| 15 | `src/pages/EventDetailPage.tsx` | spinners → skeletons |
+| 16 | `src/index.css` | ajustes finos tokens `.dark` si hace falta |
+
+## Lo que NO toco
+
+- Lógica de negocio, queries, RLS, edge functions.
+- Tablas de admin (Tenants/Users) — la conversión tabla→cards en mobile sería **Fase D** dedicada.
+- Wizard de creación de evento — funciona bien responsive según tu test manual.
+- Muro interactivo (`MuroPage`) — diseño intencional fullscreen.
+- Colores existentes — solo reemplazo hardcodeados que rompen dark mode.
+
+## Riesgos
+
+- **next-themes + SSR**: no aplica, somos SPA Vite. Riesgo cero.
+- **vaul**: ya instalado y usado en `drawer.tsx`. Riesgo cero.
+- **Dark mode**: si encuentro componentes con colores hardcoded los corrijo. Posible que algunos gradientes brand necesiten ajuste de luminosidad en `.dark` para mantener contraste — lo valido al final con screenshot.
+
+## Tiempo estimado
+
+60-90 minutos. Validación inmediata:
+1. Recargar `/admin` → ver skeletons.
+2. Toggle tema desde header.
+3. Abrir modal QR en 390px → debe subir desde abajo y ocupar 100% de ancho.
+
+¿Confirmás para arrancar?
