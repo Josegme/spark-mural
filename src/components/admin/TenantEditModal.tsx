@@ -5,13 +5,13 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from '@/components/ui/responsive-modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -193,17 +193,17 @@ export function TenantEditModal({ tenant, open, onOpenChange, onSaved }: TenantE
   const isAsistente = tenant.tipo === 'asistente';
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+      <ResponsiveModalContent desktopClassName="max-w-2xl">
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle className="flex items-center gap-2">
             {isAsistente ? <UserCheck className="w-5 h-5" /> : <Building2 className="w-5 h-5" />}
             Editar {isAsistente ? 'Asistente' : 'Salón'}: {tenant.nombre}
-          </DialogTitle>
-          <DialogDescription>
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription>
             Configurá comisiones, permisos y condiciones especiales
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
 
         <Tabs defaultValue="general" className="mt-4">
           <TabsList className="grid w-full grid-cols-3">
@@ -505,7 +505,7 @@ export function TenantEditModal({ tenant, open, onOpenChange, onSaved }: TenantE
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="mt-6">
+        <ResponsiveModalFooter className="mt-6">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
@@ -517,8 +517,8 @@ export function TenantEditModal({ tenant, open, onOpenChange, onSaved }: TenantE
             )}
             Guardar Cambios
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveModalFooter>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 }
