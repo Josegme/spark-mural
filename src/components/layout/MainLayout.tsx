@@ -196,6 +196,13 @@ function Header() {
                 </SheetClose>
               </nav>
 
+              <div className="px-4 py-3 border-t space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Tema
+                </p>
+                <ThemeToggle variant="inline" />
+              </div>
+
               {!isLoggedIn && (
                 <div className="p-4 border-t">
                   <SheetClose asChild>
