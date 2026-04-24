@@ -4,7 +4,6 @@
  */
 
 import * as React from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogContent,
