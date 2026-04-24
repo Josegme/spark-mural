@@ -4,7 +4,6 @@
  */
 
 import * as React from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogContent,
@@ -31,8 +30,25 @@ interface RootProps {
 
 const MobileCtx = React.createContext(false);
 
+// Breakpoint local: solo activar Drawer en mobile real (<640px = teléfonos).
+// No usamos useIsMobile (768px) porque el preview iframe puede reportar anchos
+// engañosos y queremos que tablets/desktop siempre vean Dialog.
+const SHEET_BREAKPOINT = 640;
+
+function useIsSmallScreen() {
+  const [isSmall, setIsSmall] = React.useState(false);
+  React.useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${SHEET_BREAKPOINT - 1}px)`);
+    const onChange = () => setIsSmall(mql.matches);
+    onChange();
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+  return isSmall;
+}
+
 export function ResponsiveModal({ open, onOpenChange, children }: RootProps) {
-  const isMobile = useIsMobile();
+  const isMobile = useIsSmallScreen();
   return (
     <MobileCtx.Provider value={isMobile}>
       {isMobile ? (
