@@ -59,6 +59,7 @@ export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableP
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [reassignTarget, setReassignTarget] = useState<{ user: AdminUser; isOrphan: boolean } | null>(null);
+  const [crudTarget, setCrudTarget] = useState<{ user: AdminUser; mode: 'view' | 'edit' | 'role' } | null>(null);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
