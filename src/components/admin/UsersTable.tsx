@@ -215,15 +215,15 @@ export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableP
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCrudTarget({ user, mode: 'view' })}>
                               <Eye className="w-4 h-4 mr-2" />
                               Ver Perfil
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCrudTarget({ user, mode: 'edit' })}>
                               <Edit className="w-4 h-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCrudTarget({ user, mode: 'role' })}>
                               <UserCog className="w-4 h-4 mr-2" />
                               Cambiar Rol
                             </DropdownMenuItem>
