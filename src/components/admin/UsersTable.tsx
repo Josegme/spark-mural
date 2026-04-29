@@ -38,6 +38,7 @@ import { formatDate } from '@/lib/utils';
 import type { AdminUser, Tenant } from '@/hooks/useAdminData';
 import { TenantEditModal } from './TenantEditModal';
 import { ReassignTenantDialog } from './ReassignTenantDialog';
+import { UserCrudModal } from './UserCrudModal';
 
 interface UsersTableProps {
   users: AdminUser[];
