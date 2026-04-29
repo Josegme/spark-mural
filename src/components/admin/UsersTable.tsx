@@ -268,6 +268,19 @@ export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableP
           onRefresh?.();
         }}
       />
+
+      {/* Dialog para asignar / reasignar tenant cuando está huérfano o sin asignar */}
+      <ReassignTenantDialog
+        user={reassignTarget?.user ?? null}
+        tenants={tenants}
+        isOrphan={reassignTarget?.isOrphan ?? false}
+        open={!!reassignTarget}
+        onOpenChange={(open) => !open && setReassignTarget(null)}
+        onSaved={() => {
+          setReassignTarget(null);
+          onRefresh?.();
+        }}
+      />
     </>
   );
 }
