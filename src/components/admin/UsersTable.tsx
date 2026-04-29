@@ -79,6 +79,21 @@ export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableP
     return tenants.find(t => t.id === user.tenant_id);
   };
 
+  /**
+   * Un perfil con rol asistente/salon que tiene tenant_id pero el tenant
+   * no existe en la tabla tenants. Estado inconsistente que bloquea su acceso.
+   */
+  const isOrphanTenant = (user: AdminUser): boolean => {
+    if (user.rol !== 'asistente' && user.rol !== 'salon') return false;
+    if (!user.tenant_id) return false;
+    return !tenants.find(t => t.id === user.tenant_id);
+  };
+
+  /** Necesita asignación: rol asistente/salon SIN tenant_id */
+  const needsAssignment = (user: AdminUser): boolean => {
+    return (user.rol === 'asistente' || user.rol === 'salon') && !user.tenant_id;
+  };
+
   if (isLoading) {
     return (
       <Card>
