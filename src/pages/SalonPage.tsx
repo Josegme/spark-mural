@@ -12,7 +12,8 @@ import {
   Calendar,
   CreditCard,
   Plus,
-  LogOut
+  LogOut,
+  Home
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSalonData } from '@/hooks/useSalonData';
@@ -49,16 +50,26 @@ export default function SalonPage() {
   if (!isLoading && !tenantInfo) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="max-w-md text-center space-y-4">
+        <div className="max-w-md text-center space-y-5 rounded-lg border border-border bg-card p-6 shadow-sm">
           <div className="text-6xl">🏛️</div>
           <h2 className="text-2xl font-bold">Cuenta pendiente de activación</h2>
           <p className="text-muted-foreground">
-            Tu cuenta de salón aún no tiene un plan asignado. 
-            Contactá a PickEvent para activar tu suscripción.
+            Tu cuenta existe, pero todavía no está vinculada a un salón o plan activo.
+            Contactá a PickEvent para activar el acceso.
           </p>
           <p className="text-sm text-muted-foreground">
             📧 Escribinos y te configuramos en menos de 24 horas.
           </p>
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => navigate('/')}>
+              <Home className="w-4 h-4 mr-2" />
+              Ir al inicio
+            </Button>
+            <Button className="flex-1" onClick={signOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Cerrar sesión
+            </Button>
+          </div>
         </div>
       </div>
     );
