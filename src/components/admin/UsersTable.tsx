@@ -38,6 +38,7 @@ import { formatDate } from '@/lib/utils';
 import type { AdminUser, Tenant } from '@/hooks/useAdminData';
 import { TenantEditModal } from './TenantEditModal';
 import { ReassignTenantDialog } from './ReassignTenantDialog';
+import { UserCrudModal } from './UserCrudModal';
 
 interface UsersTableProps {
   users: AdminUser[];
@@ -58,6 +59,7 @@ export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableP
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [reassignTarget, setReassignTarget] = useState<{ user: AdminUser; isOrphan: boolean } | null>(null);
+  const [crudTarget, setCrudTarget] = useState<{ user: AdminUser; mode: 'view' | 'edit' | 'role' } | null>(null);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
@@ -213,15 +215,15 @@ export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableP
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCrudTarget({ user, mode: 'view' })}>
                               <Eye className="w-4 h-4 mr-2" />
                               Ver Perfil
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCrudTarget({ user, mode: 'edit' })}>
                               <Edit className="w-4 h-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCrudTarget({ user, mode: 'role' })}>
                               <UserCog className="w-4 h-4 mr-2" />
                               Cambiar Rol
                             </DropdownMenuItem>
@@ -278,6 +280,19 @@ export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableP
         onOpenChange={(open) => !open && setReassignTarget(null)}
         onSaved={() => {
           setReassignTarget(null);
+          onRefresh?.();
+        }}
+      />
+
+      {/* Modal CRUD completo: Ver / Editar / Cambiar Rol / Suspender */}
+      <UserCrudModal
+        user={crudTarget?.user ?? null}
+        tenant={crudTarget?.user ? findTenantForUser(crudTarget.user) : undefined}
+        initialMode={crudTarget?.mode ?? 'view'}
+        open={!!crudTarget}
+        onOpenChange={(open) => !open && setCrudTarget(null)}
+        onSaved={() => {
+          setCrudTarget(null);
           onRefresh?.();
         }}
       />
