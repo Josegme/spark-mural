@@ -30,11 +30,14 @@ import {
   Edit,
   Shield,
   UserCog,
-  Settings2
+  Settings2,
+  AlertTriangle,
+  Link2
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import type { AdminUser, Tenant } from '@/hooks/useAdminData';
 import { TenantEditModal } from './TenantEditModal';
+import { ReassignTenantDialog } from './ReassignTenantDialog';
 
 interface UsersTableProps {
   users: AdminUser[];
