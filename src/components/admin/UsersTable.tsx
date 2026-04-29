@@ -167,6 +167,8 @@ export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableP
                 {filteredUsers.map((user) => {
                   const roleInfo = roleConfig[user.rol] || roleConfig.cliente;
                   const userTenant = findTenantForUser(user);
+                  const orphan = isOrphanTenant(user);
+                  const unassigned = needsAssignment(user);
 
                   return (
                     <TableRow key={user.id}>
@@ -177,6 +179,18 @@ export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableP
                           {userTenant && (
                             <p className="text-xs text-primary mt-0.5">
                               🏢 {userTenant.nombre}
+                            </p>
+                          )}
+                          {orphan && (
+                            <p className="text-xs text-destructive mt-0.5 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              Tenant huérfano (id inválido)
+                            </p>
+                          )}
+                          {unassigned && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              Sin tenant asignado
                             </p>
                           )}
                         </div>
@@ -217,6 +231,18 @@ export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableP
                                 <DropdownMenuItem onClick={() => setEditingTenant(userTenant)}>
                                   <Settings2 className="w-4 h-4 mr-2" />
                                   Configurar Tenant
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {(orphan || unassigned) && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => setReassignTarget({ user, isOrphan: orphan })}
+                                  className={orphan ? 'text-destructive focus:text-destructive' : ''}
+                                >
+                                  <Link2 className="w-4 h-4 mr-2" />
+                                  {orphan ? 'Reasignar Tenant' : 'Asignar Tenant'}
                                 </DropdownMenuItem>
                               </>
                             )}
