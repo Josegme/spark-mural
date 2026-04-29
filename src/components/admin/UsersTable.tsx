@@ -283,6 +283,19 @@ export function UsersTable({ users, tenants, isLoading, onRefresh }: UsersTableP
           onRefresh?.();
         }}
       />
+
+      {/* Modal CRUD completo: Ver / Editar / Cambiar Rol / Suspender */}
+      <UserCrudModal
+        user={crudTarget?.user ?? null}
+        tenant={crudTarget?.user ? findTenantForUser(crudTarget.user) : undefined}
+        initialMode={crudTarget?.mode ?? 'view'}
+        open={!!crudTarget}
+        onOpenChange={(open) => !open && setCrudTarget(null)}
+        onSaved={() => {
+          setCrudTarget(null);
+          onRefresh?.();
+        }}
+      />
     </>
   );
 }
