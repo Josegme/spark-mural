@@ -25,6 +25,9 @@ import TechnicalReportPage from "./pages/TechnicalReportPage";
 import StakeholderReportPage from "./pages/StakeholderReportPage";
 import NotFound from "./pages/NotFound";
 import ComingSoonPage from "./pages/ComingSoonPage";
+import ParaSalonesPage from "./pages/ParaSalonesPage";
+import ParaOrganizadoresPage from "./pages/ParaOrganizadoresPage";
+import ContactoPage from "./pages/ContactoPage";
 
 const queryClient = new QueryClient();
 
@@ -39,9 +42,9 @@ const App = () => (
           <Routes>
             {/* Rutas públicas */}
             <Route path="/" element={<Index />} />
-            <Route path="/para-salones" element={<ComingSoonPage />} />
-            <Route path="/para-organizadores" element={<ComingSoonPage />} />
-            <Route path="/contacto" element={<ComingSoonPage />} />
+            <Route path="/para-salones" element={<ParaSalonesPage />} />
+            <Route path="/para-organizadores" element={<ParaOrganizadoresPage />} />
+            <Route path="/contacto" element={<ContactoPage />} />
             <Route path="/terminos" element={<ComingSoonPage />} />
             <Route path="/privacidad" element={<ComingSoonPage />} />
             <Route path="/login" element={<AuthPage />} />
