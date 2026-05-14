@@ -46,6 +46,7 @@ export interface SalonTenantInfo {
   pais: string;
   limite_eventos_mes: number;
   estado: string;
+  eventos_cortesia_disponibles: number;
 }
 
 export interface SalonStats {
