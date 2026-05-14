@@ -25,7 +25,7 @@ interface SalonStatsProps {
   onGoToSubscription?: () => void;
 }
 
-export function SalonStats({ stats, isLoading }: SalonStatsProps) {
+export function SalonStats({ stats, isLoading, onGoToSubscription }: SalonStatsProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
