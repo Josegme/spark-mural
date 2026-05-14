@@ -206,13 +206,19 @@ export function useSalonData() {
     // Estado de suscripción
     const suscripcionActiva = suscripcion?.estado === 'activo' && diasHastaVencimiento > 0;
 
+    // Cortesías (free trial: 2 eventos sin suscripción)
+    const cortesiasDisponibles = tenant?.eventos_cortesia_disponibles ?? 0;
+    const usandoCortesia = !suscripcionActiva && cortesiasDisponibles > 0;
+    const cortesiaAgotada = !suscripcionActiva && cortesiasDisponibles === 0;
+
     // Alertas
     const alertaLimite = porcentajeUso >= 80;
     const alertaVencimiento = diasHastaVencimiento > 0 && diasHastaVencimiento <= 7;
-    const alertaCritica = diasHastaVencimiento <= 0 || suscripcion?.estado !== 'activo';
+    const alertaCritica = (diasHastaVencimiento <= 0 || suscripcion?.estado !== 'activo') && !usandoCortesia;
 
-    // Puede crear evento
-    const puedeCrearEvento = suscripcionActiva && eventosEsteMes.length < limiteEventosMes;
+    // Puede crear evento: con suscripción activa dentro del límite, o usando cortesía
+    const puedeCrearEvento =
+      (suscripcionActiva && eventosEsteMes.length < limiteEventosMes) || usandoCortesia;
 
     return {
       totalEventos: eventos.length,
@@ -227,6 +233,9 @@ export function useSalonData() {
       alertaLimite,
       alertaVencimiento,
       alertaCritica,
+      cortesiasDisponibles,
+      usandoCortesia,
+      cortesiaAgotada,
     };
   };
 
