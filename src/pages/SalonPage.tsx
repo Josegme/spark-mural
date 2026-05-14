@@ -149,6 +149,7 @@ export default function SalonPage() {
               <SalonStats 
                 stats={stats} 
                 isLoading={isLoading} 
+                onGoToSubscription={goToSubscription}
               />
 
               {/* Event Cards (estilo dashboard) */}
