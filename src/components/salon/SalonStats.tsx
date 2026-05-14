@@ -46,7 +46,55 @@ export function SalonStats({ stats, isLoading, onGoToSubscription }: SalonStatsP
   return (
     <div className="space-y-6">
       {/* Alertas */}
-      {stats.alertaCritica && (
+      {/* Cortesía agotada: rojo + CTA */}
+      {stats.cortesiaAgotada && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Agotaste tus eventos gratuitos</AlertTitle>
+          <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-2">
+            <span>Contratá un plan para continuar.</span>
+            {onGoToSubscription && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={onGoToSubscription}
+                className="gap-2 shrink-0"
+              >
+                <CreditCard className="w-4 h-4" />
+                Ver planes
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Usando cortesía: amarillo */}
+      {stats.usandoCortesia && (
+        <Alert className="border-warning bg-warning/10">
+          <Gift className="h-4 w-4 text-warning" />
+          <AlertTitle className="text-warning">Eventos gratuitos activos</AlertTitle>
+          <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-2">
+            <span>
+              Estás usando tus eventos gratuitos. Te quedan {stats.cortesiasDisponibles} de 2.
+              Contratá un plan para seguir operando sin interrupciones.
+            </span>
+            {onGoToSubscription && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onGoToSubscription}
+                className="gap-2 shrink-0"
+              >
+                <CreditCard className="w-4 h-4" />
+                Ver planes
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Suscripción vencida (sólo si no hay cortesía disponible) */}
+      {stats.alertaCritica && !stats.cortesiaAgotada && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>¡Suscripción Vencida!</AlertTitle>
