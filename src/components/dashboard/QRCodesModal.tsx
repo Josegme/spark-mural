@@ -104,7 +104,7 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
 
   return (
     <ResponsiveModal open={open} onOpenChange={onOpenChange}>
-      <ResponsiveModalContent desktopClassName="max-w-md max-h-[90vh]">
+      <ResponsiveModalContent desktopClassName="w-[calc(100%-2rem)] max-w-sm sm:max-w-md max-h-[85vh]">
         <ResponsiveModalHeader className="pr-8">
           <ResponsiveModalTitle className="font-display text-xl sm:text-2xl">
             Códigos QR
@@ -115,7 +115,7 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
           </ResponsiveModalDescription>
         </ResponsiveModalHeader>
 
-        <Tabs defaultValue="pantalla" className="mt-4 w-full">
+        <Tabs defaultValue="pantalla" className="mt-4 w-full min-w-0">
           <TabsList className="grid w-full grid-cols-3 h-9 p-1">
             {qrCodes.map((qr) => {
               const Icon = qr.icon;
@@ -133,7 +133,7 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
           </TabsList>
 
           {qrCodes.map((qr) => (
-            <TabsContent key={qr.id} value={qr.id} className="mt-4 space-y-3 focus-visible:outline-none">
+            <TabsContent key={qr.id} value={qr.id} className="mt-4 space-y-3 focus-visible:outline-none min-w-0">
               <div className="text-center space-y-0.5">
                 <h3 className="font-display font-semibold text-sm">{qr.fullTitle}</h3>
                 <p className="text-xs text-muted-foreground">{qr.description}</p>
@@ -144,13 +144,13 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
                   <img
                     src={generateQRImageUrl(qr.url)}
                     alt={`QR Code ${qr.fullTitle}`}
-                    className="w-[200px] h-[200px] block"
+                    className="w-[180px] h-[180px] sm:w-[200px] sm:h-[200px] block"
                     loading="lazy"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 rounded-lg bg-muted/60 border border-border px-2.5 py-1.5 min-w-0">
+              <div className="flex items-center gap-2 rounded-lg bg-muted/60 border border-border px-2.5 py-1.5 min-w-0 w-full">
                 <code className="flex-1 text-xs font-mono text-foreground/80 truncate min-w-0">
                   {qr.url}
                 </code>
@@ -165,20 +165,20 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="touch-feedback"
+                  className="touch-feedback w-full sm:flex-1 min-w-0"
                   onClick={() => downloadQR(qr.url, qr.id)}
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Descargar QR
+                  <Download className="w-4 h-4 mr-2 shrink-0" />
+                  <span className="truncate">Descargar QR</span>
                 </Button>
-                <Button size="sm" className="btn-hero touch-feedback" asChild>
+                <Button size="sm" className="btn-hero touch-feedback w-full sm:flex-1 min-w-0" asChild>
                   <a href={qr.url} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Abrir
+                    <ExternalLink className="w-4 h-4 mr-2 shrink-0" />
+                    <span className="truncate">Abrir</span>
                   </a>
                 </Button>
               </div>
