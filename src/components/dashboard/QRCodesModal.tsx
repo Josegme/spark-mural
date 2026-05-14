@@ -104,7 +104,7 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
 
   return (
     <ResponsiveModal open={open} onOpenChange={onOpenChange}>
-      <ResponsiveModalContent desktopClassName="max-w-xl">
+      <ResponsiveModalContent desktopClassName="max-w-md max-h-[90vh]">
         <ResponsiveModalHeader className="pr-8">
           <ResponsiveModalTitle className="font-display text-xl sm:text-2xl">
             Códigos QR
@@ -115,17 +115,17 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
           </ResponsiveModalDescription>
         </ResponsiveModalHeader>
 
-        <Tabs defaultValue="pantalla" className="mt-5 w-full">
-          <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+        <Tabs defaultValue="pantalla" className="mt-4 w-full">
+          <TabsList className="grid w-full grid-cols-3 h-9 p-1">
             {qrCodes.map((qr) => {
               const Icon = qr.icon;
               return (
                 <TabsTrigger
                   key={qr.id}
                   value={qr.id}
-                  className="flex-col gap-1 py-2 px-1 text-xs touch-feedback data-[state=active]:shadow-sm"
+                  className="gap-1.5 px-2 text-xs touch-feedback data-[state=active]:shadow-sm"
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
                   <span>{qr.title}</span>
                 </TabsTrigger>
               );
@@ -133,57 +133,39 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
           </TabsList>
 
           {qrCodes.map((qr) => (
-            <TabsContent key={qr.id} value={qr.id} className="mt-5 space-y-4 focus-visible:outline-none">
-              {/* Título contextual */}
-              <div className="text-center space-y-1">
-                <h3 className="font-display font-semibold text-base">{qr.fullTitle}</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">{qr.description}</p>
+            <TabsContent key={qr.id} value={qr.id} className="mt-4 space-y-3 focus-visible:outline-none">
+              <div className="text-center space-y-0.5">
+                <h3 className="font-display font-semibold text-sm">{qr.fullTitle}</h3>
+                <p className="text-xs text-muted-foreground">{qr.description}</p>
               </div>
 
-              {/* QR */}
               <div className="flex justify-center">
-                <div className="p-3 bg-white rounded-2xl shadow-lg ring-1 ring-border">
+                <div className="p-3 bg-white rounded-xl shadow-md ring-1 ring-border">
                   <img
                     src={generateQRImageUrl(qr.url)}
                     alt={`QR Code ${qr.fullTitle}`}
-                    className="w-44 h-44 sm:w-56 sm:h-56 block"
+                    className="w-[200px] h-[200px] block"
                     loading="lazy"
                   />
                 </div>
               </div>
 
-              {/* URL — bloque scrollable horizontal */}
-              <div className="rounded-lg bg-muted/60 border border-border p-3">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5 font-medium">
-                  Link directo
-                </p>
-                <div className="flex items-center gap-2 min-w-0">
-                  <code className="flex-1 text-xs font-mono text-foreground/80 truncate min-w-0">
-                    {qr.url}
-                  </code>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 shrink-0"
-                    onClick={() => copyToClipboard(qr.url, qr.fullTitle)}
-                    aria-label="Copiar link"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
+              <div className="flex items-center gap-2 rounded-lg bg-muted/60 border border-border px-2.5 py-1.5 min-w-0">
+                <code className="flex-1 text-xs font-mono text-foreground/80 truncate min-w-0">
+                  {qr.url}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => copyToClipboard(qr.url, qr.fullTitle)}
+                  aria-label="Copiar link"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
               </div>
 
-              {/* Acciones — apiladas en mobile, en fila en sm+ */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="touch-feedback"
-                  onClick={() => copyToClipboard(qr.url, qr.fullTitle)}
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copiar
-                </Button>
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -191,7 +173,7 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
                   onClick={() => downloadQR(qr.url, qr.id)}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Descargar
+                  Descargar QR
                 </Button>
                 <Button size="sm" className="btn-hero touch-feedback" asChild>
                   <a href={qr.url} target="_blank" rel="noopener noreferrer">
