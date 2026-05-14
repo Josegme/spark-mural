@@ -3,10 +3,12 @@
  * Panel completo para gestión de eventos y suscripción
  */
 
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   LayoutDashboard, 
   Calendar,
@@ -32,12 +34,15 @@ export default function SalonPage() {
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
   const { stats, eventos, eventosCalendario, suscripcion, tenantInfo, isLoading, refetch } = useSalonData();
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const handleCreateEvent = () => {
     if (stats.puedeCrearEvento) {
       navigate('/crear-evento');
     }
   };
+
+  const goToSubscription = () => setActiveTab('suscripcion');
 
   if (isLoading) {
     return (
@@ -93,19 +98,36 @@ export default function SalonPage() {
               <LogOut className="w-4 h-4 mr-2" />
               Cerrar Sesión
             </Button>
-            <Button 
-              className="btn-hero text-sm px-4 py-2" 
-              onClick={handleCreateEvent}
-              disabled={!stats.puedeCrearEvento}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Crear Evento
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button 
+                      className="btn-hero text-sm px-4 py-2" 
+                      onClick={handleCreateEvent}
+                      disabled={!stats.puedeCrearEvento}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Crear Evento
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!stats.puedeCrearEvento && (
+                  <TooltipContent>
+                    <p>
+                      {stats.cortesiaAgotada
+                        ? 'Contratá un plan para crear más eventos'
+                        : 'No podés crear eventos en este momento'}
+                    </p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="dashboard" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
@@ -127,6 +149,7 @@ export default function SalonPage() {
               <SalonStats 
                 stats={stats} 
                 isLoading={isLoading} 
+                onGoToSubscription={goToSubscription}
               />
 
               {/* Event Cards (estilo dashboard) */}

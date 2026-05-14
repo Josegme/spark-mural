@@ -50,6 +50,7 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
     comision_asistente: 50,
     precio_mensual: 150000,
     limite_eventos_mes: 30,
+    eventos_cortesia_iniciales: 2,
     // Notas
     notas_trato: '',
   });
@@ -67,6 +68,7 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
       limite_eventos_mes: tipo === 'asistente' 
         ? (config?.limites_default?.eventos_mes_asistente || 30)
         : (config?.limites_default?.eventos_mes_salon || 20),
+      eventos_cortesia_iniciales: config?.limites_default?.cortesias_iniciales || 2,
       notas_trato: '',
     });
     setCreateUser(false);
@@ -124,7 +126,7 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
         tipo,
         estado: 'activo',
         limite_eventos_mes: formData.limite_eventos_mes,
-        eventos_cortesia_disponibles: config?.limites_default?.cortesias_iniciales || 2,
+        eventos_cortesia_disponibles: formData.eventos_cortesia_iniciales,
         notas_trato: formData.notas_trato || null,
       };
 
@@ -294,16 +296,37 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Límite Eventos/Mes</Label>
-                <Input
-                  type="number"
-                  value={formData.limite_eventos_mes}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    limite_eventos_mes: parseInt(e.target.value) || 0 
-                  }))}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Límite Eventos/Mes</Label>
+                  <Input
+                    type="number"
+                    value={formData.limite_eventos_mes}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      limite_eventos_mes: parseInt(e.target.value) || 0 
+                    }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>
+                    Eventos de cortesía
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={formData.eventos_cortesia_iniciales}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      eventos_cortesia_iniciales: Math.max(0, parseInt(e.target.value) || 0)
+                    }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {tipo === 'salon' 
+                      ? 'Eventos gratuitos antes de requerir suscripción' 
+                      : 'Eventos promocionales disponibles'}
+                  </p>
+                </div>
               </div>
             </div>
 

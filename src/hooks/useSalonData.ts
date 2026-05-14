@@ -46,6 +46,7 @@ export interface SalonTenantInfo {
   pais: string;
   limite_eventos_mes: number;
   estado: string;
+  eventos_cortesia_disponibles: number;
 }
 
 export interface SalonStats {
@@ -61,6 +62,9 @@ export interface SalonStats {
   alertaLimite: boolean; // Al 80%
   alertaVencimiento: boolean; // 7 días
   alertaCritica: boolean; // Vencida
+  cortesiasDisponibles: number;
+  usandoCortesia: boolean; // Sin suscripción activa pero con cortesías > 0
+  cortesiaAgotada: boolean; // Sin suscripción activa y cortesías = 0
 }
 
 export function useSalonData() {
@@ -75,7 +79,7 @@ export function useSalonData() {
 
       const { data, error } = await supabase
         .from('tenants')
-        .select('id, nombre, email, pais, limite_eventos_mes, estado')
+        .select('id, nombre, email, pais, limite_eventos_mes, estado, eventos_cortesia_disponibles')
         .eq('id', tenantId)
         .eq('tipo', 'salon')
         .single();
@@ -202,13 +206,19 @@ export function useSalonData() {
     // Estado de suscripción
     const suscripcionActiva = suscripcion?.estado === 'activo' && diasHastaVencimiento > 0;
 
+    // Cortesías (free trial: 2 eventos sin suscripción)
+    const cortesiasDisponibles = tenant?.eventos_cortesia_disponibles ?? 0;
+    const usandoCortesia = !suscripcionActiva && cortesiasDisponibles > 0;
+    const cortesiaAgotada = !suscripcionActiva && cortesiasDisponibles === 0;
+
     // Alertas
     const alertaLimite = porcentajeUso >= 80;
     const alertaVencimiento = diasHastaVencimiento > 0 && diasHastaVencimiento <= 7;
-    const alertaCritica = diasHastaVencimiento <= 0 || suscripcion?.estado !== 'activo';
+    const alertaCritica = (diasHastaVencimiento <= 0 || suscripcion?.estado !== 'activo') && !usandoCortesia;
 
-    // Puede crear evento
-    const puedeCrearEvento = suscripcionActiva && eventosEsteMes.length < limiteEventosMes;
+    // Puede crear evento: con suscripción activa dentro del límite, o usando cortesía
+    const puedeCrearEvento =
+      (suscripcionActiva && eventosEsteMes.length < limiteEventosMes) || usandoCortesia;
 
     return {
       totalEventos: eventos.length,
@@ -223,6 +233,9 @@ export function useSalonData() {
       alertaLimite,
       alertaVencimiento,
       alertaCritica,
+      cortesiasDisponibles,
+      usandoCortesia,
+      cortesiaAgotada,
     };
   };
 

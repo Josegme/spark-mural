@@ -392,26 +392,48 @@ export function useCreateEvent() {
         return false;
       }
 
-      // If promotional event by asistente, decrement courtesy counter via edge function
-      if (isPromotional && (userRole === 'asistente' || userRole === 'admin') && tenantId) {
-        try {
-          const { data: decrementData, error: decrementError } = await supabase.functions.invoke(
-            'decrement-courtesy-counter',
-            { body: { tenantId } }
-          );
+      // Decrement courtesy counter for promotional asistente/admin events,
+      // OR for salon events created without an active subscription (free trial)
+      const shouldDecrementCourtesy =
+        (isPromotional && (userRole === 'asistente' || userRole === 'admin') && tenantId) ||
+        (userRole === 'salon' && tenantId);
 
-          if (decrementError) {
-            console.error('Error decrementing courtesy counter:', decrementError);
-            toast.error('El evento se creó pero no se pudo actualizar el contador de cortesías.');
-          } else if (decrementData?.ok) {
-            console.log('Courtesy counter decremented to:', decrementData.nuevoCuenta);
-          } else {
-            console.warn('Courtesy decrement response:', decrementData);
-            toast.error('No se pudo descontar la cortesía: ' + (decrementData?.message || 'error desconocido'));
+      if (shouldDecrementCourtesy && tenantId) {
+        // For salons, only decrement if there is no active subscription
+        let mustDecrement = isPromotional;
+        if (userRole === 'salon') {
+          const nowIso = new Date().toISOString();
+          const { data: activeSub } = await supabase
+            .from('suscripciones')
+            .select('id')
+            .eq('salon_id', tenantId)
+            .eq('estado', 'activo')
+            .gt('fecha_vencimiento', nowIso)
+            .limit(1)
+            .maybeSingle();
+          mustDecrement = !activeSub;
+        }
+
+        if (mustDecrement) {
+          try {
+            const { data: decrementData, error: decrementError } = await supabase.functions.invoke(
+              'decrement-courtesy-counter',
+              { body: { tenantId } }
+            );
+
+            if (decrementError) {
+              console.error('Error decrementing courtesy counter:', decrementError);
+              toast.error('El evento se creó pero no se pudo actualizar el contador de cortesías.');
+            } else if (decrementData?.ok) {
+              console.log('Courtesy counter decremented to:', decrementData.nuevoCuenta);
+            } else {
+              console.warn('Courtesy decrement response:', decrementData);
+              toast.error('No se pudo descontar la cortesía: ' + (decrementData?.message || 'error desconocido'));
+            }
+          } catch (courtesyError) {
+            console.error('Error calling decrement-courtesy-counter:', courtesyError);
+            toast.error('Error al actualizar el contador de cortesías.');
           }
-        } catch (courtesyError) {
-          console.error('Error calling decrement-courtesy-counter:', courtesyError);
-          toast.error('Error al actualizar el contador de cortesías.');
         }
       }
 
