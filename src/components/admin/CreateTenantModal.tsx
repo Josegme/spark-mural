@@ -50,6 +50,7 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
     comision_asistente: 50,
     precio_mensual: 150000,
     limite_eventos_mes: 30,
+    eventos_cortesia_iniciales: 2,
     // Notas
     notas_trato: '',
   });
@@ -67,6 +68,7 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
       limite_eventos_mes: tipo === 'asistente' 
         ? (config?.limites_default?.eventos_mes_asistente || 30)
         : (config?.limites_default?.eventos_mes_salon || 20),
+      eventos_cortesia_iniciales: config?.limites_default?.cortesias_iniciales || 2,
       notas_trato: '',
     });
     setCreateUser(false);
