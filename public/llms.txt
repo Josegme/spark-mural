@@ -1,0 +1,19 @@
+# PickEvent
+
+> Muro interactivo en tiempo real para eventos: los invitados suben fotos, videos y mensajes desde su celular vía QR y aparecen al instante en una pantalla proyectada. Incluye álbum descargable, juegos interactivos y transformación de fotos con IA.
+
+PickEvent es una plataforma SaaS multi-tenant orientada a eventos sociales y corporativos en LATAM (Argentina, Brasil, Paraguay, Uruguay, Chile). Soporta cumpleaños, casamientos, eventos corporativos, recitales y más. Ofrece planes Básico y Premium por evento, además de modelos de suscripción para salones y comisiones para asistentes/organizadores.
+
+## Pages
+
+- [Inicio](/): Producto, cómo funciona, planes y casos de uso.
+- [Para Salones](/para-salones): Propuesta de valor para dueños de salones de eventos.
+- [Para Organizadores](/para-organizadores): Propuesta para wedding planners y agencias.
+- [Contacto](/contacto): Contacto comercial vía WhatsApp y email para servicios especiales.
+- [Crear Evento](/crear-evento): Wizard de creación de evento (requiere cuenta).
+- [Login](/login): Acceso a cuentas de cliente, salón, asistente y administrador.
+
+## Optional
+
+- [Términos](/terminos)
+- [Privacidad](/privacidad)
