@@ -79,7 +79,7 @@ export function useSalonData() {
 
       const { data, error } = await supabase
         .from('tenants')
-        .select('id, nombre, email, pais, limite_eventos_mes, estado')
+        .select('id, nombre, email, pais, limite_eventos_mes, estado, eventos_cortesia_disponibles')
         .eq('id', tenantId)
         .eq('tipo', 'salon')
         .single();
