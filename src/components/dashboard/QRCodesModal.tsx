@@ -104,7 +104,7 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
 
   return (
     <ResponsiveModal open={open} onOpenChange={onOpenChange}>
-      <ResponsiveModalContent desktopClassName="max-w-md max-h-[90vh]">
+      <ResponsiveModalContent desktopClassName="w-[calc(100%-2rem)] max-w-sm sm:max-w-md max-h-[85vh]">
         <ResponsiveModalHeader className="pr-8">
           <ResponsiveModalTitle className="font-display text-xl sm:text-2xl">
             Códigos QR
