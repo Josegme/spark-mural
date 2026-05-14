@@ -115,7 +115,7 @@ export function QRCodesModal({ event, open, onOpenChange }: QRCodesModalProps) {
           </ResponsiveModalDescription>
         </ResponsiveModalHeader>
 
-        <Tabs defaultValue="pantalla" className="mt-4 w-full">
+        <Tabs defaultValue="pantalla" className="mt-4 w-full min-w-0">
           <TabsList className="grid w-full grid-cols-3 h-9 p-1">
             {qrCodes.map((qr) => {
               const Icon = qr.icon;
