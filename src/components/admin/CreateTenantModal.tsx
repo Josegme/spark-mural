@@ -296,16 +296,37 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Límite Eventos/Mes</Label>
-                <Input
-                  type="number"
-                  value={formData.limite_eventos_mes}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    limite_eventos_mes: parseInt(e.target.value) || 0 
-                  }))}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Límite Eventos/Mes</Label>
+                  <Input
+                    type="number"
+                    value={formData.limite_eventos_mes}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      limite_eventos_mes: parseInt(e.target.value) || 0 
+                    }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>
+                    Eventos de cortesía
+                  </Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={formData.eventos_cortesia_iniciales}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      eventos_cortesia_iniciales: Math.max(0, parseInt(e.target.value) || 0)
+                    }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {tipo === 'salon' 
+                      ? 'Eventos gratuitos antes de requerir suscripción' 
+                      : 'Eventos promocionales disponibles'}
+                  </p>
+                </div>
               </div>
             </div>
 
