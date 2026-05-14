@@ -62,6 +62,9 @@ export interface SalonStats {
   alertaLimite: boolean; // Al 80%
   alertaVencimiento: boolean; // 7 días
   alertaCritica: boolean; // Vencida
+  cortesiasDisponibles: number;
+  usandoCortesia: boolean; // Sin suscripción activa pero con cortesías > 0
+  cortesiaAgotada: boolean; // Sin suscripción activa y cortesías = 0
 }
 
 export function useSalonData() {
