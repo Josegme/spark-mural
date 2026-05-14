@@ -98,19 +98,36 @@ export default function SalonPage() {
               <LogOut className="w-4 h-4 mr-2" />
               Cerrar Sesión
             </Button>
-            <Button 
-              className="btn-hero text-sm px-4 py-2" 
-              onClick={handleCreateEvent}
-              disabled={!stats.puedeCrearEvento}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Crear Evento
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button 
+                      className="btn-hero text-sm px-4 py-2" 
+                      onClick={handleCreateEvent}
+                      disabled={!stats.puedeCrearEvento}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Crear Evento
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!stats.puedeCrearEvento && (
+                  <TooltipContent>
+                    <p>
+                      {stats.cortesiaAgotada
+                        ? 'Contratá un plan para crear más eventos'
+                        : 'No podés crear eventos en este momento'}
+                    </p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="dashboard" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
