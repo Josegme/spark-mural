@@ -6,19 +6,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { 
   Calendar, 
   CalendarCheck, 
   CalendarClock,
   AlertTriangle,
   AlertCircle,
-  TrendingUp
+  TrendingUp,
+  Gift,
+  CreditCard
 } from 'lucide-react';
 import type { SalonStats as SalonStatsType } from '@/hooks/useSalonData';
 
 interface SalonStatsProps {
   stats: SalonStatsType;
   isLoading: boolean;
+  onGoToSubscription?: () => void;
 }
 
 export function SalonStats({ stats, isLoading }: SalonStatsProps) {
