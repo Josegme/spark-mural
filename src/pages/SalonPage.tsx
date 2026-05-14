@@ -34,12 +34,15 @@ export default function SalonPage() {
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
   const { stats, eventos, eventosCalendario, suscripcion, tenantInfo, isLoading, refetch } = useSalonData();
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const handleCreateEvent = () => {
     if (stats.puedeCrearEvento) {
       navigate('/crear-evento');
     }
   };
+
+  const goToSubscription = () => setActiveTab('suscripcion');
 
   if (isLoading) {
     return (
