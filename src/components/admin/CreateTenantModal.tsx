@@ -126,7 +126,7 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
         tipo,
         estado: 'activo',
         limite_eventos_mes: formData.limite_eventos_mes,
-        eventos_cortesia_disponibles: config?.limites_default?.cortesias_iniciales || 2,
+        eventos_cortesia_disponibles: formData.eventos_cortesia_iniciales,
         notas_trato: formData.notas_trato || null,
       };
 
