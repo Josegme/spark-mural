@@ -267,6 +267,73 @@ export function InvitacionesPanel({ event }: Props) {
                   onChange={e => setMensaje(e.target.value)} />
               </div>
 
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-primary" />
+                  <Label className="text-base">Tarjeta digital (opcional)</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Subí una imagen para mostrar en la invitación. Ideal para diseños hechos en Canva, Photoshop, etc.
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {(Object.keys(FORMATO_LABELS) as TarjetaFormato[]).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setTarjetaFormato(f)}
+                      className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                        tarjetaFormato === f
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border hover:border-primary/50'
+                      }`}
+                    >
+                      {FORMATO_LABELS[f].label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Dimensiones recomendadas: {FORMATO_LABELS[tarjetaFormato].dims} px · máx 5 MB · PNG/JPG/WEBP
+                </p>
+
+                {tarjetaUrl ? (
+                  <div className="space-y-2">
+                    <div
+                      className={`${FORMATO_LABELS[tarjetaFormato].ratio} w-full max-w-xs mx-auto rounded-lg overflow-hidden border bg-muted`}
+                    >
+                      <img src={tarjetaUrl} alt="Tarjeta de invitación" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex justify-center gap-2">
+                      <label className="cursor-pointer">
+                        <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
+                          onChange={e => e.target.files?.[0] && handleUploadTarjeta(e.target.files[0])} />
+                        <span className="inline-flex items-center text-xs px-3 py-1.5 rounded-md border hover:bg-muted">
+                          <Upload className="w-3.5 h-3.5 mr-1.5" /> Reemplazar
+                        </span>
+                      </label>
+                      <Button type="button" size="sm" variant="outline" onClick={quitarTarjeta}>
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Quitar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className={`flex flex-col items-center justify-center gap-2 ${FORMATO_LABELS[tarjetaFormato].ratio} w-full max-w-xs mx-auto rounded-lg border-2 border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors bg-muted/30`}>
+                    <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
+                      onChange={e => e.target.files?.[0] && handleUploadTarjeta(e.target.files[0])}
+                      disabled={subiendo} />
+                    {subiendo ? (
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    ) : (
+                      <>
+                        <Upload className="w-6 h-6 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Subir imagen</span>
+                      </>
+                    )}
+                  </label>
+                )}
+              </div>
+
               {tieneErrores && (
                 <ul className="text-sm text-destructive space-y-1 bg-destructive/10 border border-destructive/30 rounded-md p-3">
                   {errores.map((er, i) => <li key={i}>• {er}</li>)}
