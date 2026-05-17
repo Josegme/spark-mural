@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useInvitacionPublica, useCrearRSVP } from '@/hooks/useInvitaciones';
 import { formatDate, formatTime } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const rsvpSchema = z.object({
   nombre: z.string().trim().min(2, 'Nombre muy corto').max(100, 'Máximo 100'),
@@ -83,6 +84,10 @@ export default function InvitacionPublicaPage() {
         restricciones: d.restricciones || undefined,
         mensaje: d.mensaje || undefined,
       });
+      if (d.email) {
+        supabase.functions.invoke('send-invitacion-qr', { body: { qr_token: qrToken } })
+          .catch(err => console.error('Error enviando email de invitación:', err));
+      }
       navigate(`/mi-invitacion/${qrToken}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo confirmar');

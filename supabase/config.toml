@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.decrement-courtesy-counter]
 verify_jwt = false
+
+[functions.send-invitacion-qr]
+verify_jwt = false
