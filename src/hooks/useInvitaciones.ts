@@ -199,6 +199,8 @@ export function useActivarInvitaciones(eventoId: string | undefined) {
       acompanantes_max: number;
       fecha_limite_rsvp: string | null;
       mensaje: string | null;
+      tarjeta_url?: string | null;
+      tarjeta_formato?: string | null;
     }) => {
       if (!eventoId) throw new Error('No event');
       // Generar tokens si activamos y aún no existen
