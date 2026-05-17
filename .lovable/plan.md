@@ -1,103 +1,194 @@
-# Plan Fase C — Theme, Skeletons, Bottom Sheets + Fix QR Mobile
 
-## Diagnóstico del bug del QR (imagen)
+# MVP — Invitaciones Digitales PickEvent
 
-En la captura se ve que el modal de "Códigos QR" se desplaza hacia la derecha y se corta. Causa raíz:
-
-- El `Dialog` de shadcn está posicionado con `left:50% + translate-x:-50%` y un `max-w-lg` por defecto.
-- Le pasamos `max-w-2xl w-[calc(100vw-1rem)]`, pero en navegadores móviles (Samsung Internet, Chrome con barra dinámica) `100vw` **incluye la barra de scroll vertical**, por lo que el contenido es 8-15px más ancho que el viewport visible y el modal queda corrido hacia la derecha.
-- Además, `max-w-2xl` (672px) gana sobre `w-[calc(100vw-1rem)]` cuando hay sub-elementos con ancho mínimo (códigos URL largos), provocando overflow horizontal.
-
-**Fix definitivo**: en mobile usar un **Drawer (vaul)** que sube desde abajo, ocupa todo el ancho real del viewport, se cierra arrastrando hacia abajo. En desktop seguir usando Dialog.
+Servicio extra activable al crear el evento. Reutiliza patrones ya existentes: tokens públicos tipo `qr_*_token`, RPCs `SECURITY DEFINER` para acceso anónimo, extras pagos como los juegos.
 
 ---
 
-## 1. ResponsiveModal — wrapper Dialog/Drawer
+## 1. Alcance del MVP (qué entra y qué NO)
 
-**Nuevo**: `src/components/ui/responsive-modal.tsx`
-- Detecta viewport con `useIsMobile()` (ya existe).
-- En mobile renderiza `Drawer` (vaul) con `DrawerContent` que ocupa `100%` de ancho real.
-- En desktop renderiza `Dialog` normal.
-- API espejo de Dialog: `<ResponsiveModal>`, `<ResponsiveModalContent>`, `<ResponsiveModalHeader>`, `<ResponsiveModalTitle>`, `<ResponsiveModalDescription>`.
+**Entra:**
+- Activación del extra "Invitaciones digitales" en el wizard de creación de eventos.
+- Página pública de invitación (link/QR maestro) con RSVP.
+- QR personal por invitado tras confirmar.
+- Pantalla de check-in para el organizador (cámara del celular).
+- Dashboard del organizador: contador confirmados / pendientes / ingresaron, lista exportable.
 
-**Aplicado en**:
-- `QRCodesModal.tsx` → fix definitivo del bug de la imagen.
-- `CreateTenantModal.tsx`, `TenantEditModal.tsx` → mejor UX en mobile para el admin.
-
-## 2. Theme Toggle (light / dark / system)
-
-- Instalar `next-themes`.
-- Envolver app en `<ThemeProvider attribute="class" defaultTheme="system" enableSystem>` en `src/main.tsx`.
-- Crear `src/components/ui/theme-toggle.tsx`: botón con dropdown (sol/luna/monitor).
-- Insertar en:
-  - Header desktop de `MainLayout.tsx` (al lado del avatar/login).
-  - Sheet mobile de `MainLayout.tsx` (sección dedicada).
-- Validar tokens `.dark` ya existentes en `index.css` (líneas 96+) — ajustar si algún componente usa color hardcoded.
-- Auditar y reemplazar cualquier `bg-white`, `text-black`, `bg-black` que encuentre por tokens semánticos en el camino.
-
-## 3. Skeleton Loaders consistentes
-
-**Nuevo**: `src/components/ui/skeletons.tsx` con variantes:
-- `StatsCardSkeleton` (4 cards de stats)
-- `EventCardSkeleton` (card de evento)
-- `TableRowSkeleton` (filas de tabla admin)
-- `EventHeaderSkeleton` (header de detalle de evento)
-- `ListSkeleton` (lista genérica n items)
-
-**Reemplazar spinners en**:
-- `AdminPage.tsx` → tabs Stats/Tenants/Users/Events
-- `DashboardPage.tsx` → stats + lista de eventos
-- `SalonPage.tsx`, `AsistentePage.tsx` → mismas secciones
-- `EventDetailPage.tsx` → header + grids
-- `StatsCards.tsx`, `EventsList.tsx` → skeletons internos cuando `isLoading`
-
-## 4. Bottom Sheets contextuales (consecuencia de #1)
-
-- `QRCodesModal` ya queda como bottom sheet en mobile (resuelve el bug).
-- `UploadTabs.tsx`: en mobile, el selector de tipo (Foto/Video/Mensaje) queda como tabs full-width grandes con íconos visibles + label (hoy oculta el label en mobile, lo cual confunde).
+**NO entra (fase 2):**
+- Apple/Google Wallet, mesas, segmentación por canal, recordatorios automáticos, lista de espera, modo offline.
 
 ---
 
-## Archivos a modificar/crear
+## 2. Modelo de datos (3 tablas nuevas + extensión)
 
-| # | Archivo | Tipo |
-|---|---|---|
-| 1 | `package.json` | + `next-themes` |
-| 2 | `src/main.tsx` | envolver con ThemeProvider |
-| 3 | `src/components/ui/theme-toggle.tsx` | nuevo |
-| 4 | `src/components/ui/responsive-modal.tsx` | nuevo |
-| 5 | `src/components/ui/skeletons.tsx` | nuevo |
-| 6 | `src/components/layout/MainLayout.tsx` | + ThemeToggle en header y sheet |
-| 7 | `src/components/dashboard/QRCodesModal.tsx` | usar ResponsiveModal (fix bug) |
-| 8 | `src/components/upload/UploadTabs.tsx` | tabs con label visible en mobile |
-| 9 | `src/components/admin/CreateTenantModal.tsx` | ResponsiveModal |
-| 10 | `src/components/admin/TenantEditModal.tsx` | ResponsiveModal |
-| 11 | `src/pages/AdminPage.tsx` | spinners → skeletons |
-| 12 | `src/pages/DashboardPage.tsx` | spinners → skeletons |
-| 13 | `src/pages/SalonPage.tsx` | spinners → skeletons |
-| 14 | `src/pages/AsistentePage.tsx` | spinners → skeletons |
-| 15 | `src/pages/EventDetailPage.tsx` | spinners → skeletons |
-| 16 | `src/index.css` | ajustes finos tokens `.dark` si hace falta |
+### `eventos` (extensión)
+- `invitaciones_activas` (bool, default false)
+- `invitaciones_cupo_maximo` (int, nullable) — null = sin límite
+- `invitaciones_acompanantes_max` (int, default 0)
+- `invitaciones_fecha_limite_rsvp` (timestamptz, nullable)
+- `invitaciones_mensaje` (text, nullable) — copy custom de la invitación
+- `qr_invitaciones_token` (text, único) — token maestro público
+- `qr_checkin_token` (text, único) — token privado para modo recepción
 
-## Lo que NO toco
+### `invitaciones` (cada invitado individual)
+- `id`, `evento_id`, `created_at`
+- `nombre`, `email` (nullable), `telefono` (nullable)
+- `qr_token` (text único, crypto random) — el QR personal
+- `estado` enum: `pendiente` | `confirmado` | `rechazado`
+- `acompanantes` (int, default 0)
+- `restricciones` (text, nullable)
+- `mensaje_anfitrion` (text, nullable)
+- `confirmado_at` (timestamptz, nullable)
+- `device_id` (text, nullable) — anti-duplicado por dispositivo
 
-- Lógica de negocio, queries, RLS, edge functions.
-- Tablas de admin (Tenants/Users) — la conversión tabla→cards en mobile sería **Fase D** dedicada.
-- Wizard de creación de evento — funciona bien responsive según tu test manual.
-- Muro interactivo (`MuroPage`) — diseño intencional fullscreen.
-- Colores existentes — solo reemplazo hardcodeados que rompen dark mode.
+### `checkins`
+- `id`, `invitacion_id`, `evento_id`
+- `ingreso_at` (timestamptz, default now)
+- `operador_user_id` (uuid, nullable)
+- Unique constraint sobre `invitacion_id` → un solo check-in por QR.
 
-## Riesgos
+---
 
-- **next-themes + SSR**: no aplica, somos SPA Vite. Riesgo cero.
-- **vaul**: ya instalado y usado en `drawer.tsx`. Riesgo cero.
-- **Dark mode**: si encuentro componentes con colores hardcoded los corrijo. Posible que algunos gradientes brand necesiten ajuste de luminosidad en `.dark` para mantener contraste — lo valido al final con screenshot.
+## 3. RPCs públicos (patrón actual con PII enmascarada)
 
-## Tiempo estimado
+- `get_invitacion_evento_by_token(_token)` → datos públicos del evento (nombre, fecha, lugar, mensaje, color, logo, cupo restante). Sin PII de otros invitados.
+- `crear_rsvp(_token, _nombre, _email, _telefono, _acompanantes, _restricciones, _mensaje, _device_id)` → inserta en `invitaciones`, devuelve `qr_token` personal. Valida cupo, fecha límite, no duplicado por device/email.
+- `get_invitacion_personal(_qr_token)` → datos de una invitación específica para mostrar el QR (sin exponer otras).
+- `validar_checkin(_checkin_token, _invitacion_qr_token, _operador_id)` → valida que el `_checkin_token` pertenece al evento, inserta en `checkins`, devuelve estado: `ok` | `ya_ingreso` | `invalido` | `cupo_excedido`.
 
-60-90 minutos. Validación inmediata:
-1. Recargar `/admin` → ver skeletons.
-2. Toggle tema desde header.
-3. Abrir modal QR en 390px → debe subir desde abajo y ocupar 100% de ancho.
+Todas `SECURITY DEFINER`, sin `.select()` en INSERTs anónimos (regla de seguridad del proyecto).
 
-¿Confirmás para arrancar?
+---
+
+## 4. RLS
+
+- `invitaciones`: SELECT solo por dueño del evento, tenant, super_admin. INSERT anónimo bloqueado a nivel tabla — solo vía RPC `crear_rsvp`.
+- `checkins`: SELECT solo por dueño/tenant/super_admin. INSERT solo vía RPC `validar_checkin`.
+- Extensión `eventos`: hereda RLS existente.
+
+---
+
+## 5. Rutas nuevas
+
+```text
+/invitacion/:token          → Página pública de la invitación + RSVP
+/mi-invitacion/:qr_token    → Vista del invitado con su QR personal
+/checkin/:checkin_token     → Modo recepción (scanner cámara)
+```
+
+Más, dentro del dashboard del cliente:
+```text
+/dashboard/evento/:id/invitaciones   → Gestión: lista, contador, exportar CSV
+```
+
+---
+
+## 6. Componentes nuevos
+
+```text
+src/pages/
+  InvitacionPublicaPage.tsx       (RSVP)
+  MiInvitacionPage.tsx            (QR personal)
+  CheckinPage.tsx                 (scanner)
+
+src/components/invitaciones/
+  RSVPForm.tsx
+  QRInvitacionPersonal.tsx
+  CheckinScanner.tsx              (usa @zxing/browser o html5-qrcode)
+  CheckinResultBadge.tsx          (ok/ya/inválido)
+  InvitacionesPanel.tsx           (dashboard cliente)
+  InvitacionesStats.tsx
+  InvitacionesList.tsx
+  InvitacionesShareModal.tsx      (link maestro + QR + plantilla WhatsApp)
+
+src/components/events/wizard/
+  StepInvitacionesExtra.tsx       (toggle + config en wizard)
+
+src/hooks/
+  useInvitacionPublica.ts
+  useRSVP.ts
+  useCheckin.ts
+  useInvitacionesAdmin.ts
+```
+
+---
+
+## 7. Integración en el wizard de eventos
+
+Nuevo extra en `StepConfiguration` (junto a juegos):
+- Toggle "Activar invitaciones digitales".
+- Si ON: cupo máximo, acompañantes max, fecha límite RSVP, mensaje custom.
+- Al crear el evento, generar `qr_invitaciones_token` y `qr_checkin_token` (crypto random, mismo helper que los otros tokens).
+
+Precio: nuevo entry en `configuracion_global` → `precios_invitaciones` (básico/pro). Sumado al total del paso de pago.
+
+---
+
+## 8. Flujo de datos end-to-end
+
+```text
+Organizador crea evento + activa invitaciones
+        │
+        ├─► Sistema genera 2 tokens (maestro + checkin)
+        │
+        ▼
+Comparte /invitacion/:token por WhatsApp
+        │
+        ▼
+Invitado abre → RSVP → RPC crear_rsvp
+        │
+        ▼
+Redirige a /mi-invitacion/:qr_token → muestra QR
+        │
+Día del evento ───────────────────────────────────────────┐
+        │                                                  │
+Organizador abre /checkin/:checkin_token en su celular   │
+        │                                                  │
+Escanea QR del invitado → RPC validar_checkin            │
+        │                                                  │
+        ▼                                                  │
+Resultado en pantalla + contador actualizado vía Realtime◄┘
+```
+
+---
+
+## 9. Realtime
+
+- Suscripción a `invitaciones` y `checkins` filtrada por `evento_id` para que el dashboard del organizador y la pantalla de check-in vean confirmaciones e ingresos en vivo. Habilitar publicación realtime en ambas tablas.
+
+---
+
+## 10. Seguridad y anti-fraude (MVP)
+
+- Tokens crypto random (32 bytes hex), igual que los demás QR del proyecto.
+- QR personal de un solo uso: unique constraint en `checkins.invitacion_id`.
+- Anti-RSVP-duplicado: validación en RPC por `device_id` + `email` por evento.
+- Rate limit suave en RPC `crear_rsvp` por IP/device.
+- `checkin_token` distinto del `invitaciones_token` para que compartir la invitación no habilite controlar accesos.
+
+---
+
+## 11. Orden de implementación sugerido (incremental, sin refactor)
+
+1. **Migración**: extensión `eventos` + tablas `invitaciones` y `checkins` + RLS + RPCs + tokens crypto.
+2. **Wizard**: paso/toggle del extra + persistencia + precio.
+3. **Página pública `/invitacion/:token`** + `RSVPForm` + hook `useRSVP`.
+4. **Página `/mi-invitacion/:qr_token`** con QR personal (mismo helper `api.qrserver.com` ya usado).
+5. **Página `/checkin/:checkin_token`** con scanner (`html5-qrcode`) + RPC validación + feedback.
+6. **Dashboard cliente**: panel `InvitacionesPanel` con stats realtime, lista, share modal, export CSV.
+7. **QA**: viewport mobile (es donde se usa todo), modo standalone (Add to Home Screen) para check-in.
+
+---
+
+## 12. Detalles técnicos clave
+
+- **QR rendering**: reutilizar `generateQRImageUrl` ya existente en `QRCodesModal`.
+- **Scanner**: `html5-qrcode` (liviano, sin build issues, funciona en iOS Safari ≥ 14.3).
+- **Compartir**: misma estrategia que enterprise → `https://wa.me/?text=...` directo, nunca `wa.link`.
+- **Modal share**: reutilizar `ResponsiveModal` (mobile bottom-sheet / desktop dialog).
+- **Pricing**: dinámico desde `configuracion_global` vía `usePublicPrices` extendido.
+- **Feature flag**: `FEATURE_FLAGS.INVITACIONES` para poder activarlo en staging primero.
+
+---
+
+¿Avanzo con la migración como primer paso, o querés que primero ajuste algo del modelo (cupos, campos del RSVP, política de un-QR-por-acompañante vs un-QR-por-invitación)?
