@@ -73,7 +73,16 @@ export default function InvitacionPublicaPage() {
       return;
     }
     try {
-      const qrToken = await crearRSVP({ token: token!, ...parsed.data });
+      const d = parsed.data;
+      const qrToken = await crearRSVP({
+        token: token!,
+        nombre: d.nombre,
+        email: d.email || undefined,
+        telefono: d.telefono || undefined,
+        acompanantes: d.acompanantes,
+        restricciones: d.restricciones || undefined,
+        mensaje: d.mensaje || undefined,
+      });
       navigate(`/mi-invitacion/${qrToken}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo confirmar');
