@@ -53,13 +53,50 @@ export function InvitacionesPanel({ event }: Props) {
       event.invitaciones_acompanantes_max, event.invitaciones_fecha_limite_rsvp,
       event.invitaciones_mensaje]);
 
+  // Fin del evento (fecha + hora + duración) para validar la fecha límite de RSVP
+  const eventoFin = (() => {
+    if (!event.fecha_evento || !event.hora_inicio) return null;
+    const d = new Date(`${event.fecha_evento}T${event.hora_inicio}`);
+    if (isNaN(d.getTime())) return null;
+    d.setHours(d.getHours() + (event.duracion_horas || 0));
+    return d;
+  })();
+
+  const limiteDate = limite ? new Date(limite) : null;
+  const cupoNum = cupo ? parseInt(cupo) : null;
+  const acompNum = parseInt(acomp) || 0;
+
+  const errores: string[] = [];
+  if (activa) {
+    if (limiteDate && eventoFin && limiteDate > eventoFin) {
+      errores.push('La fecha límite para confirmar no puede ser posterior al fin del evento.');
+    }
+    if (limiteDate && limiteDate < new Date()) {
+      errores.push('La fecha límite ya pasó. Elegí una fecha futura.');
+    }
+    if (cupoNum !== null && cupoNum < 1) {
+      errores.push('El cupo máximo debe ser al menos 1 (o dejalo vacío para sin límite).');
+    }
+    if (acompNum < 0 || acompNum > 20) {
+      errores.push('Los acompañantes deben estar entre 0 y 20.');
+    }
+    if (mensaje.length > 500) {
+      errores.push('El mensaje no puede superar los 500 caracteres.');
+    }
+  }
+  const tieneErrores = errores.length > 0;
+
   const guardar = async () => {
+    if (tieneErrores) {
+      toast.error(errores[0]);
+      return;
+    }
     try {
       await activar({
         activar: activa,
-        cupo_maximo: cupo ? parseInt(cupo) : null,
-        acompanantes_max: parseInt(acomp) || 0,
-        fecha_limite_rsvp: limite ? new Date(limite).toISOString() : null,
+        cupo_maximo: cupoNum,
+        acompanantes_max: acompNum,
+        fecha_limite_rsvp: limiteDate ? limiteDate.toISOString() : null,
         mensaje: mensaje.trim() || null,
       });
       toast.success(activa ? 'Invitaciones activas' : 'Configuración guardada');
@@ -67,6 +104,11 @@ export function InvitacionesPanel({ event }: Props) {
       toast.error(e instanceof Error ? e.message : 'Error al guardar');
     }
   };
+
+  // máximo para el input datetime-local (en formato YYYY-MM-DDTHH:mm)
+  const maxLimite = eventoFin
+    ? new Date(eventoFin.getTime() - eventoFin.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    : undefined;
 
   const totalConfirmados = invitaciones.filter(i => i.estado === 'confirmado').length;
   const totalPersonas = invitaciones
