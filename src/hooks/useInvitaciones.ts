@@ -217,6 +217,8 @@ export function useActivarInvitaciones(eventoId: string | undefined) {
         invitaciones_fecha_limite_rsvp: config.fecha_limite_rsvp,
         invitaciones_mensaje: config.mensaje,
       };
+      if (config.tarjeta_url !== undefined) updates.invitacion_tarjeta_url = config.tarjeta_url;
+      if (config.tarjeta_formato !== undefined) updates.invitacion_tarjeta_formato = config.tarjeta_formato;
 
       const randHex = (n: number) => {
         const bytes = new Uint8Array(n);
