@@ -8,7 +8,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { LayoutGrid, Shield, Settings, Download, Gamepad2 } from 'lucide-react';
+import { LayoutGrid, Shield, Settings, Download, Gamepad2, Mail } from 'lucide-react';
 import { EventHeaderSkeleton, EventsGridSkeleton } from '@/components/ui/skeletons';
 import { useEventDetails } from '@/hooks/useEventDetails';
 import { QRCodesModal } from '@/components/dashboard/QRCodesModal';
@@ -19,6 +19,8 @@ import {
   AlbumDownload,
 } from '@/components/event-detail';
 import { EventGames } from '@/components/event-detail/EventGames';
+import { InvitacionesPanel } from '@/components/invitaciones/InvitacionesPanel';
+import { FEATURE_FLAGS } from '@/lib/constants';
 import type { UserEvent } from '@/hooks/useUserEvents';
 
 export default function EventDetailPage() {
@@ -78,7 +80,7 @@ export default function EventDetailPage() {
         <Tabs defaultValue="content" className="space-y-6">
           {/* Scrollable horizontal con labels siempre visibles */}
           <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar">
-            <TabsList className="inline-flex w-auto sm:w-full sm:max-w-lg sm:grid sm:grid-cols-5 h-auto p-1">
+            <TabsList className={`inline-flex w-auto sm:w-full sm:max-w-${FEATURE_FLAGS.INVITACIONES ? '2xl' : 'lg'} sm:grid sm:grid-cols-${FEATURE_FLAGS.INVITACIONES ? '6' : '5'} h-auto p-1`}>
               <TabsTrigger value="content" className="gap-2 px-3 py-2 touch-feedback">
                 <LayoutGrid className="w-4 h-4 shrink-0" />
                 <span>Contenido</span>
@@ -91,6 +93,12 @@ export default function EventDetailPage() {
                 <Gamepad2 className="w-4 h-4 shrink-0" />
                 <span>Juegos</span>
               </TabsTrigger>
+              {FEATURE_FLAGS.INVITACIONES && (
+                <TabsTrigger value="invitaciones" className="gap-2 px-3 py-2 touch-feedback">
+                  <Mail className="w-4 h-4 shrink-0" />
+                  <span>Invitaciones</span>
+                </TabsTrigger>
+              )}
               <TabsTrigger value="settings" className="gap-2 px-3 py-2 touch-feedback">
                 <Settings className="w-4 h-4 shrink-0" />
                 <span>Config</span>
@@ -132,6 +140,12 @@ export default function EventDetailPage() {
           <TabsContent value="games">
             <EventGames eventoId={event.id} content={content} />
           </TabsContent>
+
+          {FEATURE_FLAGS.INVITACIONES && (
+            <TabsContent value="invitaciones">
+              <InvitacionesPanel event={event} />
+            </TabsContent>
+          )}
 
           <TabsContent value="settings">
             <div className="space-y-6">

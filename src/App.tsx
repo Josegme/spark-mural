@@ -28,6 +28,9 @@ import ComingSoonPage from "./pages/ComingSoonPage";
 import ParaSalonesPage from "./pages/ParaSalonesPage";
 import ParaOrganizadoresPage from "./pages/ParaOrganizadoresPage";
 import ContactoPage from "./pages/ContactoPage";
+import InvitacionPublicaPage from "./pages/InvitacionPublicaPage";
+import MiInvitacionPage from "./pages/MiInvitacionPage";
+import CheckinPage from "./pages/CheckinPage";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +58,18 @@ const App = () => (
             <Route path="/muro/:token" element={<MuroPage />} />
             <Route path="/subir/:token" element={<UploadPage />} />
             <Route path="/album/:token" element={<AlbumPage />} />
+
+            {/* Invitaciones digitales (públicas) */}
+            <Route path="/invitacion/:token" element={<InvitacionPublicaPage />} />
+            <Route path="/mi-invitacion/:qr_token" element={<MiInvitacionPage />} />
+            <Route
+              path="/checkin/:checkin_token"
+              element={
+                <ProtectedRoute>
+                  <CheckinPage />
+                </ProtectedRoute>
+              }
+            />
             
             {/* Ruta de pago exitoso (protegida) */}
             <Route
