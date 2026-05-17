@@ -194,8 +194,13 @@ export function InvitacionesPanel({ event }: Props) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="limite">Fecha límite para confirmar</Label>
-                <Input id="limite" type="datetime-local"
+                <Input id="limite" type="datetime-local" max={maxLimite}
                   value={limite} onChange={e => setLimite(e.target.value)} />
+                {eventoFin && (
+                  <p className="text-xs text-muted-foreground">
+                    El evento finaliza el {eventoFin.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}.
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="mensaje">Mensaje en la invitación</Label>
@@ -203,11 +208,17 @@ export function InvitacionesPanel({ event }: Props) {
                   placeholder="Te esperamos en..." value={mensaje}
                   onChange={e => setMensaje(e.target.value)} />
               </div>
+
+              {tieneErrores && (
+                <ul className="text-sm text-destructive space-y-1 bg-destructive/10 border border-destructive/30 rounded-md p-3">
+                  {errores.map((er, i) => <li key={i}>• {er}</li>)}
+                </ul>
+              )}
             </>
           )}
 
           <div className="flex justify-end">
-            <Button onClick={guardar} disabled={isPending}>
+            <Button onClick={guardar} disabled={isPending || tieneErrores}>
               {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Guardar
             </Button>
