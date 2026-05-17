@@ -6,6 +6,7 @@
 // Feature flags
 export const FEATURE_FLAGS = {
   IA_ENABLED: false, // Cambiar a true cuando la IA esté lista
+  INVITACIONES: true, // Módulo de invitaciones digitales (RSVP + QR + Check-in)
 } as const;
 
 export const APP_CONFIG = {
