@@ -127,6 +127,21 @@ export function getDownloadUrl(token: string): string {
   return `${window.location.origin}/album/${token}`;
 }
 
+// Generar URL de invitación pública (RSVP)
+export function getInvitacionUrl(token: string): string {
+  return `${window.location.origin}/invitacion/${token}`;
+}
+
+// Generar URL de la invitación personal (QR del invitado)
+export function getMiInvitacionUrl(qrToken: string): string {
+  return `${window.location.origin}/mi-invitacion/${qrToken}`;
+}
+
+// Generar URL del modo check-in (recepción)
+export function getCheckinUrl(checkinToken: string): string {
+  return `${window.location.origin}/checkin/${checkinToken}`;
+}
+
 // Tiempo transcurrido (hace X tiempo)
 export function timeAgo(date: string | Date): string {
   const now = new Date();

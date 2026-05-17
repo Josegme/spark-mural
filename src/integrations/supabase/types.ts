@@ -14,6 +14,52 @@ export type Database = {
   }
   public: {
     Tables: {
+      checkins: {
+        Row: {
+          evento_id: string
+          id: string
+          ingreso_at: string
+          invitacion_id: string
+          operador_user_id: string | null
+        }
+        Insert: {
+          evento_id: string
+          id?: string
+          ingreso_at?: string
+          invitacion_id: string
+          operador_user_id?: string | null
+        }
+        Update: {
+          evento_id?: string
+          id?: string
+          ingreso_at?: string
+          invitacion_id?: string
+          operador_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_invitacion_id_fkey"
+            columns: ["invitacion_id"]
+            isOneToOne: true
+            referencedRelation: "invitaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comisiones_config: {
         Row: {
           activo: boolean
@@ -166,6 +212,11 @@ export type Database = {
           fecha_inicio_real: string | null
           hora_inicio: string
           id: string
+          invitaciones_acompanantes_max: number
+          invitaciones_activas: boolean
+          invitaciones_cupo_maximo: number | null
+          invitaciones_fecha_limite_rsvp: string | null
+          invitaciones_mensaje: string | null
           limite_subidas_por_invitado: number | null
           logo_url: string | null
           moderacion_activa: boolean
@@ -173,7 +224,9 @@ export type Database = {
           pasarela_pago: Database["public"]["Enums"]["payment_gateway"] | null
           payment_id: string | null
           precio_pagado: number
+          qr_checkin_token: string | null
           qr_descarga_token: string
+          qr_invitaciones_token: string | null
           qr_invitados_token: string
           qr_pantalla_token: string
           tema_ia: string | null
@@ -199,6 +252,11 @@ export type Database = {
           fecha_inicio_real?: string | null
           hora_inicio: string
           id?: string
+          invitaciones_acompanantes_max?: number
+          invitaciones_activas?: boolean
+          invitaciones_cupo_maximo?: number | null
+          invitaciones_fecha_limite_rsvp?: string | null
+          invitaciones_mensaje?: string | null
           limite_subidas_por_invitado?: number | null
           logo_url?: string | null
           moderacion_activa?: boolean
@@ -206,7 +264,9 @@ export type Database = {
           pasarela_pago?: Database["public"]["Enums"]["payment_gateway"] | null
           payment_id?: string | null
           precio_pagado?: number
+          qr_checkin_token?: string | null
           qr_descarga_token: string
+          qr_invitaciones_token?: string | null
           qr_invitados_token: string
           qr_pantalla_token: string
           tema_ia?: string | null
@@ -232,6 +292,11 @@ export type Database = {
           fecha_inicio_real?: string | null
           hora_inicio?: string
           id?: string
+          invitaciones_acompanantes_max?: number
+          invitaciones_activas?: boolean
+          invitaciones_cupo_maximo?: number | null
+          invitaciones_fecha_limite_rsvp?: string | null
+          invitaciones_mensaje?: string | null
           limite_subidas_por_invitado?: number | null
           logo_url?: string | null
           moderacion_activa?: boolean
@@ -239,7 +304,9 @@ export type Database = {
           pasarela_pago?: Database["public"]["Enums"]["payment_gateway"] | null
           payment_id?: string | null
           precio_pagado?: number
+          qr_checkin_token?: string | null
           qr_descarga_token?: string
+          qr_invitaciones_token?: string | null
           qr_invitados_token?: string
           qr_pantalla_token?: string
           tema_ia?: string | null
@@ -271,6 +338,69 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitaciones: {
+        Row: {
+          acompanantes: number
+          confirmado_at: string | null
+          created_at: string
+          device_id: string | null
+          email: string | null
+          estado: Database["public"]["Enums"]["invitacion_status"]
+          evento_id: string
+          id: string
+          mensaje_anfitrion: string | null
+          nombre: string
+          qr_token: string
+          restricciones: string | null
+          telefono: string | null
+        }
+        Insert: {
+          acompanantes?: number
+          confirmado_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          email?: string | null
+          estado?: Database["public"]["Enums"]["invitacion_status"]
+          evento_id: string
+          id?: string
+          mensaje_anfitrion?: string | null
+          nombre: string
+          qr_token: string
+          restricciones?: string | null
+          telefono?: string | null
+        }
+        Update: {
+          acompanantes?: number
+          confirmado_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          email?: string | null
+          estado?: Database["public"]["Enums"]["invitacion_status"]
+          evento_id?: string
+          id?: string
+          mensaje_anfitrion?: string | null
+          nombre?: string
+          qr_token?: string
+          restricciones?: string | null
+          telefono?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitaciones_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitaciones_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1086,6 +1216,23 @@ export type Database = {
     }
     Functions: {
       can_read_public_event: { Args: { _evento_id: string }; Returns: boolean }
+      crear_rsvp: {
+        Args: {
+          _acompanantes: number
+          _device_id: string
+          _email: string
+          _mensaje: string
+          _nombre: string
+          _restricciones: string
+          _telefono: string
+          _token: string
+        }
+        Returns: {
+          estado: string
+          motivo: string
+          qr_token: string
+        }[]
+      }
       event_accepts_uploads: { Args: { _evento_id: string }; Returns: boolean }
       evento_has_valid_token: {
         Args: { _evento_id: string; _token: string }
@@ -1130,6 +1277,39 @@ export type Database = {
         }[]
       }
       get_global_config: { Args: { config_key: string }; Returns: Json }
+      get_invitacion_evento_by_token: {
+        Args: { _token: string }
+        Returns: {
+          acompanantes_max: number
+          color_banner: string
+          cupo_maximo: number
+          cupo_restante: number
+          evento_id: string
+          fecha_evento: string
+          fecha_limite_rsvp: string
+          hora_inicio: string
+          logo_url: string
+          mensaje: string
+          nombre: string
+          tipo: string
+        }[]
+      }
+      get_invitacion_personal: {
+        Args: { _qr_token: string }
+        Returns: {
+          acompanantes: number
+          color_banner: string
+          estado: string
+          evento_id: string
+          evento_nombre: string
+          fecha_evento: string
+          hora_inicio: string
+          invitacion_id: string
+          logo_url: string
+          nombre: string
+          ya_ingreso: boolean
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -1143,6 +1323,18 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      validar_checkin: {
+        Args: {
+          _checkin_token: string
+          _invitacion_qr_token: string
+          _operador_id: string
+        }
+        Returns: {
+          acompanantes: number
+          estado: string
+          nombre: string
+        }[]
+      }
     }
     Enums: {
       app_role: "super_admin" | "asistente" | "salon" | "cliente"
@@ -1173,6 +1365,7 @@ export type Database = {
         | "acuarela"
         | "neon"
         | "minimalista"
+      invitacion_status: "pendiente" | "confirmado" | "rechazado"
       payment_gateway:
         | "mercadopago_ar"
         | "mercadopago_br"
@@ -1344,6 +1537,7 @@ export const Constants = {
         "neon",
         "minimalista",
       ],
+      invitacion_status: ["pendiente", "confirmado", "rechazado"],
       payment_gateway: [
         "mercadopago_ar",
         "mercadopago_br",
