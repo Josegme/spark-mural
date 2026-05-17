@@ -28,10 +28,20 @@ interface Props {
     invitaciones_acompanantes_max?: number;
     invitaciones_fecha_limite_rsvp?: string | null;
     invitaciones_mensaje?: string | null;
+    invitacion_tarjeta_url?: string | null;
+    invitacion_tarjeta_formato?: string | null;
     qr_invitaciones_token?: string | null;
     qr_checkin_token?: string | null;
   };
 }
+
+type TarjetaFormato = 'post' | 'historia' | 'horizontal';
+
+const FORMATO_LABELS: Record<TarjetaFormato, { label: string; ratio: string; dims: string }> = {
+  post: { label: 'Post (1:1)', ratio: 'aspect-square', dims: '1080×1080' },
+  historia: { label: 'Historia / Reel (9:16)', ratio: 'aspect-[9/16]', dims: '1080×1920' },
+  horizontal: { label: 'Horizontal (16:9)', ratio: 'aspect-video', dims: '1200×675' },
+};
 
 export function InvitacionesPanel({ event }: Props) {
   const { invitaciones, checkins } = useInvitacionesAdmin(event.id);
