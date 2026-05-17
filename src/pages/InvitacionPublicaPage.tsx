@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useInvitacionPublica, useCrearRSVP } from '@/hooks/useInvitaciones';
 import { formatDate, formatTime } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const rsvpSchema = z.object({
   nombre: z.string().trim().min(2, 'Nombre muy corto').max(100, 'Máximo 100'),
