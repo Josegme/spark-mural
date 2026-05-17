@@ -117,11 +117,50 @@ export function InvitacionesPanel({ event }: Props) {
         acompanantes_max: acompNum,
         fecha_limite_rsvp: limiteDate ? limiteDate.toISOString() : null,
         mensaje: mensaje.trim() || null,
+        tarjeta_url: tarjetaUrl,
+        tarjeta_formato: tarjetaUrl ? tarjetaFormato : null,
       });
       toast.success(activa ? 'Invitaciones activas' : 'Configuración guardada');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Error al guardar');
     }
+  };
+
+  const handleUploadTarjeta = async (file: File) => {
+    if (!file.type.match(/^image\/(png|jpe?g|webp)$/)) {
+      toast.error('Formato no permitido. Usá PNG, JPG o WEBP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('La imagen no puede superar los 5 MB.');
+      return;
+    }
+    setSubiendo(true);
+    try {
+      const url = await uploadTarjetaInvitacion(event.id, file);
+      setTarjetaUrl(url);
+      toast.success('Tarjeta subida. No olvides guardar.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo subir la imagen');
+    } finally {
+      setSubiendo(false);
+    }
+  };
+
+  const quitarTarjeta = async () => {
+    if (!tarjetaUrl) return;
+    // Intentar borrar el archivo del storage (best-effort)
+    try {
+      const marker = '/invitacion-tarjetas/';
+      const idx = tarjetaUrl.indexOf(marker);
+      if (idx >= 0) {
+        const path = tarjetaUrl.substring(idx + marker.length);
+        await supabase.storage.from('invitacion-tarjetas').remove([path]);
+      }
+    } catch {
+      // best-effort
+    }
+    setTarjetaUrl(null);
   };
 
   // máximo para el input datetime-local (en formato YYYY-MM-DDTHH:mm)
