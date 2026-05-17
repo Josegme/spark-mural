@@ -13,10 +13,12 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
   Mail, QrCode, Users, CheckCircle2, ScanLine, Copy, Download, ExternalLink, Save, Loader2, Share2,
+  Image as ImageIcon, Upload, Trash2,
 } from 'lucide-react';
-import { useInvitacionesAdmin, useActivarInvitaciones } from '@/hooks/useInvitaciones';
+import { useInvitacionesAdmin, useActivarInvitaciones, uploadTarjetaInvitacion } from '@/hooks/useInvitaciones';
 import { getCheckinUrl, getInvitacionUrl } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { EventDetails } from '@/hooks/useEventDetails';
 
 interface Props {
