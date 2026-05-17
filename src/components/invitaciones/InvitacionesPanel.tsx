@@ -54,6 +54,11 @@ export function InvitacionesPanel({ event }: Props) {
     event.invitaciones_fecha_limite_rsvp ? event.invitaciones_fecha_limite_rsvp.slice(0, 16) : ''
   );
   const [mensaje, setMensaje] = useState(event.invitaciones_mensaje || '');
+  const [tarjetaUrl, setTarjetaUrl] = useState<string | null>(event.invitacion_tarjeta_url || null);
+  const [tarjetaFormato, setTarjetaFormato] = useState<TarjetaFormato>(
+    (event.invitacion_tarjeta_formato as TarjetaFormato) || 'post'
+  );
+  const [subiendo, setSubiendo] = useState(false);
 
   useEffect(() => {
     setActiva(!!event.invitaciones_activas);
@@ -61,9 +66,11 @@ export function InvitacionesPanel({ event }: Props) {
     setAcomp(event.invitaciones_acompanantes_max?.toString() || '0');
     setLimite(event.invitaciones_fecha_limite_rsvp ? event.invitaciones_fecha_limite_rsvp.slice(0, 16) : '');
     setMensaje(event.invitaciones_mensaje || '');
+    setTarjetaUrl(event.invitacion_tarjeta_url || null);
+    setTarjetaFormato((event.invitacion_tarjeta_formato as TarjetaFormato) || 'post');
   }, [event.invitaciones_activas, event.invitaciones_cupo_maximo,
       event.invitaciones_acompanantes_max, event.invitaciones_fecha_limite_rsvp,
-      event.invitaciones_mensaje]);
+      event.invitaciones_mensaje, event.invitacion_tarjeta_url, event.invitacion_tarjeta_formato]);
 
   // Fin del evento (fecha + hora + duración) para validar la fecha límite de RSVP
   const eventoFin = (() => {
