@@ -20,6 +20,8 @@ export interface InvitacionEventoPublico {
   fecha_limite_rsvp: string | null;
   cupo_maximo: number | null;
   cupo_restante: number | null;
+  tarjeta_url: string | null;
+  tarjeta_formato: string | null;
 }
 
 export function useInvitacionPublica(token: string | undefined) {
@@ -197,6 +199,8 @@ export function useActivarInvitaciones(eventoId: string | undefined) {
       acompanantes_max: number;
       fecha_limite_rsvp: string | null;
       mensaje: string | null;
+      tarjeta_url?: string | null;
+      tarjeta_formato?: string | null;
     }) => {
       if (!eventoId) throw new Error('No event');
       // Generar tokens si activamos y aún no existen
@@ -213,6 +217,8 @@ export function useActivarInvitaciones(eventoId: string | undefined) {
         invitaciones_fecha_limite_rsvp: config.fecha_limite_rsvp,
         invitaciones_mensaje: config.mensaje,
       };
+      if (config.tarjeta_url !== undefined) updates.invitacion_tarjeta_url = config.tarjeta_url;
+      if (config.tarjeta_formato !== undefined) updates.invitacion_tarjeta_formato = config.tarjeta_formato;
 
       const randHex = (n: number) => {
         const bytes = new Uint8Array(n);
@@ -230,4 +236,16 @@ export function useActivarInvitaciones(eventoId: string | undefined) {
       qc.invalidateQueries({ queryKey: ['event-details', eventoId] });
     },
   });
+}
+
+/** Sube una tarjeta digital al bucket público y devuelve la URL */
+export async function uploadTarjetaInvitacion(eventoId: string, file: File): Promise<string> {
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const path = `${eventoId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage
+    .from('invitacion-tarjetas')
+    .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from('invitacion-tarjetas').getPublicUrl(path);
+  return data.publicUrl;
 }

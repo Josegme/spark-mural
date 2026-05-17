@@ -13,10 +13,12 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
   Mail, QrCode, Users, CheckCircle2, ScanLine, Copy, Download, ExternalLink, Save, Loader2, Share2,
+  Image as ImageIcon, Upload, Trash2,
 } from 'lucide-react';
-import { useInvitacionesAdmin, useActivarInvitaciones } from '@/hooks/useInvitaciones';
+import { useInvitacionesAdmin, useActivarInvitaciones, uploadTarjetaInvitacion } from '@/hooks/useInvitaciones';
 import { getCheckinUrl, getInvitacionUrl } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { EventDetails } from '@/hooks/useEventDetails';
 
 interface Props {
@@ -26,10 +28,20 @@ interface Props {
     invitaciones_acompanantes_max?: number;
     invitaciones_fecha_limite_rsvp?: string | null;
     invitaciones_mensaje?: string | null;
+    invitacion_tarjeta_url?: string | null;
+    invitacion_tarjeta_formato?: string | null;
     qr_invitaciones_token?: string | null;
     qr_checkin_token?: string | null;
   };
 }
+
+type TarjetaFormato = 'post' | 'historia' | 'horizontal';
+
+const FORMATO_LABELS: Record<TarjetaFormato, { label: string; ratio: string; dims: string }> = {
+  post: { label: 'Post (1:1)', ratio: 'aspect-square', dims: '1080×1080' },
+  historia: { label: 'Historia / Reel (9:16)', ratio: 'aspect-[9/16]', dims: '1080×1920' },
+  horizontal: { label: 'Horizontal (16:9)', ratio: 'aspect-video', dims: '1200×675' },
+};
 
 export function InvitacionesPanel({ event }: Props) {
   const { invitaciones, checkins } = useInvitacionesAdmin(event.id);
@@ -42,6 +54,11 @@ export function InvitacionesPanel({ event }: Props) {
     event.invitaciones_fecha_limite_rsvp ? event.invitaciones_fecha_limite_rsvp.slice(0, 16) : ''
   );
   const [mensaje, setMensaje] = useState(event.invitaciones_mensaje || '');
+  const [tarjetaUrl, setTarjetaUrl] = useState<string | null>(event.invitacion_tarjeta_url || null);
+  const [tarjetaFormato, setTarjetaFormato] = useState<TarjetaFormato>(
+    (event.invitacion_tarjeta_formato as TarjetaFormato) || 'post'
+  );
+  const [subiendo, setSubiendo] = useState(false);
 
   useEffect(() => {
     setActiva(!!event.invitaciones_activas);
@@ -49,9 +66,11 @@ export function InvitacionesPanel({ event }: Props) {
     setAcomp(event.invitaciones_acompanantes_max?.toString() || '0');
     setLimite(event.invitaciones_fecha_limite_rsvp ? event.invitaciones_fecha_limite_rsvp.slice(0, 16) : '');
     setMensaje(event.invitaciones_mensaje || '');
+    setTarjetaUrl(event.invitacion_tarjeta_url || null);
+    setTarjetaFormato((event.invitacion_tarjeta_formato as TarjetaFormato) || 'post');
   }, [event.invitaciones_activas, event.invitaciones_cupo_maximo,
       event.invitaciones_acompanantes_max, event.invitaciones_fecha_limite_rsvp,
-      event.invitaciones_mensaje]);
+      event.invitaciones_mensaje, event.invitacion_tarjeta_url, event.invitacion_tarjeta_formato]);
 
   // Fin del evento (fecha + hora + duración) para validar la fecha límite de RSVP
   const eventoFin = (() => {
@@ -98,11 +117,50 @@ export function InvitacionesPanel({ event }: Props) {
         acompanantes_max: acompNum,
         fecha_limite_rsvp: limiteDate ? limiteDate.toISOString() : null,
         mensaje: mensaje.trim() || null,
+        tarjeta_url: tarjetaUrl,
+        tarjeta_formato: tarjetaUrl ? tarjetaFormato : null,
       });
       toast.success(activa ? 'Invitaciones activas' : 'Configuración guardada');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Error al guardar');
     }
+  };
+
+  const handleUploadTarjeta = async (file: File) => {
+    if (!file.type.match(/^image\/(png|jpe?g|webp)$/)) {
+      toast.error('Formato no permitido. Usá PNG, JPG o WEBP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('La imagen no puede superar los 5 MB.');
+      return;
+    }
+    setSubiendo(true);
+    try {
+      const url = await uploadTarjetaInvitacion(event.id, file);
+      setTarjetaUrl(url);
+      toast.success('Tarjeta subida. No olvides guardar.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo subir la imagen');
+    } finally {
+      setSubiendo(false);
+    }
+  };
+
+  const quitarTarjeta = async () => {
+    if (!tarjetaUrl) return;
+    // Intentar borrar el archivo del storage (best-effort)
+    try {
+      const marker = '/invitacion-tarjetas/';
+      const idx = tarjetaUrl.indexOf(marker);
+      if (idx >= 0) {
+        const path = tarjetaUrl.substring(idx + marker.length);
+        await supabase.storage.from('invitacion-tarjetas').remove([path]);
+      }
+    } catch {
+      // best-effort
+    }
+    setTarjetaUrl(null);
   };
 
   // máximo para el input datetime-local (en formato YYYY-MM-DDTHH:mm)
@@ -207,6 +265,73 @@ export function InvitacionesPanel({ event }: Props) {
                 <Textarea id="mensaje" rows={3} maxLength={500}
                   placeholder="Te esperamos en..." value={mensaje}
                   onChange={e => setMensaje(e.target.value)} />
+              </div>
+
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-primary" />
+                  <Label className="text-base">Tarjeta digital (opcional)</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Subí una imagen para mostrar en la invitación. Ideal para diseños hechos en Canva, Photoshop, etc.
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {(Object.keys(FORMATO_LABELS) as TarjetaFormato[]).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setTarjetaFormato(f)}
+                      className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                        tarjetaFormato === f
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border hover:border-primary/50'
+                      }`}
+                    >
+                      {FORMATO_LABELS[f].label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Dimensiones recomendadas: {FORMATO_LABELS[tarjetaFormato].dims} px · máx 5 MB · PNG/JPG/WEBP
+                </p>
+
+                {tarjetaUrl ? (
+                  <div className="space-y-2">
+                    <div
+                      className={`${FORMATO_LABELS[tarjetaFormato].ratio} w-full max-w-xs mx-auto rounded-lg overflow-hidden border bg-muted`}
+                    >
+                      <img src={tarjetaUrl} alt="Tarjeta de invitación" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex justify-center gap-2">
+                      <label className="cursor-pointer">
+                        <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
+                          onChange={e => e.target.files?.[0] && handleUploadTarjeta(e.target.files[0])} />
+                        <span className="inline-flex items-center text-xs px-3 py-1.5 rounded-md border hover:bg-muted">
+                          <Upload className="w-3.5 h-3.5 mr-1.5" /> Reemplazar
+                        </span>
+                      </label>
+                      <Button type="button" size="sm" variant="outline" onClick={quitarTarjeta}>
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Quitar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className={`flex flex-col items-center justify-center gap-2 ${FORMATO_LABELS[tarjetaFormato].ratio} w-full max-w-xs mx-auto rounded-lg border-2 border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors bg-muted/30`}>
+                    <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"
+                      onChange={e => e.target.files?.[0] && handleUploadTarjeta(e.target.files[0])}
+                      disabled={subiendo} />
+                    {subiendo ? (
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    ) : (
+                      <>
+                        <Upload className="w-6 h-6 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Subir imagen</span>
+                      </>
+                    )}
+                  </label>
+                )}
               </div>
 
               {tieneErrores && (

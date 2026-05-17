@@ -96,6 +96,11 @@ export default function InvitacionPublicaPage() {
 
   const bannerColor = evento.color_banner || '#4c1d95';
 
+  const tarjetaRatio =
+    evento.tarjeta_formato === 'historia' ? 'aspect-[9/16] max-w-xs'
+    : evento.tarjeta_formato === 'horizontal' ? 'aspect-video max-w-2xl'
+    : 'aspect-square max-w-md';
+
   return (
     <div className="min-h-screen bg-background">
       <div
@@ -110,6 +115,16 @@ export default function InvitacionPublicaPage() {
       </div>
 
       <div className="container max-w-xl mx-auto px-4 py-6 space-y-6">
+        {evento.tarjeta_url && (
+          <div className={`${tarjetaRatio} w-full mx-auto rounded-xl overflow-hidden shadow-lg bg-muted`}>
+            <img
+              src={evento.tarjeta_url}
+              alt={`Invitación a ${evento.nombre}`}
+              className="w-full h-full object-cover"
+              loading="eager"
+            />
+          </div>
+        )}
         <Card>
           <CardHeader>
             <h2 className="text-2xl font-display font-semibold">¡Estás invitado!</h2>

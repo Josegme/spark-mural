@@ -212,6 +212,8 @@ export type Database = {
           fecha_inicio_real: string | null
           hora_inicio: string
           id: string
+          invitacion_tarjeta_formato: string | null
+          invitacion_tarjeta_url: string | null
           invitaciones_acompanantes_max: number
           invitaciones_activas: boolean
           invitaciones_cupo_maximo: number | null
@@ -252,6 +254,8 @@ export type Database = {
           fecha_inicio_real?: string | null
           hora_inicio: string
           id?: string
+          invitacion_tarjeta_formato?: string | null
+          invitacion_tarjeta_url?: string | null
           invitaciones_acompanantes_max?: number
           invitaciones_activas?: boolean
           invitaciones_cupo_maximo?: number | null
@@ -292,6 +296,8 @@ export type Database = {
           fecha_inicio_real?: string | null
           hora_inicio?: string
           id?: string
+          invitacion_tarjeta_formato?: string | null
+          invitacion_tarjeta_url?: string | null
           invitaciones_acompanantes_max?: number
           invitaciones_activas?: boolean
           invitaciones_cupo_maximo?: number | null
@@ -1291,6 +1297,8 @@ export type Database = {
           logo_url: string
           mensaje: string
           nombre: string
+          tarjeta_formato: string
+          tarjeta_url: string
           tipo: string
         }[]
       }
