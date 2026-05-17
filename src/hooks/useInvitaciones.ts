@@ -20,6 +20,8 @@ export interface InvitacionEventoPublico {
   fecha_limite_rsvp: string | null;
   cupo_maximo: number | null;
   cupo_restante: number | null;
+  tarjeta_url: string | null;
+  tarjeta_formato: string | null;
 }
 
 export function useInvitacionPublica(token: string | undefined) {
