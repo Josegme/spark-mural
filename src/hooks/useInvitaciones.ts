@@ -237,3 +237,15 @@ export function useActivarInvitaciones(eventoId: string | undefined) {
     },
   });
 }
+
+/** Sube una tarjeta digital al bucket público y devuelve la URL */
+export async function uploadTarjetaInvitacion(eventoId: string, file: File): Promise<string> {
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const path = `${eventoId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage
+    .from('invitacion-tarjetas')
+    .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from('invitacion-tarjetas').getPublicUrl(path);
+  return data.publicUrl;
+}
