@@ -84,6 +84,10 @@ export default function InvitacionPublicaPage() {
         restricciones: d.restricciones || undefined,
         mensaje: d.mensaje || undefined,
       });
+      if (d.email) {
+        supabase.functions.invoke('send-invitacion-qr', { body: { qr_token: qrToken } })
+          .catch(err => console.error('Error enviando email de invitación:', err));
+      }
       navigate(`/mi-invitacion/${qrToken}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo confirmar');
