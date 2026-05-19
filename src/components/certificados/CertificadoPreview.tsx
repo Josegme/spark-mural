@@ -5,7 +5,7 @@
 import React from 'react';
 import type { Certificado } from '@/hooks/useCertificados';
 import { renderTexto } from '@/hooks/useCertificados';
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface Props {
   cert: Certificado;
