@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Download, Mail, CheckCircle2, Send, FileArchive, Users } from 'lucide-react';
+import { Loader2, Download, Mail, CheckCircle2, Send, FileArchive, Users, RotateCw, Copy } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';
 import { useInvitacionesAdmin } from '@/hooks/useInvitaciones';
 import {
@@ -141,17 +142,26 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
     setWorking(invitacionId + action);
     try {
       const emit = await ensureEmitido(invitacionId, nombre, email);
-      const { base64, blob } = await renderPdfFor(nombre, emit.codigo_verificacion);
+      const { base64, blob, thumbnailJpgBase64 } = await renderPdfFor(nombre, emit.codigo_verificacion);
       if (action === 'download') {
         downloadPdfBlob(blob, `certificado-${nombre.replace(/\s+/g, '_')}.pdf`);
-        await enviarCertificado({ certificado_emitido_id: emit.id, pdf_base64: base64 }).catch(() => {});
+        await enviarCertificado({
+          certificado_emitido_id: emit.id,
+          pdf_base64: base64,
+          thumbnail_base64: thumbnailJpgBase64,
+        }).catch(() => {});
         toast({ title: 'PDF descargado' });
       } else {
         if (!email) {
           toast({ title: 'Sin email', description: 'Este invitado no tiene email', variant: 'destructive' });
           return;
         }
-        await enviarCertificado({ certificado_emitido_id: emit.id, pdf_base64: base64, email_to: email });
+        await enviarCertificado({
+          certificado_emitido_id: emit.id,
+          pdf_base64: base64,
+          email_to: email,
+          thumbnail_base64: thumbnailJpgBase64,
+        });
         toast({ title: 'Certificado enviado', description: email });
       }
       qc.invalidateQueries({ queryKey: ['certificados-emitidos', eventoId] });
@@ -176,11 +186,14 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
       for (const inv of effectiveSelected) {
         try {
           const emit = await ensureEmitido(inv.id, inv.nombre, inv.email);
-          const { base64, blob } = await renderPdfFor(inv.nombre, emit.codigo_verificacion);
+          const { base64, blob, thumbnailJpgBase64 } = await renderPdfFor(inv.nombre, emit.codigo_verificacion);
           const safeName = inv.nombre.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
           zip.file(`${safeName}-${emit.codigo_verificacion}.pdf`, blob);
-          // Subir en background para guardar pdf_url
-          enviarCertificado({ certificado_emitido_id: emit.id, pdf_base64: base64 }).catch(() => {});
+          enviarCertificado({
+            certificado_emitido_id: emit.id,
+            pdf_base64: base64,
+            thumbnail_base64: thumbnailJpgBase64,
+          }).catch(() => {});
         } catch (e) {
           console.error('ZIP item error', inv.nombre, e);
           errors++;
@@ -216,11 +229,12 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
       for (const inv of conEmail) {
         try {
           const emit = await ensureEmitido(inv.id, inv.nombre, inv.email);
-          const { base64 } = await renderPdfFor(inv.nombre, emit.codigo_verificacion);
+          const { base64, thumbnailJpgBase64 } = await renderPdfFor(inv.nombre, emit.codigo_verificacion);
           await enviarCertificado({
             certificado_emitido_id: emit.id,
             pdf_base64: base64,
             email_to: inv.email,
+            thumbnail_base64: thumbnailJpgBase64,
           });
           ok++;
         } catch (e) {
