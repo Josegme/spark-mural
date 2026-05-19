@@ -48,6 +48,7 @@ const DEFAULT: Omit<Certificado, 'id' | 'evento_id' | 'created_at' | 'updated_at
   color_secundario: '#ec4899',
   tipografia: 'sans',
   fondo_url: null,
+  fondo_opacidad: 0.3,
   activo: true,
 };
 
