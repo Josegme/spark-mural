@@ -277,6 +277,13 @@ export function CertificadoEditor({ eventoId, eventoNombre, fechaEvento, certifi
                 onUpload={f => handleUpload(f, 'logo_secundario')}
                 onClear={() => update('logo_secundario_url', null)}
               />
+              <FileField
+                label="Fondo personalizado (opcional)"
+                url={form.fondo_url}
+                uploading={uploading === 'fondo'}
+                onUpload={f => handleUpload(f, 'fondo')}
+                onClear={() => update('fondo_url', null)}
+              />
             </TabsContent>
 
             <TabsContent value="firmas" className="space-y-4">
