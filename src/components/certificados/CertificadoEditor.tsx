@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Upload, X, Save, Download } from 'lucide-react';
+import { Loader2, Upload, X, Save, Download, RotateCcw } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 import { toast } from '@/hooks/use-toast';
 import {
   TIPO_PRESETS,
@@ -285,6 +286,22 @@ export function CertificadoEditor({ eventoId, eventoNombre, fechaEvento, certifi
                 onUpload={f => handleUpload(f, 'fondo')}
                 onClear={() => update('fondo_url', null)}
               />
+              {form.fondo_url && (
+                <div>
+                  <Label>Opacidad del fondo: {Math.round((form.fondo_opacidad ?? 0.3) * 100)}%</Label>
+                  <Slider
+                    value={[Math.round((form.fondo_opacidad ?? 0.3) * 100)]}
+                    onValueChange={([v]) => update('fondo_opacidad', v / 100)}
+                    min={5}
+                    max={100}
+                    step={5}
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Bajá la opacidad si el texto se lee mal sobre el fondo.
+                  </p>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="firmas" className="space-y-4">
@@ -304,6 +321,7 @@ export function CertificadoEditor({ eventoId, eventoNombre, fechaEvento, certifi
                     uploading={uploading === 'firma' + idx}
                     onUpload={f => handleUpload(f, 'firma', idx)}
                     onClear={() => updateFirma(idx, { imagen_url: null })}
+                    transparentPreview
                   />
                 </div>
               ))}
@@ -312,6 +330,9 @@ export function CertificadoEditor({ eventoId, eventoNombre, fechaEvento, certifi
                   + Agregar firma
                 </Button>
               )}
+              <p className="text-xs text-muted-foreground">
+                Tip: usá PNG con fondo transparente. Recomendado: 600×200 px aprox.
+              </p>
             </TabsContent>
           </Tabs>
 
@@ -323,6 +344,23 @@ export function CertificadoEditor({ eventoId, eventoNombre, fechaEvento, certifi
             <Button variant="outline" onClick={handleDownloadPreview} disabled={downloading}>
               {downloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
               Probar PDF
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                const preset = TIPO_PRESETS[form.tipo];
+                setForm(prev => ({
+                  ...DEFAULT,
+                  tipo: prev.tipo,
+                  titulo: preset.titulo,
+                  texto_principal: preset.texto,
+                }));
+                toast({ title: 'Diseño restablecido', description: 'Volvimos a los valores por defecto' });
+              }}
+              title="Restablecer diseño a valores por defecto"
+            >
+              <RotateCcw className="w-4 h-4" />
             </Button>
           </div>
         </CardContent>
@@ -356,21 +394,36 @@ function FileField({
   uploading,
   onUpload,
   onClear,
+  transparentPreview,
 }: {
   label: string;
   url: string | null;
   uploading: boolean;
   onUpload: (f: File) => void;
   onClear: () => void;
+  transparentPreview?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const checkered = transparentPreview
+    ? {
+        backgroundImage:
+          'linear-gradient(45deg,#ddd 25%,transparent 25%),linear-gradient(-45deg,#ddd 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ddd 75%),linear-gradient(-45deg,transparent 75%,#ddd 75%)',
+        backgroundSize: '10px 10px',
+        backgroundPosition: '0 0,0 5px,5px -5px,-5px 0',
+      }
+    : undefined;
   return (
     <div>
       <Label>{label}</Label>
       <div className="flex gap-2 items-center mt-1">
         {url ? (
           <>
-            <img src={url} alt="" className="h-10 max-w-[120px] object-contain bg-muted rounded px-2" />
+            <img
+              src={url}
+              alt=""
+              className="h-10 max-w-[120px] object-contain rounded px-2"
+              style={checkered || { background: 'hsl(var(--muted))' }}
+            />
             <Button variant="ghost" size="sm" onClick={onClear}>
               <X className="w-4 h-4" />
             </Button>
