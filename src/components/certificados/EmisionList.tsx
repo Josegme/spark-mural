@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Download, Mail, CheckCircle2, Send, FileArchive, Users } from 'lucide-react';
+import { Loader2, Download, Mail, CheckCircle2, Send, FileArchive, Users, RotateCw, Copy } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from '@/hooks/use-toast';
 import { useInvitacionesAdmin } from '@/hooks/useInvitaciones';
 import {
@@ -141,17 +142,26 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
     setWorking(invitacionId + action);
     try {
       const emit = await ensureEmitido(invitacionId, nombre, email);
-      const { base64, blob } = await renderPdfFor(nombre, emit.codigo_verificacion);
+      const { base64, blob, thumbnailJpgBase64 } = await renderPdfFor(nombre, emit.codigo_verificacion);
       if (action === 'download') {
         downloadPdfBlob(blob, `certificado-${nombre.replace(/\s+/g, '_')}.pdf`);
-        await enviarCertificado({ certificado_emitido_id: emit.id, pdf_base64: base64 }).catch(() => {});
+        await enviarCertificado({
+          certificado_emitido_id: emit.id,
+          pdf_base64: base64,
+          thumbnail_base64: thumbnailJpgBase64,
+        }).catch(() => {});
         toast({ title: 'PDF descargado' });
       } else {
         if (!email) {
           toast({ title: 'Sin email', description: 'Este invitado no tiene email', variant: 'destructive' });
           return;
         }
-        await enviarCertificado({ certificado_emitido_id: emit.id, pdf_base64: base64, email_to: email });
+        await enviarCertificado({
+          certificado_emitido_id: emit.id,
+          pdf_base64: base64,
+          email_to: email,
+          thumbnail_base64: thumbnailJpgBase64,
+        });
         toast({ title: 'Certificado enviado', description: email });
       }
       qc.invalidateQueries({ queryKey: ['certificados-emitidos', eventoId] });
@@ -176,11 +186,14 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
       for (const inv of effectiveSelected) {
         try {
           const emit = await ensureEmitido(inv.id, inv.nombre, inv.email);
-          const { base64, blob } = await renderPdfFor(inv.nombre, emit.codigo_verificacion);
+          const { base64, blob, thumbnailJpgBase64 } = await renderPdfFor(inv.nombre, emit.codigo_verificacion);
           const safeName = inv.nombre.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
           zip.file(`${safeName}-${emit.codigo_verificacion}.pdf`, blob);
-          // Subir en background para guardar pdf_url
-          enviarCertificado({ certificado_emitido_id: emit.id, pdf_base64: base64 }).catch(() => {});
+          enviarCertificado({
+            certificado_emitido_id: emit.id,
+            pdf_base64: base64,
+            thumbnail_base64: thumbnailJpgBase64,
+          }).catch(() => {});
         } catch (e) {
           console.error('ZIP item error', inv.nombre, e);
           errors++;
@@ -216,11 +229,12 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
       for (const inv of conEmail) {
         try {
           const emit = await ensureEmitido(inv.id, inv.nombre, inv.email);
-          const { base64 } = await renderPdfFor(inv.nombre, emit.codigo_verificacion);
+          const { base64, thumbnailJpgBase64 } = await renderPdfFor(inv.nombre, emit.codigo_verificacion);
           await enviarCertificado({
             certificado_emitido_id: emit.id,
             pdf_base64: base64,
             email_to: inv.email,
+            thumbnail_base64: thumbnailJpgBase64,
           });
           ok++;
         } catch (e) {
@@ -253,13 +267,31 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
     });
   };
 
+  const enviadosCount = useMemo(() => emitidos.filter(e => e.enviado_email).length, [emitidos]);
+
+  const copiarLink = (codigo: string) => {
+    const url = `${window.location.origin}/certificado/${codigo}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: 'Link copiado', description: url });
+  };
+
+  const fmtFecha = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString('es-AR', {
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+      });
+    } catch {
+      return iso;
+    }
+  };
+
   return (
-    <>
+    <TooltipProvider>
       <Card>
         <CardHeader>
           <CardTitle>Emisión de certificados</CardTitle>
           <CardDescription>
-            Confirmados: {confirmados.length} · Asistieron: {checkinSet.size} · Emitidos: {emitidos.length}
+            Confirmados: {confirmados.length} · Asistieron: {checkinSet.size} · Emitidos: {emitidos.length} · Enviados: {enviadosCount}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -340,7 +372,7 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
                 const emitido = emitidosByInv.get(inv.id);
                 const isWorkingDl = working === inv.id + 'download';
                 const isWorkingEm = working === inv.id + 'email';
-                const isSelected = audiencia !== 'manual' || selected.has(inv.id);
+                const yaEnviado = !!emitido?.enviado_email;
                 return (
                   <div
                     key={inv.id}
@@ -365,32 +397,68 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
                               Asistió
                             </Badge>
                           )}
-                          {emitido?.enviado_email && (
-                            <Badge variant="outline" className="h-5 text-[10px]">
-                              <Mail className="w-3 h-3 mr-1" />
-                              Enviado
-                            </Badge>
+                          {yaEnviado && emitido?.enviado_at && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className="h-5 text-[10px] cursor-default">
+                                  <Mail className="w-3 h-3 mr-1" />
+                                  Enviado
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>Enviado el {fmtFecha(emitido.enviado_at)}</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {emitido?.codigo_verificacion && (
+                            <button
+                              type="button"
+                              onClick={() => copiarLink(emitido.codigo_verificacion)}
+                              className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                              title="Copiar link de verificación"
+                            >
+                              <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">
+                                {emitido.codigo_verificacion}
+                              </code>
+                              <Copy className="w-3 h-3" />
+                            </button>
                           )}
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEmit(inv.id, inv.nombre, inv.email, 'download')}
-                        disabled={!!working || !!bulkRunning}
-                      >
-                        {isWorkingDl ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleEmit(inv.id, inv.nombre, inv.email, 'email')}
-                        disabled={!!working || !!bulkRunning || !inv.email}
-                        title={!inv.email ? 'Sin email' : 'Enviar por email'}
-                      >
-                        {isWorkingEm ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEmit(inv.id, inv.nombre, inv.email, 'download')}
+                            disabled={!!working || !!bulkRunning}
+                          >
+                            {isWorkingDl ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Descargar PDF</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant={yaEnviado ? 'outline' : 'default'}
+                            onClick={() => handleEmit(inv.id, inv.nombre, inv.email, 'email')}
+                            disabled={!!working || !!bulkRunning || !inv.email}
+                          >
+                            {isWorkingEm ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : yaEnviado ? (
+                              <RotateCw className="w-4 h-4" />
+                            ) : (
+                              <Send className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {!inv.email ? 'Sin email' : yaEnviado ? 'Reenviar email' : 'Enviar por email'}
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                 );
@@ -416,6 +484,6 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
           </div>
         </div>
       )}
-    </>
+    </TooltipProvider>
   );
 }

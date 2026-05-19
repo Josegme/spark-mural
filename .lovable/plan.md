@@ -1,168 +1,107 @@
-# Módulo de Certificados Personalizables
 
-Sistema para generar certificados (participación, asistencia, agradecimiento, diploma, etc.) por evento, con datos auto-completados del invitado y envío por email o descarga individual/masiva.
+# Plan: Cerrar MVP de Certificados
 
-## Alcance del MVP
+Buena noticia: revisando el código actual, algunas piezas del "qué falta" ya están hechas parcialmente (UI de firmas, logo secundario, fondo, badge "Enviado"). Este plan completa lo que realmente queda para dejar el módulo listo para producción.
 
-Se entrega como funcionalidad incluida (no add-on todavía) dentro del panel de cada evento, en una nueva pestaña **"Certificados"** dentro de `InvitacionesPanel` o como módulo hermano. Lo probás con eventos reales y luego lo convertimos en add-on con flag y cobro.
+## Estado actual (verificado en código)
 
-## Tipos de certificado soportados (presets)
+| Pieza | Estado |
+|---|---|
+| QR de verificación en el PDF | ❌ No se renderiza (la página `/certificado/:codigo` existe pero el PDF no la referencia visualmente) |
+| Editor de firmas (hasta 2, con upload PNG) | ✅ Ya implementado en `CertificadoEditor.tsx` |
+| Upload de logo secundario y fondo | ✅ Ya implementado (campos `FileField`) |
+| Variables `{lugar}` y `{organizador}` | ✅ Soportadas en `renderTexto` y editables |
+| Badge "Enviado" en lista | ✅ Existe, pero falta fecha y botón "Reenviar" explícito |
+| Template de email | ⚠️ Existe pero es básico, sin imagen del certificado ni link de descarga claro |
 
-El usuario elige un preset al crear el certificado, que define textos por defecto editables:
-- **Participación** ("certifica que {nombre} participó en…")
-- **Asistencia** ("certifica la asistencia de {nombre} a…")
-- **Agradecimiento** ("agradecemos a {nombre} por acompañarnos en…")
-- **Finalización de curso / Diploma** ("ha completado satisfactoriamente…")
-- **Personalizado** (texto libre)
+Por lo tanto el plan se concentra en **4 entregables** concretos.
 
-## Personalización disponible
+---
 
-Por cada certificado de evento, el organizador podrá configurar:
+## 1. QR de verificación impreso en el PDF
 
-**Contenido**
-- Título del certificado (ej. "Certificado de Participación")
-- Nombre del evento/curso (autollenado desde `eventos.nombre`, editable)
-- Texto principal con variables: `{nombre}`, `{evento}`, `{fecha}`, `{duracion}`, `{lugar}`, `{organizador}`
-- Texto secundario / descripción (opcional)
-- Fecha de emisión (auto o manual)
-- Código de verificación único por certificado (UUID corto)
+**Objetivo:** que cada certificado lleve el QR que apunta a `/certificado/{codigo}` para validar autenticidad escaneando.
 
-**Identidad visual**
-- Logo principal (reutiliza `eventos.logo_url` o sube uno nuevo)
-- Logo secundario opcional (auspiciante / institución)
-- Firma digital (imagen PNG con transparencia) + nombre y cargo del firmante
-- Hasta 2 firmas
-- Color primario y secundario
-- Fondo: plantilla predefinida (3-4 opciones) o imagen propia
-- Orientación: horizontal (apaisado) o vertical
-- Tipografía: 3-4 opciones (serif clásica, sans moderna, script elegante, mixta)
+**Implementación:**
+- Reutilizar la librería QR que ya usa el proyecto (`qrcode` o `qrcode.react` — verificar cuál está instalada en `package.json` y usar esa, no agregar otra).
+- En `CertificadoPreview.tsx`, agregar en cada una de las 3 plantillas (moderna, clasica, festiva) un slot fijo en la esquina inferior derecha con:
+  - QR (≈70×70 px) generado a partir de `verifyUrl`
+  - Debajo: texto chico `Código: {codigo}` y `Verificá en pickevent.site/certificado/{codigo}`
+- Asegurar que el QR se renderice como `<canvas>` o `<svg>` inline para que `html2canvas` lo capture sin problema.
+- Ajustar las "safe zones" de cada plantilla para que el contenido principal no se pise con el bloque QR.
 
-**Plantillas iniciales (MVP: 3)**
-1. **Clásica** — bordes ornamentales, serif, ideal cursos/diplomas
-2. **Moderna** — minimalista, sans-serif, ideal corporativos
-3. **Festiva** — colorida, ideal cumpleaños/bodas/agradecimientos
+**Archivos:** `src/components/certificados/CertificadoPreview.tsx` únicamente.
 
-## Flujo de uso
+---
 
-1. Organizador entra al evento → pestaña **Certificados**
-2. Click "Crear certificado" → elige preset y plantilla
-3. Configura textos, sube logos/firmas, ajusta colores
-4. **Vista previa en vivo** con datos de un invitado real (o demo)
-5. Define audiencia:
-   - Todos los confirmados (`invitaciones.estado = 'confirmado'`)
-   - Solo los que hicieron check-in (`checkins`)
-   - Selección manual
-6. Acciones disponibles:
-   - **Descargar individual** (PDF de un invitado)
-   - **Descargar todos** (ZIP con un PDF por invitado)
-   - **Enviar por email** (a uno, a varios o a todos vía Resend)
-   - Compartir link público de verificación (`/certificado/{codigo}`)
+## 2. Mejorar UX de firmas y fondo (pulir lo existente)
 
-## Arquitectura técnica
+Lo grueso ya está. Falta pulir:
 
-```text
-┌──────────────────────┐      ┌─────────────────────────┐
-│ CertificadosPanel    │ ───► │ useCertificados (hook)  │
-│ (UI configuración    │      └─────────────────────────┘
-│  + preview en vivo)  │                 │
-└──────────────────────┘                 ▼
-            │                ┌─────────────────────────┐
-            │                │ Supabase: certificados, │
-            │                │ certificados_emitidos   │
-            │                └─────────────────────────┘
-            ▼                            │
-┌──────────────────────┐                 ▼
-│ Edge Function:       │      ┌─────────────────────────┐
-│ generar-certificado  │ ───► │ Storage: certificados/  │
-│ (HTML→PDF Puppeteer  │      │ (PDFs generados)        │
-│  o pdf-lib)          │      └─────────────────────────┘
-└──────────────────────┘                 │
-            │                            ▼
-            ▼                ┌─────────────────────────┐
-┌──────────────────────┐     │ Edge Function:          │
-│ Vista pública:       │     │ enviar-certificados     │
-│ /certificado/:codigo │     │ (Resend, batch)         │
-└──────────────────────┘     └─────────────────────────┘
-```
+- **Validar dimensiones de firma**: hoy se acepta cualquier PNG, mostrar warning si supera 800px de alto (queda gigante en el PDF). Solo aviso visual, no bloqueante.
+- **Preview de la firma en el editor**: ya se muestra el thumbnail genérico — agregar fondo cuadriculado tipo Photoshop para distinguir transparencia real vs blanco opaco (ayuda al usuario a saber si subió el PNG correcto).
+- **Cuando hay fondo personalizado**: agregar un slider de "opacidad del fondo" (0–100%) para que el texto se lea bien. Guardarlo como `fondo_opacidad` en el JSON de `colores` (sin cambiar schema; usar el jsonb que ya existe) o agregar columna `fondo_opacidad numeric default 0.3`.
+- **Botón "Restablecer a valores por defecto"** en el editor (resetea al `DEFAULT` del preset elegido).
 
-### Tablas nuevas
+**Decisión a confirmar con vos:** ¿agregamos la columna `fondo_opacidad` (migración chica) o lo metemos dentro del campo `colores` jsonb que ya existe?
 
-**`certificados`** (plantilla configurada por evento)
-- `evento_id`, `tipo` (preset), `plantilla` (clásica/moderna/festiva), `orientacion`
-- `titulo`, `texto_principal`, `texto_secundario`
-- `logo_principal_url`, `logo_secundario_url`
-- `firmas` (jsonb: `[{nombre, cargo, imagen_url}]`)
-- `colores` (jsonb), `tipografia`
-- `fondo_url` (opcional), `activo` (bool)
-- `created_at`, `updated_at`
+**Archivos:** `CertificadoEditor.tsx`, `CertificadoPreview.tsx`, posible migración mínima.
 
-**`certificados_emitidos`** (un registro por invitado/certificado emitido)
-- `certificado_id`, `invitacion_id`, `evento_id`
-- `nombre_destinatario`, `email_destinatario`
-- `codigo_verificacion` (único, 8 chars)
-- `pdf_url` (storage), `enviado_email` (bool), `enviado_at`
-- `created_at`
+---
 
-### Storage
-- Bucket nuevo `certificados` (público para PDFs y assets)
-- Subcarpetas: `/firmas/`, `/logos/`, `/pdfs/{evento_id}/`
+## 3. Estado de envío + Reenviar
 
-### Edge Functions
-1. **`generar-certificado`** — recibe `certificado_id` + `invitacion_id[]`, renderiza HTML con variables reemplazadas, convierte a PDF (Puppeteer/Deno o `pdf-lib`), sube a storage, inserta en `certificados_emitidos`.
-2. **`enviar-certificados`** — recibe lista de `certificados_emitidos.id`, genera lo que falte y envía email vía Resend con el PDF adjunto.
+**Objetivo:** que el organizador vea claramente quién ya recibió el certificado y pueda reenviar uno puntual.
 
-### RPC pública
-- `get_certificado_by_codigo(_codigo text)` → devuelve datos públicos para verificación sin exponer email/teléfono.
+**Implementación en `EmisionList.tsx`:**
+- Badge "Enviado" ya existe → agregarle tooltip con fecha (`enviado_at` formateado: "hace 3h" o "12 nov 14:30").
+- Botón **"Reenviar"** (icono `RotateCw`) visible solo si `emitido?.enviado_email === true`. Reusa la misma función `handleEmit(..., 'email')` que ya regenera y reenvía.
+- Mostrar el **código de verificación** debajo del nombre cuando ya está emitido, con un botón "Copiar link" que copia `https://pickevent.site/certificado/{codigo}` al portapapeles.
+- En el resumen de la card (`Confirmados X · Asistieron Y · Emitidos Z`): agregar `Enviados W` calculado de `emitidos.filter(e => e.enviado_email).length`.
+- En el envío masivo, al terminar mostrar resumen detallado con lista de errores (los nombres que fallaron) en un toast extendido o pequeño dialog.
 
-### Frontend
-- `src/components/certificados/CertificadosPanel.tsx` — panel principal en el evento
-- `src/components/certificados/CertificadoEditor.tsx` — formulario + preview en vivo
-- `src/components/certificados/CertificadoPreview.tsx` — renderiza el HTML/SVG del certificado (es lo mismo que renderiza el edge function)
-- `src/components/certificados/plantillas/{Clasica,Moderna,Festiva}.tsx`
-- `src/hooks/useCertificados.ts`
-- `src/pages/CertificadoVerificacionPage.tsx` — ruta pública `/certificado/:codigo`
+**Archivos:** `EmisionList.tsx` únicamente.
 
-## Decisión clave: motor de PDF
+---
 
-Recomiendo **HTML + Puppeteer** en edge function porque:
-- Misma plantilla React renderiza preview y PDF (single source of truth)
-- Fácil iterar diseño con CSS
-- Soporta fuentes web, gradientes, sombras
+## 4. Template de email decente
 
-Alternativa más liviana: **pdf-lib** (sin Puppeteer) — más rápido y barato pero diseño limitado a posicionar texto/imágenes manualmente. Si el costo/latencia de Puppeteer molesta, migramos a pdf-lib en una fase posterior.
+**Objetivo:** mail profesional, con preview visual del certificado y link de descarga claro (no solo adjunto).
 
-## Fases de implementación
+**Implementación en `supabase/functions/enviar-certificado/index.ts`:**
 
-**Fase 1 — MVP (este sprint)**
-- Tablas + RLS + storage bucket
-- 1 plantilla (Moderna) bien pulida
-- Editor con preview en vivo
-- Generación individual y descarga PDF
-- Envío por email vía Resend (uno a uno)
-- Página pública de verificación
+Mejoras al HTML actual:
+- **Imagen de preview del certificado**: usar el primer fotograma del PDF como `<img>` thumbnail al inicio del mail. Solución simple: en el edge function, ya tenemos `pdf_base64` → generar un JPG thumbnail (libreria `pdf-lib` o `pdfjs` en Deno es pesada; alternativa más fácil: que el cliente envíe también la imagen JPG del certificado renderizada por html2canvas — ya la tenemos antes de meterla al PDF). Agregar parámetro opcional `thumbnail_base64` al body del edge function. Subirlo a storage como `thumbnails/{evento_id}/{codigo}.jpg` y embeberlo con `<img src="{publicUrl}">` en el mail.
+- **Dos CTAs claros**: `[Descargar PDF]` (link a `pdf_url` en storage) y `[Verificar autenticidad]` (link a `/certificado/{codigo}`).
+- **Cuerpo del mail rediseñado** con paleta del evento (`color_banner` del evento + `color_primario` del certificado), tipografía pulida, footer con logo PickEvent + "Este certificado tiene validez verificable online".
+- **Subject mejorado**: `🎓 {nombre_destinatario}, tu {titulo} de {evento_nombre} está listo`.
+- **Mantener** el PDF adjunto (algunos usuarios lo guardan directo del mail).
+- **Texto plano alternativo**: agregar `text:` además de `html:` en el call a Resend para evitar caer en spam.
 
-**Fase 2 (siguiente sprint, si te gusta el MVP)**
-- 2 plantillas adicionales (Clásica, Festiva)
-- Generación masiva (ZIP) + envío masivo (batch)
-- Selector de audiencia (solo check-in, manual)
-- Variables avanzadas y fondo personalizado
+**Archivos:** `supabase/functions/enviar-certificado/index.ts` + ajuste mínimo en `EmisionList.tsx` y `CertificadoEditor.tsx` para enviar el `thumbnail_base64` (extraído del mismo canvas que ya genera html2canvas, antes de convertirlo a PDF).
 
-**Fase 3 (cuando sea add-on)**
-- Feature flag `certificados_enabled` por tenant/evento
-- Cobro como add-on (precio en `configuracion_global`)
-- Métricas: cuántos generados, cuántos enviados
-- QR de verificación impreso en el PDF
+---
 
-## Riesgos y consideraciones
+## Orden de implementación sugerido
 
-- **Peso de Puppeteer en edge**: arranque frío ~3-5s. Aceptable para generación on-demand; si hacemos batch grande, encolamos.
-- **Fuentes**: usar fuentes self-hosted o Google Fonts permitidas, embeber en el HTML.
-- **Email deliverability**: PDFs adjuntos pesados pueden ir a spam. Alternativa: enviar link de descarga.
-- **Seguridad**: códigos de verificación deben ser impredecibles (`gen_random_uuid` truncado a 8 chars + chequeo de unicidad).
-- **Privacidad**: la página pública de verificación muestra solo nombre + evento + fecha, nunca email/teléfono.
+1. **QR en PDF** (entregable #1) — autocontenido, alto impacto visual.
+2. **Estado de envío + Reenviar** (entregable #3) — UI puro, sin backend.
+3. **Template de email** (entregable #4) — backend + ajuste cliente para mandar el thumbnail.
+4. **Pulido de firmas/fondo** (entregable #2) — el más cosmético, lo dejamos para el final.
 
-## Qué construyo si aprobás
+Todo entra en un solo sprint. No requiere cambios destructivos al schema (solo eventualmente la columna `fondo_opacidad` que es opcional).
 
-Arrancamos directo con la **Fase 1** completa: migración + storage + edge function de generación + plantilla Moderna + editor con preview + descarga individual + envío 1-a-1 + página de verificación. Una vez que lo probás con un evento real, definimos Fase 2.
+---
 
-¿Querés que arranque así, o preferís ajustar alguna decisión antes (plantilla inicial distinta, motor pdf-lib en vez de Puppeteer, alcance reducido)?
+## Lo que NO incluye este plan (lo dejamos para Fase 3)
+
+- Generación masiva server-side (Puppeteer en edge) — esperamos a tener evento real con >100 invitados.
+- Cache de PDFs en storage para no regenerar.
+- Métricas de admin (cuántos certificados generados/enviados por tenant).
+- Feature flag por tenant y cobro como add-on (Fase 3 cuando lo monetices).
+
+---
+
+## Pregunta única antes de implementar
+
+¿Va bien el orden 1→2→3→4? ¿O preferís que arranque por el template de email primero (#4) porque ya estás a punto de probarlo con un evento real?

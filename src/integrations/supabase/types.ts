@@ -22,6 +22,7 @@ export type Database = {
           created_at: string
           evento_id: string
           firmas: Json
+          fondo_opacidad: number
           fondo_url: string | null
           id: string
           logo_principal_url: string | null
@@ -44,6 +45,7 @@ export type Database = {
           created_at?: string
           evento_id: string
           firmas?: Json
+          fondo_opacidad?: number
           fondo_url?: string | null
           id?: string
           logo_principal_url?: string | null
@@ -66,6 +68,7 @@ export type Database = {
           created_at?: string
           evento_id?: string
           firmas?: Json
+          fondo_opacidad?: number
           fondo_url?: string | null
           id?: string
           logo_principal_url?: string | null
