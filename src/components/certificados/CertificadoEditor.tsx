@@ -17,6 +17,7 @@ import {
   useGuardarCertificado,
   type Certificado,
   type CertOrientacion,
+  type CertPlantilla,
   type CertTipo,
   type CertTipografia,
   type Firma,
