@@ -34,6 +34,7 @@ export interface Certificado {
   color_secundario: string;
   tipografia: CertTipografia;
   fondo_url: string | null;
+  fondo_opacidad: number;
   activo: boolean;
   created_at: string;
   updated_at: string;
@@ -210,6 +211,7 @@ export async function enviarCertificado(input: {
   certificado_emitido_id: string;
   pdf_base64: string;
   email_to?: string | null;
+  thumbnail_base64?: string | null;
 }): Promise<{ success: boolean; pdf_url: string | null }> {
   const { data, error } = await supabase.functions.invoke('enviar-certificado', {
     body: input,
