@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      certificados: {
+        Row: {
+          activo: boolean
+          color_primario: string
+          color_secundario: string
+          created_at: string
+          evento_id: string
+          firmas: Json
+          fondo_url: string | null
+          id: string
+          logo_principal_url: string | null
+          logo_secundario_url: string | null
+          lugar: string | null
+          organizador: string | null
+          orientacion: string
+          plantilla: string
+          texto_principal: string
+          texto_secundario: string | null
+          tipo: string
+          tipografia: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          color_primario?: string
+          color_secundario?: string
+          created_at?: string
+          evento_id: string
+          firmas?: Json
+          fondo_url?: string | null
+          id?: string
+          logo_principal_url?: string | null
+          logo_secundario_url?: string | null
+          lugar?: string | null
+          organizador?: string | null
+          orientacion?: string
+          plantilla?: string
+          texto_principal?: string
+          texto_secundario?: string | null
+          tipo?: string
+          tipografia?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          color_primario?: string
+          color_secundario?: string
+          created_at?: string
+          evento_id?: string
+          firmas?: Json
+          fondo_url?: string | null
+          id?: string
+          logo_principal_url?: string | null
+          logo_secundario_url?: string | null
+          lugar?: string | null
+          organizador?: string | null
+          orientacion?: string
+          plantilla?: string
+          texto_principal?: string
+          texto_secundario?: string | null
+          tipo?: string
+          tipografia?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      certificados_emitidos: {
+        Row: {
+          certificado_id: string
+          codigo_verificacion: string
+          created_at: string
+          email_destinatario: string | null
+          enviado_at: string | null
+          enviado_email: boolean
+          evento_id: string
+          id: string
+          invitacion_id: string | null
+          nombre_destinatario: string
+          pdf_url: string | null
+        }
+        Insert: {
+          certificado_id: string
+          codigo_verificacion: string
+          created_at?: string
+          email_destinatario?: string | null
+          enviado_at?: string | null
+          enviado_email?: boolean
+          evento_id: string
+          id?: string
+          invitacion_id?: string | null
+          nombre_destinatario: string
+          pdf_url?: string | null
+        }
+        Update: {
+          certificado_id?: string
+          codigo_verificacion?: string
+          created_at?: string
+          email_destinatario?: string | null
+          enviado_at?: string | null
+          enviado_email?: boolean
+          evento_id?: string
+          id?: string
+          invitacion_id?: string | null
+          nombre_destinatario?: string
+          pdf_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificados_emitidos_certificado_id_fkey"
+            columns: ["certificado_id"]
+            isOneToOne: false
+            referencedRelation: "certificados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checkins: {
         Row: {
           evento_id: string
@@ -1243,6 +1362,18 @@ export type Database = {
       evento_has_valid_token: {
         Args: { _evento_id: string; _token: string }
         Returns: boolean
+      }
+      get_certificado_by_codigo: {
+        Args: { _codigo: string }
+        Returns: {
+          codigo: string
+          emitido_at: string
+          evento_nombre: string
+          fecha_evento: string
+          nombre_destinatario: string
+          organizador: string
+          titulo: string
+        }[]
       }
       get_contenido_by_evento_token: {
         Args: { _evento_id: string; _token: string }

@@ -31,6 +31,7 @@ import ContactoPage from "./pages/ContactoPage";
 import InvitacionPublicaPage from "./pages/InvitacionPublicaPage";
 import MiInvitacionPage from "./pages/MiInvitacionPage";
 import CheckinPage from "./pages/CheckinPage";
+import CertificadoVerificacionPage from "./pages/CertificadoVerificacionPage";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
             {/* Invitaciones digitales (públicas) */}
             <Route path="/invitacion/:token" element={<InvitacionPublicaPage />} />
             <Route path="/mi-invitacion/:qr_token" element={<MiInvitacionPage />} />
+            <Route path="/certificado/:codigo" element={<CertificadoVerificacionPage />} />
             <Route
               path="/checkin/:checkin_token"
               element={

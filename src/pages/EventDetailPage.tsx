@@ -8,7 +8,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { LayoutGrid, Shield, Settings, Download, Gamepad2, Mail } from 'lucide-react';
+import { LayoutGrid, Shield, Settings, Download, Gamepad2, Mail, Award } from 'lucide-react';
 import { EventHeaderSkeleton, EventsGridSkeleton } from '@/components/ui/skeletons';
 import { useEventDetails } from '@/hooks/useEventDetails';
 import { QRCodesModal } from '@/components/dashboard/QRCodesModal';
@@ -20,6 +20,7 @@ import {
 } from '@/components/event-detail';
 import { EventGames } from '@/components/event-detail/EventGames';
 import { InvitacionesPanel } from '@/components/invitaciones/InvitacionesPanel';
+import { CertificadosPanel } from '@/components/certificados/CertificadosPanel';
 import { FEATURE_FLAGS } from '@/lib/constants';
 import type { UserEvent } from '@/hooks/useUserEvents';
 
@@ -99,6 +100,12 @@ export default function EventDetailPage() {
                   <span>Invitaciones</span>
                 </TabsTrigger>
               )}
+              {FEATURE_FLAGS.CERTIFICADOS && (
+                <TabsTrigger value="certificados" className="gap-2 px-3 py-2 touch-feedback">
+                  <Award className="w-4 h-4 shrink-0" />
+                  <span>Certificados</span>
+                </TabsTrigger>
+              )}
               <TabsTrigger value="settings" className="gap-2 px-3 py-2 touch-feedback">
                 <Settings className="w-4 h-4 shrink-0" />
                 <span>Config</span>
@@ -144,6 +151,12 @@ export default function EventDetailPage() {
           {FEATURE_FLAGS.INVITACIONES && (
             <TabsContent value="invitaciones">
               <InvitacionesPanel event={event} />
+            </TabsContent>
+          )}
+
+          {FEATURE_FLAGS.CERTIFICADOS && (
+            <TabsContent value="certificados">
+              <CertificadosPanel event={{ id: event.id, nombre: event.nombre, fecha_evento: event.fecha_evento }} />
             </TabsContent>
           )}
 
