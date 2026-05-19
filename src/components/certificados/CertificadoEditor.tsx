@@ -211,6 +211,17 @@ export function CertificadoEditor({ eventoId, eventoNombre, fechaEvento, certifi
             </TabsContent>
 
             <TabsContent value="diseno" className="space-y-4">
+              <div>
+                <Label>Plantilla</Label>
+                <Select value={form.plantilla} onValueChange={v => update('plantilla', v as CertPlantilla)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="moderna">Moderna — minimalista, ideal corporativo</SelectItem>
+                    <SelectItem value="clasica">Clásica — ornamental, ideal diplomas</SelectItem>
+                    <SelectItem value="festiva">Festiva — colorida, ideal cumpleaños / bodas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Orientación</Label>
