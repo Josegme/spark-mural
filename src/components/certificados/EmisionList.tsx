@@ -267,13 +267,31 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
     });
   };
 
+  const enviadosCount = useMemo(() => emitidos.filter(e => e.enviado_email).length, [emitidos]);
+
+  const copiarLink = (codigo: string) => {
+    const url = `${window.location.origin}/certificado/${codigo}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: 'Link copiado', description: url });
+  };
+
+  const fmtFecha = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString('es-AR', {
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+      });
+    } catch {
+      return iso;
+    }
+  };
+
   return (
-    <>
+    <TooltipProvider>
       <Card>
         <CardHeader>
           <CardTitle>Emisión de certificados</CardTitle>
           <CardDescription>
-            Confirmados: {confirmados.length} · Asistieron: {checkinSet.size} · Emitidos: {emitidos.length}
+            Confirmados: {confirmados.length} · Asistieron: {checkinSet.size} · Emitidos: {emitidos.length} · Enviados: {enviadosCount}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -354,7 +372,7 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
                 const emitido = emitidosByInv.get(inv.id);
                 const isWorkingDl = working === inv.id + 'download';
                 const isWorkingEm = working === inv.id + 'email';
-                const isSelected = audiencia !== 'manual' || selected.has(inv.id);
+                const yaEnviado = !!emitido?.enviado_email;
                 return (
                   <div
                     key={inv.id}
@@ -379,32 +397,68 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
                               Asistió
                             </Badge>
                           )}
-                          {emitido?.enviado_email && (
-                            <Badge variant="outline" className="h-5 text-[10px]">
-                              <Mail className="w-3 h-3 mr-1" />
-                              Enviado
-                            </Badge>
+                          {yaEnviado && emitido?.enviado_at && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className="h-5 text-[10px] cursor-default">
+                                  <Mail className="w-3 h-3 mr-1" />
+                                  Enviado
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>Enviado el {fmtFecha(emitido.enviado_at)}</TooltipContent>
+                            </Tooltip>
+                          )}
+                          {emitido?.codigo_verificacion && (
+                            <button
+                              type="button"
+                              onClick={() => copiarLink(emitido.codigo_verificacion)}
+                              className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                              title="Copiar link de verificación"
+                            >
+                              <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded">
+                                {emitido.codigo_verificacion}
+                              </code>
+                              <Copy className="w-3 h-3" />
+                            </button>
                           )}
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEmit(inv.id, inv.nombre, inv.email, 'download')}
-                        disabled={!!working || !!bulkRunning}
-                      >
-                        {isWorkingDl ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleEmit(inv.id, inv.nombre, inv.email, 'email')}
-                        disabled={!!working || !!bulkRunning || !inv.email}
-                        title={!inv.email ? 'Sin email' : 'Enviar por email'}
-                      >
-                        {isWorkingEm ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEmit(inv.id, inv.nombre, inv.email, 'download')}
+                            disabled={!!working || !!bulkRunning}
+                          >
+                            {isWorkingDl ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Descargar PDF</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant={yaEnviado ? 'outline' : 'default'}
+                            onClick={() => handleEmit(inv.id, inv.nombre, inv.email, 'email')}
+                            disabled={!!working || !!bulkRunning || !inv.email}
+                          >
+                            {isWorkingEm ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : yaEnviado ? (
+                              <RotateCw className="w-4 h-4" />
+                            ) : (
+                              <Send className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {!inv.email ? 'Sin email' : yaEnviado ? 'Reenviar email' : 'Enviar por email'}
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                 );
