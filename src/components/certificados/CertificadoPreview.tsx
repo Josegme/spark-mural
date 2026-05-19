@@ -61,9 +61,20 @@ export const CertificadoPreview = React.forwardRef<HTMLDivElement, Props>(
               color: '#1a1a1a',
               boxSizing: 'border-box',
               overflow: 'hidden',
-              background: cert.fondo_url ? `url(${cert.fondo_url}) center/cover` : '#ffffff',
+              background: '#ffffff',
             }}
           >
+            {cert.fondo_url && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: `url(${cert.fondo_url}) center/cover`,
+                  opacity: cert.fondo_opacidad ?? 0.3,
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
             {cert.plantilla === 'clasica' && (
               <PlantillaClasica
                 cert={cert}
