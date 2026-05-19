@@ -100,6 +100,12 @@ export default function EventDetailPage() {
                   <span>Invitaciones</span>
                 </TabsTrigger>
               )}
+              {FEATURE_FLAGS.CERTIFICADOS && (
+                <TabsTrigger value="certificados" className="gap-2 px-3 py-2 touch-feedback">
+                  <Award className="w-4 h-4 shrink-0" />
+                  <span>Certificados</span>
+                </TabsTrigger>
+              )}
               <TabsTrigger value="settings" className="gap-2 px-3 py-2 touch-feedback">
                 <Settings className="w-4 h-4 shrink-0" />
                 <span>Config</span>
@@ -145,6 +151,12 @@ export default function EventDetailPage() {
           {FEATURE_FLAGS.INVITACIONES && (
             <TabsContent value="invitaciones">
               <InvitacionesPanel event={event} />
+            </TabsContent>
+          )}
+
+          {FEATURE_FLAGS.CERTIFICADOS && (
+            <TabsContent value="certificados">
+              <CertificadosPanel event={{ id: event.id, nombre: event.nombre, fecha_evento: event.fecha_evento }} />
             </TabsContent>
           )}
 
