@@ -484,6 +484,6 @@ export function EmisionList({ eventoId, eventoNombre, fechaEvento, certificado }
           </div>
         </div>
       )}
-    </>
+    </TooltipProvider>
   );
 }
