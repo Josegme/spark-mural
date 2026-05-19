@@ -202,7 +202,7 @@ export const CertificadoPreview = React.forwardRef<HTMLDivElement, Props>(
                 {codigo && (
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ background: '#fff', padding: 6, display: 'inline-block', borderRadius: 4 }}>
-                      <QRCode value={verifyUrl || codigo} size={80} level="M" />
+                      <QRCodeSVG value={verifyUrl || codigo} size={80} level="M" />
                     </div>
                     <div style={{ fontSize: 10, color: '#737373', marginTop: 4 }}>
                       Código: <strong>{codigo}</strong>
