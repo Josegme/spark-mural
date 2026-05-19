@@ -17,6 +17,7 @@ import {
   useGuardarCertificado,
   type Certificado,
   type CertOrientacion,
+  type CertPlantilla,
   type CertTipo,
   type CertTipografia,
   type Firma,
@@ -210,6 +211,17 @@ export function CertificadoEditor({ eventoId, eventoNombre, fechaEvento, certifi
             </TabsContent>
 
             <TabsContent value="diseno" className="space-y-4">
+              <div>
+                <Label>Plantilla</Label>
+                <Select value={form.plantilla} onValueChange={v => update('plantilla', v as CertPlantilla)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="moderna">Moderna — minimalista, ideal corporativo</SelectItem>
+                    <SelectItem value="clasica">Clásica — ornamental, ideal diplomas</SelectItem>
+                    <SelectItem value="festiva">Festiva — colorida, ideal cumpleaños / bodas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Orientación</Label>
@@ -264,6 +276,13 @@ export function CertificadoEditor({ eventoId, eventoNombre, fechaEvento, certifi
                 uploading={uploading === 'logo_secundario'}
                 onUpload={f => handleUpload(f, 'logo_secundario')}
                 onClear={() => update('logo_secundario_url', null)}
+              />
+              <FileField
+                label="Fondo personalizado (opcional)"
+                url={form.fondo_url}
+                uploading={uploading === 'fondo'}
+                onUpload={f => handleUpload(f, 'fondo')}
+                onClear={() => update('fondo_url', null)}
               />
             </TabsContent>
 
