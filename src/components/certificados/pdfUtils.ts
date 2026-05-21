@@ -18,13 +18,26 @@ export async function generarCertificadoPDF(
   orientacion: 'horizontal' | 'vertical',
   _filename = 'certificado.pdf'
 ): Promise<PdfResult> {
+  // El nodo puede estar dentro de un contenedor con transform: scale(),
+  // lo que hace que html2canvas calcule mal el bounding rect y termine
+  // renderizando el texto duplicado/encimado. Pasamos width/height explícitos
+  // tomados del propio nodo (offsetWidth/Height ignoran transforms del padre)
+  // para forzar la captura en su tamaño real.
+  const realWidth = node.offsetWidth;
+  const realHeight = node.offsetHeight;
+
   const canvas = await html2canvas(node, {
     scale: 2,
     useCORS: true,
     allowTaint: false,
     backgroundColor: '#ffffff',
     logging: false,
+    width: realWidth,
+    height: realHeight,
+    windowWidth: realWidth,
+    windowHeight: realHeight,
   });
+
 
   const imgData = canvas.toDataURL('image/jpeg', 0.92);
 
