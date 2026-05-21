@@ -118,50 +118,91 @@ export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating, pagoP
         </div>
 
         {/* Acciones — full width en mobile */}
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Button variant="outline" size="sm" onClick={onOpenQR} className="flex-1 md:flex-none touch-feedback">
-            <QrCode className="w-4 h-4 mr-2" />
-            <span className="sm:inline">QR</span>
-            <span className="hidden sm:inline ml-1">Codes</span>
-          </Button>
+        <div className="flex flex-col gap-2 w-full md:w-auto md:items-end">
+          <div className="flex items-center gap-2 w-full md:w-auto flex-wrap md:flex-nowrap">
+            <Button variant="outline" size="sm" onClick={onOpenQR} className="flex-1 md:flex-none touch-feedback">
+              <QrCode className="w-4 h-4 mr-2" />
+              <span className="sm:inline">QR</span>
+              <span className="hidden sm:inline ml-1">Codes</span>
+            </Button>
 
-          <Button size="sm" asChild className="flex-1 md:flex-none touch-feedback">
-            <a href={muroUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              <span>Ver Muro</span>
-            </a>
-          </Button>
+            <Button size="sm" asChild className="flex-1 md:flex-none touch-feedback">
+              <a href={muroUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-4 h-4 mr-2" />
+                <span>Ver Muro</span>
+              </a>
+            </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" disabled={isUpdating} className="shrink-0 touch-feedback">
-                <MoreVertical className="w-4 h-4" />
+            {/* Botón primario contextual según estado */}
+            {canActivate && (
+              <Button
+                size="sm"
+                onClick={() => onChangeStatus('activo')}
+                disabled={isUpdating}
+                className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white shadow-md touch-feedback"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                {event.estado === 'pausado' ? 'Reanudar Evento' : 'Iniciar Evento'}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {canActivate && (
-                <DropdownMenuItem onClick={() => onChangeStatus('activo')}>
-                  <Play className="w-4 h-4 mr-2 text-success" />
-                  Iniciar Evento
-                </DropdownMenuItem>
-              )}
-              {canPause && (
-                <DropdownMenuItem onClick={() => onChangeStatus('pausado')}>
-                  <Pause className="w-4 h-4 mr-2 text-warning" />
-                  Pausar Evento
-                </DropdownMenuItem>
-              )}
-              {canFinish && (
-                <>
-                  <DropdownMenuSeparator />
+            )}
+            {canPause && (
+              <Button
+                size="sm"
+                onClick={() => onChangeStatus('pausado')}
+                disabled={isUpdating}
+                className="flex-1 md:flex-none bg-amber-500 hover:bg-amber-600 text-white shadow-md touch-feedback"
+              >
+                <Pause className="w-4 h-4 mr-2" />
+                Pausar Evento
+              </Button>
+            )}
+
+            {/* Menú: solo acciones secundarias (Finalizar) */}
+            {canFinish && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" disabled={isUpdating} className="shrink-0 touch-feedback">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => onChangeStatus('finalizado')}>
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Finalizar Evento
                   </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+
+          {/* Nota informativa contextual */}
+          {!pagoPendiente && (() => {
+            const notes: Record<string, { text: string; className: string }> = {
+              programado: {
+                text: "Tu evento está listo. Tocá 'Iniciar Evento' cuando quieras abrir el muro a los invitados.",
+                className: 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20',
+              },
+              activo: {
+                text: 'Evento en vivo. Los invitados pueden subir contenido. Podés pausarlo o finalizarlo desde el menú ⋮.',
+                className: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
+              },
+              pausado: {
+                text: 'Evento pausado. Los invitados no pueden subir contenido hasta que lo reanudes.',
+                className: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
+              },
+              finalizado: {
+                text: 'Evento finalizado. Podés descargar el álbum y emitir certificados.',
+                className: 'bg-muted text-muted-foreground border-border',
+              },
+            };
+            const note = notes[event.estado];
+            if (!note) return null;
+            return (
+              <p className={`text-xs px-3 py-1.5 rounded-md border w-full md:max-w-md md:text-right ${note.className}`}>
+                {note.text}
+              </p>
+            );
+          })()}
         </div>
       </div>
     </div>
