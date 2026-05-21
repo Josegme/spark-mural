@@ -44,7 +44,8 @@ export const CertificadoPreview = React.forwardRef<HTMLDivElement, Props>(
       lugar: cert.lugar || '',
       organizador: cert.organizador || '',
     });
-    const fontFamily = FONT_FAMILY[cert.tipografia] || FONT_FAMILY.sans;
+    const fontFamily = cert.tipografia === 'script' ? FONT_FAMILY.sans : FONT_FAMILY[cert.tipografia] || FONT_FAMILY.sans;
+    const decorativeNameFont = cert.tipografia === 'script' || cert.tipografia === 'mixta' ? FONT_FAMILY.script : undefined;
 
     return (
       <div className="flex justify-center w-full overflow-hidden">
@@ -180,10 +181,10 @@ function PlantillaModerna({ cert, nombre, texto, horizontal, codigo, verifyUrl }
           fontSize: horizontal ? 42 : 38,
           fontWeight: 700,
           color: cert.color_primario,
-          letterSpacing: 2,
+          letterSpacing: 1,
           textTransform: 'uppercase',
         }}
-        nameStyle={{ fontStyle: cert.tipografia === 'script' || cert.tipografia === 'mixta' ? 'italic' : 'normal' }}
+        nameStyle={{ fontFamily: decorativeNameFont, fontStyle: decorativeNameFont ? 'italic' : 'normal' }}
       />
     </>
   );
@@ -365,6 +366,7 @@ function PlantillaFestiva({ cert, nombre, texto, horizontal, codigo, verifyUrl }
           letterSpacing: 1,
         }}
         nameStyle={{
+          fontFamily: decorativeNameFont,
           fontStyle: 'italic',
           color: cert.color_primario,
           fontSize: horizontal ? 60 : 52,
