@@ -457,7 +457,6 @@ function ContentBlock({
       <div style={{ fontSize: 18, color: '#525252', marginBottom: 4 }}>Otorgado a</div>
       <div
         style={{
-          fontSize: nameFontSize,
           fontWeight: 700,
           color: '#1a1a1a',
           marginBottom: 18,
@@ -473,7 +472,6 @@ function ContentBlock({
 
       <div
         style={{
-          fontSize: bodyFontSize,
           lineHeight: 1.35,
           color: '#404040',
           maxWidth: horizontal ? 760 : 560,
