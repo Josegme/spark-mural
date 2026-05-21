@@ -269,16 +269,15 @@ function PlantillaClasica({ cert, nombre, texto, horizontal, codigo, verifyUrl }
           fontSize: horizontal ? 46 : 40,
           fontWeight: 700,
           color: cert.color_primario,
-          letterSpacing: 4,
+          letterSpacing: 1,
           textTransform: 'uppercase',
-          fontVariant: 'small-caps',
         }}
         nameStyle={{
-          fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive',
+          fontFamily: '"Segoe Script", "Lucida Handwriting", cursive',
           fontStyle: 'italic',
-          fontSize: horizontal ? 72 : 60,
+          fontSize: horizontal ? 58 : 50,
         }}
-        textStyle={{ fontFamily: '"Times New Roman", Georgia, serif', fontSize: 19 }}
+        textStyle={{ fontFamily: '"Times New Roman", Georgia, serif', fontSize: 17 }}
       />
     </>
   );
