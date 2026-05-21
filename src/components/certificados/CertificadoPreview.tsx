@@ -393,6 +393,13 @@ function ContentBlock({
   nameStyle?: React.CSSProperties;
   textStyle?: React.CSSProperties;
 }) {
+  const preferredTitleSize = typeof titleStyle?.fontSize === 'number' ? titleStyle.fontSize : horizontal ? 42 : 38;
+  const preferredNameSize = typeof nameStyle?.fontSize === 'number' ? nameStyle.fontSize : horizontal ? 56 : 48;
+  const preferredBodySize = typeof textStyle?.fontSize === 'number' ? textStyle.fontSize : 18;
+  const titleFontSize = fitTextSize(cert.titulo, preferredTitleSize, horizontal ? 30 : 22, 26);
+  const nameFontSize = fitTextSize(nombre || 'Nombre del Participante', preferredNameSize, horizontal ? 24 : 18, 30);
+  const bodyFontSize = Math.min(preferredBodySize, fitTextSize(texto, 18, horizontal ? 105 : 75, 12));
+
   return (
     <div
       style={{
@@ -426,7 +433,18 @@ function ContentBlock({
         </div>
       )}
 
-      <div style={{ marginBottom: 8, ...titleStyle }}>{cert.titulo}</div>
+      <div
+        style={{
+          marginBottom: 8,
+          lineHeight: 1.15,
+          maxWidth: horizontal ? 860 : 600,
+          overflowWrap: 'break-word',
+          ...titleStyle,
+          fontSize: titleFontSize,
+        }}
+      >
+        {cert.titulo}
+      </div>
       <div
         style={{
           width: 80,
@@ -439,13 +457,15 @@ function ContentBlock({
       <div style={{ fontSize: 18, color: '#525252', marginBottom: 4 }}>Otorgado a</div>
       <div
         style={{
-          fontSize: horizontal ? 56 : 48,
+          fontSize: nameFontSize,
           fontWeight: 700,
           color: '#1a1a1a',
-          marginBottom: 24,
+          marginBottom: 18,
           lineHeight: 1.1,
-          maxWidth: '90%',
+          maxWidth: horizontal ? 760 : 560,
+          overflowWrap: 'break-word',
           ...nameStyle,
+          fontSize: nameFontSize,
         }}
       >
         {nombre || 'Nombre del Participante'}
@@ -453,12 +473,14 @@ function ContentBlock({
 
       <div
         style={{
-          fontSize: 18,
-          lineHeight: 1.6,
+          fontSize: bodyFontSize,
+          lineHeight: 1.35,
           color: '#404040',
-          maxWidth: horizontal ? 800 : 600,
+          maxWidth: horizontal ? 760 : 560,
           marginBottom: 16,
+          overflowWrap: 'break-word',
           ...textStyle,
+          fontSize: bodyFontSize,
         }}
       >
         {texto}
