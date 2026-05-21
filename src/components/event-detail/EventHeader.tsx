@@ -66,6 +66,7 @@ const eventTypeLabels: Record<string, string> = {
 };
 
 export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating, pagoPendiente }: EventHeaderProps) {
+  const [confirmFinish, setConfirmFinish] = useState(false);
   const status = statusConfig[event.estado] || statusConfig.programado;
   const typeLabel = eventTypeLabels[event.tipo] || eventTypeLabels.otro;
   const StatusIcon = status.icon;
