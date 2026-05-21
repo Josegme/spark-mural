@@ -20,8 +20,14 @@ interface Props {
 const FONT_FAMILY: Record<string, string> = {
   sans: '"Helvetica Neue", Helvetica, Arial, sans-serif',
   serif: '"Times New Roman", Georgia, serif',
-  script: '"Brush Script MT", "Lucida Handwriting", cursive',
+  script: '"Segoe Script", "Lucida Handwriting", "Brush Script MT", cursive',
   mixta: '"Georgia", serif',
+};
+
+const fitTextSize = (text: string, base: number, maxChars: number, min = 24) => {
+  const length = text.trim().length;
+  if (length <= maxChars) return base;
+  return Math.max(min, Math.round(base * (maxChars / length)));
 };
 
 export const CertificadoPreview = React.forwardRef<HTMLDivElement, Props>(
@@ -38,7 +44,7 @@ export const CertificadoPreview = React.forwardRef<HTMLDivElement, Props>(
       lugar: cert.lugar || '',
       organizador: cert.organizador || '',
     });
-    const fontFamily = FONT_FAMILY[cert.tipografia] || FONT_FAMILY.sans;
+    const fontFamily = cert.tipografia === 'script' ? FONT_FAMILY.sans : FONT_FAMILY[cert.tipografia] || FONT_FAMILY.sans;
 
     return (
       <div className="flex justify-center w-full overflow-hidden">
@@ -125,6 +131,8 @@ interface PlantillaProps {
 
 /* =================== MODERNA =================== */
 function PlantillaModerna({ cert, nombre, texto, horizontal, codigo, verifyUrl }: PlantillaProps) {
+  const decorativeNameFont = cert.tipografia === 'script' || cert.tipografia === 'mixta' ? FONT_FAMILY.script : undefined;
+
   return (
     <>
       {!cert.fondo_url && (
@@ -174,10 +182,10 @@ function PlantillaModerna({ cert, nombre, texto, horizontal, codigo, verifyUrl }
           fontSize: horizontal ? 42 : 38,
           fontWeight: 700,
           color: cert.color_primario,
-          letterSpacing: 2,
+          letterSpacing: 1,
           textTransform: 'uppercase',
         }}
-        nameStyle={{ fontStyle: cert.tipografia === 'script' || cert.tipografia === 'mixta' ? 'italic' : 'normal' }}
+        nameStyle={{ fontFamily: decorativeNameFont, fontStyle: decorativeNameFont ? 'italic' : 'normal' }}
       />
     </>
   );
@@ -263,16 +271,15 @@ function PlantillaClasica({ cert, nombre, texto, horizontal, codigo, verifyUrl }
           fontSize: horizontal ? 46 : 40,
           fontWeight: 700,
           color: cert.color_primario,
-          letterSpacing: 4,
+          letterSpacing: 1,
           textTransform: 'uppercase',
-          fontVariant: 'small-caps',
         }}
         nameStyle={{
-          fontFamily: '"Brush Script MT", "Lucida Handwriting", cursive',
+          fontFamily: '"Segoe Script", "Lucida Handwriting", cursive',
           fontStyle: 'italic',
-          fontSize: horizontal ? 72 : 60,
+          fontSize: horizontal ? 58 : 50,
         }}
-        textStyle={{ fontFamily: '"Times New Roman", Georgia, serif', fontSize: 19 }}
+        textStyle={{ fontFamily: '"Times New Roman", Georgia, serif', fontSize: 17 }}
       />
     </>
   );
@@ -280,6 +287,8 @@ function PlantillaClasica({ cert, nombre, texto, horizontal, codigo, verifyUrl }
 
 /* =================== FESTIVA =================== */
 function PlantillaFestiva({ cert, nombre, texto, horizontal, codigo, verifyUrl }: PlantillaProps) {
+  const decorativeNameFont = cert.tipografia === 'script' || cert.tipografia === 'mixta' ? FONT_FAMILY.script : undefined;
+
   return (
     <>
       {!cert.fondo_url && (
@@ -360,6 +369,7 @@ function PlantillaFestiva({ cert, nombre, texto, horizontal, codigo, verifyUrl }
           letterSpacing: 1,
         }}
         nameStyle={{
+          fontFamily: decorativeNameFont,
           fontStyle: 'italic',
           color: cert.color_primario,
           fontSize: horizontal ? 60 : 52,
@@ -387,6 +397,13 @@ function ContentBlock({
   nameStyle?: React.CSSProperties;
   textStyle?: React.CSSProperties;
 }) {
+  const preferredTitleSize = typeof titleStyle?.fontSize === 'number' ? titleStyle.fontSize : horizontal ? 42 : 38;
+  const preferredNameSize = typeof nameStyle?.fontSize === 'number' ? nameStyle.fontSize : horizontal ? 56 : 48;
+  const preferredBodySize = typeof textStyle?.fontSize === 'number' ? textStyle.fontSize : 18;
+  const titleFontSize = fitTextSize(cert.titulo, preferredTitleSize, horizontal ? 30 : 22, 26);
+  const nameFontSize = fitTextSize(nombre || 'Nombre del Participante', preferredNameSize, horizontal ? 24 : 18, 30);
+  const bodyFontSize = Math.min(preferredBodySize, fitTextSize(texto, 18, horizontal ? 105 : 75, 12));
+
   return (
     <div
       style={{
@@ -420,7 +437,18 @@ function ContentBlock({
         </div>
       )}
 
-      <div style={{ marginBottom: 8, ...titleStyle }}>{cert.titulo}</div>
+      <div
+        style={{
+          marginBottom: 8,
+          lineHeight: 1.15,
+          maxWidth: horizontal ? 860 : 600,
+          overflowWrap: 'break-word',
+          ...titleStyle,
+          fontSize: titleFontSize,
+        }}
+      >
+        {cert.titulo}
+      </div>
       <div
         style={{
           width: 80,
@@ -433,13 +461,14 @@ function ContentBlock({
       <div style={{ fontSize: 18, color: '#525252', marginBottom: 4 }}>Otorgado a</div>
       <div
         style={{
-          fontSize: horizontal ? 56 : 48,
           fontWeight: 700,
           color: '#1a1a1a',
-          marginBottom: 24,
+          marginBottom: 18,
           lineHeight: 1.1,
-          maxWidth: '90%',
+          maxWidth: horizontal ? 760 : 560,
+          overflowWrap: 'break-word',
           ...nameStyle,
+          fontSize: nameFontSize,
         }}
       >
         {nombre || 'Nombre del Participante'}
@@ -447,12 +476,13 @@ function ContentBlock({
 
       <div
         style={{
-          fontSize: 18,
-          lineHeight: 1.6,
+          lineHeight: 1.35,
           color: '#404040',
-          maxWidth: horizontal ? 800 : 600,
+          maxWidth: horizontal ? 760 : 560,
           marginBottom: 16,
+          overflowWrap: 'break-word',
           ...textStyle,
+          fontSize: bodyFontSize,
         }}
       >
         {texto}

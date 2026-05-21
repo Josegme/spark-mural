@@ -18,25 +18,48 @@ export async function generarCertificadoPDF(
   orientacion: 'horizontal' | 'vertical',
   _filename = 'certificado.pdf'
 ): Promise<PdfResult> {
-  // El nodo puede estar dentro de un contenedor con transform: scale(),
-  // lo que hace que html2canvas calcule mal el bounding rect y termine
-  // renderizando el texto duplicado/encimado. Pasamos width/height explícitos
-  // tomados del propio nodo (offsetWidth/Height ignoran transforms del padre)
-  // para forzar la captura en su tamaño real.
   const realWidth = node.offsetWidth;
   const realHeight = node.offsetHeight;
 
-  const canvas = await html2canvas(node, {
-    scale: 2,
-    useCORS: true,
-    allowTaint: false,
-    backgroundColor: '#ffffff',
-    logging: false,
-    width: realWidth,
-    height: realHeight,
-    windowWidth: realWidth,
-    windowHeight: realHeight,
-  });
+  // Capturamos un clon aislado del certificado, fuera del preview escalado.
+  // Si html2canvas renderiza el nodo dentro de un ancestro con transform: scale(),
+  // las coordenadas tipográficas se deforman y los textos terminan encimados.
+  await document.fonts?.ready;
+  const sandbox = document.createElement('div');
+  sandbox.style.position = 'fixed';
+  sandbox.style.left = '-10000px';
+  sandbox.style.top = '0';
+  sandbox.style.width = `${realWidth}px`;
+  sandbox.style.height = `${realHeight}px`;
+  sandbox.style.background = '#ffffff';
+  sandbox.style.transform = 'none';
+  sandbox.style.pointerEvents = 'none';
+
+  const clone = node.cloneNode(true) as HTMLElement;
+  clone.style.transform = 'none';
+  clone.style.width = `${realWidth}px`;
+  clone.style.height = `${realHeight}px`;
+  sandbox.appendChild(clone);
+  document.body.appendChild(sandbox);
+
+  let canvas: HTMLCanvasElement;
+  try {
+    canvas = await html2canvas(clone, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: '#ffffff',
+      logging: false,
+      width: realWidth,
+      height: realHeight,
+      windowWidth: realWidth,
+      windowHeight: realHeight,
+      scrollX: 0,
+      scrollY: 0,
+    });
+  } finally {
+    sandbox.remove();
+  }
 
 
   const imgData = canvas.toDataURL('image/jpeg', 0.92);
