@@ -42,21 +42,24 @@ export async function generarCertificadoPDF(
   sandbox.appendChild(clone);
   document.body.appendChild(sandbox);
 
-  const canvas = await html2canvas(clone, {
-    scale: 2,
-    useCORS: true,
-    allowTaint: false,
-    backgroundColor: '#ffffff',
-    logging: false,
-    width: realWidth,
-    height: realHeight,
-    windowWidth: realWidth,
-    windowHeight: realHeight,
-    scrollX: 0,
-    scrollY: 0,
-  });
-
-  sandbox.remove();
+  let canvas: HTMLCanvasElement;
+  try {
+    canvas = await html2canvas(clone, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: '#ffffff',
+      logging: false,
+      width: realWidth,
+      height: realHeight,
+      windowWidth: realWidth,
+      windowHeight: realHeight,
+      scrollX: 0,
+      scrollY: 0,
+    });
+  } finally {
+    sandbox.remove();
+  }
 
 
   const imgData = canvas.toDataURL('image/jpeg', 0.92);
