@@ -526,7 +526,7 @@ function ContentBlock({
         {codigo && (
           <div style={{ textAlign: 'center' }}>
             <div style={{ background: '#fff', padding: 6, display: 'inline-block', borderRadius: 4 }}>
-              <QRCodeSVG value={verifyUrl || codigo} size={80} level="M" />
+              <QRCodeCanvas value={verifyUrl || codigo} size={80} level="M" includeMargin={false} />
             </div>
             <div style={{ fontSize: 10, color: '#737373', marginTop: 4 }}>
               Código: <strong>{codigo}</strong>
