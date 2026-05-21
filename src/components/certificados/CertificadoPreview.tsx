@@ -132,6 +132,8 @@ interface PlantillaProps {
 
 /* =================== MODERNA =================== */
 function PlantillaModerna({ cert, nombre, texto, horizontal, codigo, verifyUrl }: PlantillaProps) {
+  const decorativeNameFont = cert.tipografia === 'script' || cert.tipografia === 'mixta' ? FONT_FAMILY.script : undefined;
+
   return (
     <>
       {!cert.fondo_url && (
@@ -286,6 +288,8 @@ function PlantillaClasica({ cert, nombre, texto, horizontal, codigo, verifyUrl }
 
 /* =================== FESTIVA =================== */
 function PlantillaFestiva({ cert, nombre, texto, horizontal, codigo, verifyUrl }: PlantillaProps) {
+  const decorativeNameFont = cert.tipografia === 'script' || cert.tipografia === 'mixta' ? FONT_FAMILY.script : undefined;
+
   return (
     <>
       {!cert.fondo_url && (
