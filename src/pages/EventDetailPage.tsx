@@ -79,43 +79,68 @@ export default function EventDetailPage() {
         />
 
         <Tabs defaultValue="content" className="space-y-6">
-          {/* Scrollable horizontal con labels siempre visibles */}
-          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar">
-            <TabsList className={`inline-flex w-auto sm:w-full sm:max-w-${FEATURE_FLAGS.INVITACIONES ? '2xl' : 'lg'} sm:grid sm:grid-cols-${FEATURE_FLAGS.INVITACIONES ? '6' : '5'} h-auto p-1`}>
-              <TabsTrigger value="content" className="gap-2 px-3 py-2 touch-feedback">
-                <LayoutGrid className="w-4 h-4 shrink-0" />
-                <span>Contenido</span>
+          {/* Tablero de accesos: grid responsivo, tiles con color suave por sección */}
+          <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 h-auto bg-transparent p-0 w-full">
+            <TabsTrigger
+              value="settings"
+              className="flex-col gap-1.5 h-auto py-4 px-3 rounded-xl border border-border bg-sky-500/10 hover:bg-sky-500/20 data-[state=active]:bg-sky-500/30 data-[state=active]:border-sky-500/60 data-[state=active]:shadow-md transition-all touch-feedback"
+            >
+              <Settings className="w-6 h-6 text-sky-500" />
+              <span className="text-xs font-medium">Config</span>
+            </TabsTrigger>
+
+            {FEATURE_FLAGS.INVITACIONES && (
+              <TabsTrigger
+                value="invitaciones"
+                className="flex-col gap-1.5 h-auto py-4 px-3 rounded-xl border border-border bg-indigo-500/10 hover:bg-indigo-500/20 data-[state=active]:bg-indigo-500/30 data-[state=active]:border-indigo-500/60 data-[state=active]:shadow-md transition-all touch-feedback"
+              >
+                <Mail className="w-6 h-6 text-indigo-500" />
+                <span className="text-xs font-medium">Invitaciones</span>
               </TabsTrigger>
-              <TabsTrigger value="moderation" className="gap-2 px-3 py-2 touch-feedback">
-                <Shield className="w-4 h-4 shrink-0" />
-                <span>Moderación</span>
+            )}
+
+            <TabsTrigger
+              value="content"
+              className="flex-col gap-1.5 h-auto py-4 px-3 rounded-xl border border-border bg-emerald-500/10 hover:bg-emerald-500/20 data-[state=active]:bg-emerald-500/30 data-[state=active]:border-emerald-500/60 data-[state=active]:shadow-md transition-all touch-feedback"
+            >
+              <LayoutGrid className="w-6 h-6 text-emerald-500" />
+              <span className="text-xs font-medium">Contenido</span>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="moderation"
+              className="flex-col gap-1.5 h-auto py-4 px-3 rounded-xl border border-border bg-amber-500/10 hover:bg-amber-500/20 data-[state=active]:bg-amber-500/30 data-[state=active]:border-amber-500/60 data-[state=active]:shadow-md transition-all touch-feedback"
+            >
+              <Shield className="w-6 h-6 text-amber-500" />
+              <span className="text-xs font-medium">Moderación</span>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="games"
+              className="flex-col gap-1.5 h-auto py-4 px-3 rounded-xl border border-border bg-pink-500/10 hover:bg-pink-500/20 data-[state=active]:bg-pink-500/30 data-[state=active]:border-pink-500/60 data-[state=active]:shadow-md transition-all touch-feedback"
+            >
+              <Gamepad2 className="w-6 h-6 text-pink-500" />
+              <span className="text-xs font-medium">Juegos</span>
+            </TabsTrigger>
+
+            {FEATURE_FLAGS.CERTIFICADOS && (
+              <TabsTrigger
+                value="certificados"
+                className="flex-col gap-1.5 h-auto py-4 px-3 rounded-xl border border-border bg-violet-500/10 hover:bg-violet-500/20 data-[state=active]:bg-violet-500/30 data-[state=active]:border-violet-500/60 data-[state=active]:shadow-md transition-all touch-feedback"
+              >
+                <Award className="w-6 h-6 text-violet-500" />
+                <span className="text-xs font-medium">Certificados</span>
               </TabsTrigger>
-              <TabsTrigger value="games" className="gap-2 px-3 py-2 touch-feedback">
-                <Gamepad2 className="w-4 h-4 shrink-0" />
-                <span>Juegos</span>
-              </TabsTrigger>
-              {FEATURE_FLAGS.INVITACIONES && (
-                <TabsTrigger value="invitaciones" className="gap-2 px-3 py-2 touch-feedback">
-                  <Mail className="w-4 h-4 shrink-0" />
-                  <span>Invitaciones</span>
-                </TabsTrigger>
-              )}
-              {FEATURE_FLAGS.CERTIFICADOS && (
-                <TabsTrigger value="certificados" className="gap-2 px-3 py-2 touch-feedback">
-                  <Award className="w-4 h-4 shrink-0" />
-                  <span>Certificados</span>
-                </TabsTrigger>
-              )}
-              <TabsTrigger value="settings" className="gap-2 px-3 py-2 touch-feedback">
-                <Settings className="w-4 h-4 shrink-0" />
-                <span>Config</span>
-              </TabsTrigger>
-              <TabsTrigger value="download" className="gap-2 px-3 py-2 touch-feedback">
-                <Download className="w-4 h-4 shrink-0" />
-                <span>Álbum</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+            )}
+
+            <TabsTrigger
+              value="download"
+              className="flex-col gap-1.5 h-auto py-4 px-3 rounded-xl border border-border bg-teal-500/10 hover:bg-teal-500/20 data-[state=active]:bg-teal-500/30 data-[state=active]:border-teal-500/60 data-[state=active]:shadow-md transition-all touch-feedback"
+            >
+              <Download className="w-6 h-6 text-teal-500" />
+              <span className="text-xs font-medium">Álbum</span>
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="content">
             <ContentGrid
