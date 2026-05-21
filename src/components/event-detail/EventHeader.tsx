@@ -12,6 +12,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useState } from 'react';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -55,6 +66,7 @@ const eventTypeLabels: Record<string, string> = {
 };
 
 export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating, pagoPendiente }: EventHeaderProps) {
+  const [confirmFinish, setConfirmFinish] = useState(false);
   const status = statusConfig[event.estado] || statusConfig.programado;
   const typeLabel = eventTypeLabels[event.tipo] || eventTypeLabels.otro;
   const StatusIcon = status.icon;
@@ -166,13 +178,36 @@ export function EventHeader({ event, onChangeStatus, onOpenQR, isUpdating, pagoP
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onChangeStatus('finalizado')}>
+                  <DropdownMenuItem
+                    onSelect={(e) => { e.preventDefault(); setConfirmFinish(true); }}
+                    className="text-destructive focus:text-destructive"
+                  >
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Finalizar Evento
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+
+            <AlertDialog open={confirmFinish} onOpenChange={setConfirmFinish}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Finalizar el evento?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción cierra el muro definitivamente. Los invitados ya no podrán subir contenido. Vas a poder descargar el álbum y emitir certificados, pero no podrás reanudar el evento.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => onChangeStatus('finalizado')}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Sí, finalizar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
 
           {/* Nota informativa contextual */}
