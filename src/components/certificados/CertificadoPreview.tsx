@@ -45,7 +45,6 @@ export const CertificadoPreview = React.forwardRef<HTMLDivElement, Props>(
       organizador: cert.organizador || '',
     });
     const fontFamily = cert.tipografia === 'script' ? FONT_FAMILY.sans : FONT_FAMILY[cert.tipografia] || FONT_FAMILY.sans;
-    const decorativeNameFont = cert.tipografia === 'script' || cert.tipografia === 'mixta' ? FONT_FAMILY.script : undefined;
 
     return (
       <div className="flex justify-center w-full overflow-hidden">
