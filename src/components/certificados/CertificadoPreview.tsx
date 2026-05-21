@@ -20,8 +20,14 @@ interface Props {
 const FONT_FAMILY: Record<string, string> = {
   sans: '"Helvetica Neue", Helvetica, Arial, sans-serif',
   serif: '"Times New Roman", Georgia, serif',
-  script: '"Brush Script MT", "Lucida Handwriting", cursive',
+  script: '"Segoe Script", "Lucida Handwriting", "Brush Script MT", cursive',
   mixta: '"Georgia", serif',
+};
+
+const fitTextSize = (text: string, base: number, maxChars: number, min = 24) => {
+  const length = text.trim().length;
+  if (length <= maxChars) return base;
+  return Math.max(min, Math.round(base * (maxChars / length)));
 };
 
 export const CertificadoPreview = React.forwardRef<HTMLDivElement, Props>(
