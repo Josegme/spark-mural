@@ -1465,6 +1465,8 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      safe_uuid: { Args: { _txt: string }; Returns: string }
+      user_owns_evento: { Args: { _evento_id: string }; Returns: boolean }
       validar_checkin: {
         Args: {
           _checkin_token: string
