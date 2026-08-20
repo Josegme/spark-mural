@@ -1,6 +1,6 @@
 /**
  * PICKEVENT - Landing Page
- * Página principal con hero, cómo funciona, planes y casos de uso
+ * Página principal con hero, servicios, cómo funciona, planes y casos de uso
  */
 
 import { Link } from 'react-router-dom';
@@ -11,13 +11,14 @@ import { EVENT_TYPES, FEATURE_FLAGS } from '@/lib/constants';
 import { usePublicPrices } from '@/hooks/usePublicPrices';
 import { formatPrice, cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { Check, Sparkles, QrCode, Tv, Download, Camera, MessageSquare, Heart, Gamepad2, Users, Trophy, Hand } from 'lucide-react';
+import { Check, Sparkles, QrCode, Tv, Download, Camera, MessageSquare, Heart, Gamepad2, Users, Trophy, Hand, Mail, Ticket, Award, ScanLine, ShieldCheck, PartyPopper } from 'lucide-react';
 import { EnterpriseBanner } from '@/components/landing/EnterpriseBanner';
 
 export default function Index() {
   return (
     <MainLayout>
       <HeroSection />
+      <ServicesSection />
       <HowItWorksSection />
       <GamesSection />
       <FeaturesSection />
@@ -52,8 +53,8 @@ function HeroSection() {
           </h1>
           
           <p className="text-fluid-lg md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-            Muro interactivo en tiempo real donde tus invitados comparten fotos, 
-            videos y mensajes que aparecen al instante en la pantalla.
+            Muro interactivo, invitaciones digitales con RSVP, control de ingreso por QR y 
+            certificados personalizados. Todo en una sola plataforma para tu evento.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -89,31 +90,119 @@ function HeroSection() {
   );
 }
 
+function ServicesSection() {
+  const services = [
+    {
+      icon: Mail,
+      title: 'Invitaciones Digitales',
+      description: 'Envíá invitaciones con RSVP, tarjeta digital personalizada y confirmación de asistencia. Controlá cupos, acompañantes y fecha límite de respuesta.',
+      color: 'bg-rose-500/10 text-rose-500',
+      badge: 'Nuevo',
+    },
+    {
+      icon: Ticket,
+      title: 'Control de Ingreso QR',
+      description: 'Cada invitado recibe un QR único de entrada. Escaneá en puerta con el celular, validá asistencia en tiempo real y evitá entradas duplicadas.',
+      color: 'bg-amber-500/10 text-amber-500',
+      badge: 'Nuevo',
+    },
+    {
+      icon: Award,
+      title: 'Certificados Personalizados',
+      description: 'Diseñá certificados de participación o agradecimiento con logo, firmas y fondo personalizado. Envialos por email o descargalos en PDF para imprimir.',
+      color: 'bg-violet-500/10 text-violet-500',
+      badge: 'Nuevo',
+    },
+  ];
+
+  return (
+    <section className="py-20 bg-muted/30">
+      <div className="container">
+        <div className="text-center space-y-4 mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent-foreground text-sm font-medium">
+            <PartyPopper className="w-4 h-4" />
+            <span>Nuevos Servicios</span>
+          </div>
+          <h2 className="text-fluid-3xl font-display font-bold">
+            Todo lo que necesitás para tu evento
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            De la invitación inicial al recuerdo final: gestioná invitados, accesos y certificados desde el mismo panel
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {services.map((service, index) => (
+            <Card
+              key={service.title}
+              className="relative overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-lg animate-fade-in-up h-full"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-primary opacity-10 rounded-bl-full" />
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${service.color}`}>
+                    <service.icon className="w-7 h-7" />
+                  </div>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                    {service.badge}
+                  </span>
+                </div>
+                <CardTitle className="font-display text-xl">{service.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-base">
+                  {service.description}
+                </CardDescription>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="mt-12 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-success" />
+            <span>Accesos verificados</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-success" />
+            <span>Lista de invitados automática</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Download className="w-4 h-4 text-success" />
+            <span>PDF e impresión listos</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function HowItWorksSection() {
   const steps = [
     {
       number: '1',
       title: 'Creá tu Evento',
-      description: 'Elegí fecha, duración y personalizá con tu logo y colores.',
+      description: 'Elegí fecha, duración y personalización. Activá invitaciones, muro interactivo y certificados desde el mismo panel.',
       icon: Sparkles,
     },
     {
       number: '2',
-      title: 'Compartí el QR',
-      description: 'Recibís 3 QR codes únicos para pantalla, invitados y descarga.',
-      icon: QrCode,
+      title: 'Compartí Invitaciones',
+      description: 'Tus invitados reciben invitación digital con RSVP, QR de entrada y link para subir fotos al muro.',
+      icon: Mail,
     },
     {
       number: '3',
-      title: 'Disfrutá en Vivo',
-      description: 'Las fotos y mensajes aparecen al instante en la pantalla.',
-      icon: Tv,
+      title: 'Controlá y Disfrutá',
+      description: 'Validá el ingreso con QR en puerta y dejá que las fotos, videos y mensajes lleguen a la pantalla en vivo.',
+      icon: ScanLine,
     },
     {
       number: '4',
-      title: 'Descargá el Álbum',
-      description: 'Todo el contenido disponible por 30 días para descargar.',
-      icon: Download,
+      title: 'Cerrá con Recuerdos',
+      description: 'Descargá el álbum completo y enviá certificados personalizados a quienes asistieron.',
+      icon: Award,
     },
   ];
 
@@ -125,7 +214,7 @@ function HowItWorksSection() {
             ¿Cómo Funciona?
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            En 4 simples pasos tenés tu muro interactivo funcionando
+            En 4 simples pasos tenés tu evento completo: invitaciones, ingreso, muro y certificados
           </p>
         </div>
 
@@ -244,6 +333,16 @@ function GamesSection() {
 function FeaturesSection() {
   const features = [
     {
+      icon: Mail,
+      title: 'Invitaciones Digitales',
+      description: 'Enviá invitaciones con tarjeta personalizada, RSVP automático y control de acompañantes.',
+    },
+    {
+      icon: Ticket,
+      title: 'Control de Ingreso QR',
+      description: 'Cada invitado recibe un QR único. Escanealo en puerta para validar accesos y evitar duplicados.',
+    },
+    {
       icon: Camera,
       title: 'Fotos en Tiempo Real',
       description: 'Las fotos aparecen instantáneamente en el muro proyectado.',
@@ -254,14 +353,19 @@ function FeaturesSection() {
       description: 'Globitos con mensajes de hasta 150 caracteres que animan la pantalla.',
     },
     {
-      icon: Heart,
-      title: 'Likes Interactivos',
-      description: 'Los invitados pueden dar likes a las fotos que más les gusten.',
+      icon: Award,
+      title: 'Certificados Personalizados',
+      description: 'Diseñá certificados con logo, firmas y fondo. Envialos por email o descargalos en PDF.',
     },
     {
       icon: Sparkles,
       title: 'IA Generativa',
       description: 'Transformá las fotos con temas personalizados como superhéroes, fantasía y más.',
+    },
+    {
+      icon: Heart,
+      title: 'Likes Interactivos',
+      description: 'Los invitados pueden dar likes a las fotos que más les gusten.',
     },
   ];
 
@@ -270,10 +374,10 @@ function FeaturesSection() {
       <div className="container">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl md:text-4xl font-display font-bold">
-            Todo en Tiempo Real
+            Servicios Completos para tu Evento
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Funcionalidades diseñadas para hacer tu evento único
+            Desde la invitación hasta el certificado final, todo en una sola plataforma
           </p>
         </div>
 
