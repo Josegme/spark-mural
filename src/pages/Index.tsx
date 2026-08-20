@@ -333,6 +333,16 @@ function GamesSection() {
 function FeaturesSection() {
   const features = [
     {
+      icon: Mail,
+      title: 'Invitaciones Digitales',
+      description: 'Enviá invitaciones con tarjeta personalizada, RSVP automático y control de acompañantes.',
+    },
+    {
+      icon: Ticket,
+      title: 'Control de Ingreso QR',
+      description: 'Cada invitado recibe un QR único. Escanealo en puerta para validar accesos y evitar duplicados.',
+    },
+    {
       icon: Camera,
       title: 'Fotos en Tiempo Real',
       description: 'Las fotos aparecen instantáneamente en el muro proyectado.',
@@ -343,14 +353,19 @@ function FeaturesSection() {
       description: 'Globitos con mensajes de hasta 150 caracteres que animan la pantalla.',
     },
     {
-      icon: Heart,
-      title: 'Likes Interactivos',
-      description: 'Los invitados pueden dar likes a las fotos que más les gusten.',
+      icon: Award,
+      title: 'Certificados Personalizados',
+      description: 'Diseñá certificados con logo, firmas y fondo. Envialos por email o descargalos en PDF.',
     },
     {
       icon: Sparkles,
       title: 'IA Generativa',
       description: 'Transformá las fotos con temas personalizados como superhéroes, fantasía y más.',
+    },
+    {
+      icon: Heart,
+      title: 'Likes Interactivos',
+      description: 'Los invitados pueden dar likes a las fotos que más les gusten.',
     },
   ];
 
