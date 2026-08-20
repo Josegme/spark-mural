@@ -214,7 +214,7 @@ function HowItWorksSection() {
             ¿Cómo Funciona?
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            En 4 simples pasos tenés tu muro interactivo funcionando
+            En 4 simples pasos tenés tu evento completo: invitaciones, ingreso, muro y certificados
           </p>
         </div>
 
