@@ -177,6 +177,8 @@ function ServicesSection() {
     </section>
   );
 }
+
+function HowItWorksSection() {
   const steps = [
     {
       number: '1',
