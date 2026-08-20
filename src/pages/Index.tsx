@@ -53,8 +53,8 @@ function HeroSection() {
           </h1>
           
           <p className="text-fluid-lg md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-            Muro interactivo en tiempo real donde tus invitados comparten fotos, 
-            videos y mensajes que aparecen al instante en la pantalla.
+            Muro interactivo, invitaciones digitales con RSVP, control de ingreso por QR y 
+            certificados personalizados. Todo en una sola plataforma para tu evento.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
