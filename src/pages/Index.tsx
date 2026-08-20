@@ -374,10 +374,10 @@ function FeaturesSection() {
       <div className="container">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-3xl md:text-4xl font-display font-bold">
-            Todo en Tiempo Real
+            Servicios Completos para tu Evento
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Funcionalidades diseñadas para hacer tu evento único
+            Desde la invitación hasta el certificado final, todo en una sola plataforma
           </p>
         </div>
 
