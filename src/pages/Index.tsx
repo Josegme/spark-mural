@@ -1,6 +1,6 @@
 /**
  * PICKEVENT - Landing Page
- * Página principal con hero, cómo funciona, planes y casos de uso
+ * Página principal con hero, servicios, cómo funciona, planes y casos de uso
  */
 
 import { Link } from 'react-router-dom';
@@ -11,7 +11,7 @@ import { EVENT_TYPES, FEATURE_FLAGS } from '@/lib/constants';
 import { usePublicPrices } from '@/hooks/usePublicPrices';
 import { formatPrice, cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { Check, Sparkles, QrCode, Tv, Download, Camera, MessageSquare, Heart, Gamepad2, Users, Trophy, Hand } from 'lucide-react';
+import { Check, Sparkles, QrCode, Tv, Download, Camera, MessageSquare, Heart, Gamepad2, Users, Trophy, Hand, Mail, Ticket, Award, ScanLine, ShieldCheck, PartyPopper } from 'lucide-react';
 import { EnterpriseBanner } from '@/components/landing/EnterpriseBanner';
 
 export default function Index() {
