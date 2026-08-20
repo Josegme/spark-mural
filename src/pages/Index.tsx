@@ -183,26 +183,26 @@ function HowItWorksSection() {
     {
       number: '1',
       title: 'Creá tu Evento',
-      description: 'Elegí fecha, duración y personalizá con tu logo y colores.',
+      description: 'Elegí fecha, duración y personalización. Activá invitaciones, muro interactivo y certificados desde el mismo panel.',
       icon: Sparkles,
     },
     {
       number: '2',
-      title: 'Compartí el QR',
-      description: 'Recibís 3 QR codes únicos para pantalla, invitados y descarga.',
-      icon: QrCode,
+      title: 'Compartí Invitaciones',
+      description: 'Tus invitados reciben invitación digital con RSVP, QR de entrada y link para subir fotos al muro.',
+      icon: Mail,
     },
     {
       number: '3',
-      title: 'Disfrutá en Vivo',
-      description: 'Las fotos y mensajes aparecen al instante en la pantalla.',
-      icon: Tv,
+      title: 'Controlá y Disfrutá',
+      description: 'Validá el ingreso con QR en puerta y dejá que las fotos, videos y mensajes lleguen a la pantalla en vivo.',
+      icon: ScanLine,
     },
     {
       number: '4',
-      title: 'Descargá el Álbum',
-      description: 'Todo el contenido disponible por 30 días para descargar.',
-      icon: Download,
+      title: 'Cerrá con Recuerdos',
+      description: 'Descargá el álbum completo y enviá certificados personalizados a quienes asistieron.',
+      icon: Award,
     },
   ];
 
