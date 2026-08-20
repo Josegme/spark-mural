@@ -90,7 +90,93 @@ function HeroSection() {
   );
 }
 
-function HowItWorksSection() {
+function ServicesSection() {
+  const services = [
+    {
+      icon: Mail,
+      title: 'Invitaciones Digitales',
+      description: 'Envíá invitaciones con RSVP, tarjeta digital personalizada y confirmación de asistencia. Controlá cupos, acompañantes y fecha límite de respuesta.',
+      color: 'bg-rose-500/10 text-rose-500',
+      badge: 'Nuevo',
+    },
+    {
+      icon: Ticket,
+      title: 'Control de Ingreso QR',
+      description: 'Cada invitado recibe un QR único de entrada. Escaneá en puerta con el celular, validá asistencia en tiempo real y evitá entradas duplicadas.',
+      color: 'bg-amber-500/10 text-amber-500',
+      badge: 'Nuevo',
+    },
+    {
+      icon: Award,
+      title: 'Certificados Personalizados',
+      description: 'Diseñá certificados de participación o agradecimiento con logo, firmas y fondo personalizado. Envialos por email o descargalos en PDF para imprimir.',
+      color: 'bg-violet-500/10 text-violet-500',
+      badge: 'Nuevo',
+    },
+  ];
+
+  return (
+    <section className="py-20 bg-muted/30">
+      <div className="container">
+        <div className="text-center space-y-4 mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent-foreground text-sm font-medium">
+            <PartyPopper className="w-4 h-4" />
+            <span>Nuevos Servicios</span>
+          </div>
+          <h2 className="text-fluid-3xl font-display font-bold">
+            Todo lo que necesitás para tu evento
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            De la invitación inicial al recuerdo final: gestioná invitados, accesos y certificados desde el mismo panel
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {services.map((service, index) => (
+            <Card
+              key={service.title}
+              className="relative overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-lg animate-fade-in-up h-full"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-primary opacity-10 rounded-bl-full" />
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${service.color}`}>
+                    <service.icon className="w-7 h-7" />
+                  </div>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                    {service.badge}
+                  </span>
+                </div>
+                <CardTitle className="font-display text-xl">{service.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-base">
+                  {service.description}
+                </CardDescription>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="mt-12 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-success" />
+            <span>Accesos verificados</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-success" />
+            <span>Lista de invitados automática</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Download className="w-4 h-4 text-success" />
+            <span>PDF e impresión listos</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
   const steps = [
     {
       number: '1',
