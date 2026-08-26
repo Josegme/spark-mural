@@ -5,6 +5,7 @@
 
 import { useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { MuroLayout } from '@/components/layout';
 import { MuroBanner, MuroCarousel, MuroMessages, MuroGameOverlay } from '@/components/muro';
 import { useMuroRealtime } from '@/hooks/useMuroRealtime';
