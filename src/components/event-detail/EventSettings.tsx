@@ -33,6 +33,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Image as ImageIcon, Upload, X } from 'lucide-react';
 import type { EventDetails } from '@/hooks/useEventDetails';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -54,6 +56,52 @@ export function EventSettings({ event, onUpdate, onDelete, isUpdating, isDeletin
   }, [event.moderacion_activa]);
   const [uploadLimit, setUploadLimit] = useState(event.limite_subidas_por_invitado?.toString() || '');
   const [bannerColor, setBannerColor] = useState(event.color_banner || '#4c1d95');
+  const [fondoUrl, setFondoUrl] = useState<string | null>(event.muro_fondo_url ?? null);
+  const [ocultarBanner, setOcultarBanner] = useState(!!event.muro_ocultar_banner);
+  const [qrFlotante, setQrFlotante] = useState(event.muro_qr_flotante !== false);
+  const [uploadingFondo, setUploadingFondo] = useState(false);
+
+  useEffect(() => {
+    setFondoUrl(event.muro_fondo_url ?? null);
+    setOcultarBanner(!!event.muro_ocultar_banner);
+    setQrFlotante(event.muro_qr_flotante !== false);
+  }, [event.muro_fondo_url, event.muro_ocultar_banner, event.muro_qr_flotante]);
+
+  const handleFondoUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('El archivo debe ser una imagen');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error('La imagen no puede superar 8MB');
+      return;
+    }
+    setUploadingFondo(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${event.id}/muro-fondo-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('invitacion-tarjetas')
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('invitacion-tarjetas').getPublicUrl(path);
+      setFondoUrl(data.publicUrl);
+      onUpdate({ muro_fondo_url: data.publicUrl });
+      toast.success('Fondo del muro actualizado');
+    } catch (err) {
+      console.error(err);
+      toast.error('No se pudo subir el fondo');
+    } finally {
+      setUploadingFondo(false);
+    }
+  };
+
+  const handleRemoveFondo = () => {
+    setFondoUrl(null);
+    onUpdate({ muro_fondo_url: null });
+    toast.success('Fondo eliminado');
+  };
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -234,6 +282,100 @@ export function EventSettings({ event, onUpdate, onDelete, isUpdating, isDeletin
                 style={{ backgroundColor: bannerColor }}
               />
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Muro: fondo y pantalla limpia */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ImageIcon className="w-5 h-5 text-primary" />
+            <CardTitle className="text-lg">Muro</CardTitle>
+          </div>
+          <CardDescription>
+            Subí una imagen de fondo y elegí cómo se proyecta el muro
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-2">
+            <Label>Imagen de fondo (recomendado 1920×1080, máx. 8MB)</Label>
+            {fondoUrl ? (
+              <div className="relative w-full max-w-md overflow-hidden rounded-xl border">
+                <img src={fondoUrl} alt="Fondo del muro" className="w-full aspect-video object-cover" />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2"
+                  onClick={handleRemoveFondo}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full max-w-md aspect-video border-2 border-dashed border-muted-foreground/30 rounded-xl cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors">
+                {uploadingFondo ? (
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                    <span className="text-sm text-muted-foreground">Subir imagen de fondo</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingFondo}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFondoUpload(f);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Si no subís fondo, el muro sigue viéndose con fondo negro como hasta ahora.
+            </p>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="ocultarBanner">Pantalla limpia (ocultar barra lateral)</Label>
+              <p className="text-sm text-muted-foreground">
+                La foto ocupa toda la pantalla, sin el panel lateral
+              </p>
+            </div>
+            <Switch
+              id="ocultarBanner"
+              checked={ocultarBanner}
+              onCheckedChange={(checked) => {
+                setOcultarBanner(checked);
+                onUpdate({ muro_ocultar_banner: checked });
+              }}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="qrFlotante">QR flotante</Label>
+              <p className="text-sm text-muted-foreground">
+                Muestra un QR chico en la esquina cuando la barra lateral está oculta
+              </p>
+            </div>
+            <Switch
+              id="qrFlotante"
+              checked={qrFlotante}
+              disabled={!ocultarBanner}
+              onCheckedChange={(checked) => {
+                setQrFlotante(checked);
+                onUpdate({ muro_qr_flotante: checked });
+              }}
+            />
           </div>
         </CardContent>
       </Card>

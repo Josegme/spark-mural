@@ -31,6 +31,9 @@ export interface MuroEvent {
   color_banner: string;
   estado: string;
   qr_invitados_token: string | null;
+  muro_fondo_url?: string | null;
+  muro_ocultar_banner?: boolean | null;
+  muro_qr_flotante?: boolean | null;
 }
 
 interface ActiveGameState {

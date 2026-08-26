@@ -50,6 +50,9 @@ export interface EventDetails {
   precio_pagado: number;
   payment_link?: string | null;
   pago_estado?: string | null;
+  muro_fondo_url?: string | null;
+  muro_ocultar_banner?: boolean | null;
+  muro_qr_flotante?: boolean | null;
 }
 
 export function useEventDetails(eventId: string | undefined) {

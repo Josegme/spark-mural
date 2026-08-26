@@ -5,6 +5,7 @@
 
 import { useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { MuroLayout } from '@/components/layout';
 import { MuroBanner, MuroCarousel, MuroMessages, MuroGameOverlay } from '@/components/muro';
 import { useMuroRealtime } from '@/hooks/useMuroRealtime';
@@ -83,20 +84,37 @@ export default function MuroPage() {
 
   // Usar qr_invitados_token para el QR de subida (consistente con el modal)
   const uploadToken = event?.qr_invitados_token || token || '';
+  const fondoUrl = event.muro_fondo_url || null;
+  const ocultarBanner = !!event.muro_ocultar_banner;
+  const mostrarQrFlotante = event.muro_qr_flotante !== false && ocultarBanner;
 
   return (
     <MuroLayout>
-      <div className="flex flex-row h-screen">
+      {/* Fondo personalizado a pantalla completa */}
+      {fondoUrl && (
+        <div className="fixed inset-0 z-0">
+          <div
+            className="absolute inset-0 bg-center bg-cover"
+            style={{ backgroundImage: `url(${fondoUrl})` }}
+          />
+          <div className="absolute inset-0 bg-black/25" />
+        </div>
+      )}
+
+      <div className="relative z-10 flex flex-row h-screen">
         {/* Banner lateral izquierdo */}
-        <MuroBanner
-          eventName={event.nombre}
-          eventType={event.tipo}
-          logoUrl={event.logo_url}
-          bannerColor={event.color_banner}
-          uploadToken={uploadToken}
-          totalPhotos={totalPhotos}
-          totalMessages={totalMessages}
-        />
+        {!ocultarBanner && (
+          <MuroBanner
+            eventName={event.nombre}
+            eventType={event.tipo}
+            logoUrl={event.logo_url}
+            bannerColor={event.color_banner}
+            uploadToken={uploadToken}
+            totalPhotos={totalPhotos}
+            totalMessages={totalMessages}
+          />
+        )}
+
 
         {/* Área principal: Carrusel de FOTOS + Mensajes flotantes */}
         <div className="flex-1 relative overflow-hidden">
@@ -134,10 +152,25 @@ export default function MuroPage() {
             contents={photoContents}
             currentIndex={currentIndex}
             isPremium={event.es_premium}
+            transparentBg={!!fondoUrl}
           />
           
           {/* Mensajes flotantes alrededor de la foto */}
           {!isEventPaused && !activeGame && <MuroMessages messages={contents} />}
+
+          {/* QR flotante (cuando la barra lateral está oculta) */}
+          {mostrarQrFlotante && !activeGame && (
+            <div className="absolute bottom-6 right-6 z-30 flex flex-col items-center gap-1 rounded-2xl bg-white/95 p-3 shadow-2xl">
+              <QRCodeSVG
+                value={`${window.location.origin}/subir/${uploadToken}`}
+                size={92}
+                bgColor="#ffffff"
+                fgColor="#000000"
+                level="M"
+              />
+              <span className="text-[11px] font-semibold text-black/70">¡Subí tu foto!</span>
+            </div>
+          )}
         </div>
       </div>
     </MuroLayout>

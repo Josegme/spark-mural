@@ -12,9 +12,11 @@ interface MuroCarouselProps {
   contents: MuroContent[];
   currentIndex: number;
   isPremium: boolean;
+  /** Si hay fondo personalizado, el carrusel no pinta negro */
+  transparentBg?: boolean;
 }
 
-export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarouselProps) {
+export function MuroCarousel({ contents, currentIndex, isPremium, transparentBg = false }: MuroCarouselProps) {
   const photos = contents.filter(c => c.tipo === 'foto');
   
   if (photos.length === 0) {
@@ -29,7 +31,7 @@ export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarousel
   if (!currentPhoto) return null;
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-black">
+    <div className={`relative w-full h-full overflow-hidden ${transparentBg ? 'bg-transparent' : 'bg-black'}`}>
       <AnimatePresence mode="wait">
         <motion.div
           key={currentPhoto.id}
@@ -39,7 +41,7 @@ export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarousel
           transition={{ duration: 0.6, ease: 'easeInOut' }}
           className="absolute inset-0"
         >
-          <FullscreenPhoto content={currentPhoto} isPremium={isPremium} />
+          <FullscreenPhoto content={currentPhoto} isPremium={isPremium} transparentBg={transparentBg} />
         </motion.div>
       </AnimatePresence>
 
@@ -70,7 +72,7 @@ export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarousel
 // Contador global de likes que nunca decrece entre fotos
 const globalLikesRef = { current: 0 };
 
-function FullscreenPhoto({ content, isPremium }: { content: MuroContent; isPremium: boolean }) {
+function FullscreenPhoto({ content, isPremium, transparentBg = false }: { content: MuroContent; isPremium: boolean; transparentBg?: boolean }) {
   const imageUrl = isPremium && content.url_ia ? content.url_ia : content.url_original;
   
   // Likes automáticos simulados - siempre incrementales
@@ -118,7 +120,11 @@ function FullscreenPhoto({ content, isPremium }: { content: MuroContent; isPremi
         <img
           src={imageUrl}
           alt={`Foto de ${content.invitado_nombre || 'invitado'}`}
-          className="w-full h-full object-contain bg-black"
+          className={
+            transparentBg
+              ? 'w-full h-full object-contain p-4 md:p-8 drop-shadow-2xl'
+              : 'w-full h-full object-contain bg-black'
+          }
           loading="eager"
           crossOrigin="anonymous"
           onError={(e) => {
@@ -131,7 +137,7 @@ function FullscreenPhoto({ content, isPremium }: { content: MuroContent; isPremi
       ) : null}
       
       <div 
-        className="photo-fallback w-full h-full flex-col items-center justify-center hidden bg-black"
+        className={`photo-fallback w-full h-full flex-col items-center justify-center hidden ${transparentBg ? 'bg-transparent' : 'bg-black'}`}
         style={{ display: !imageUrl ? 'flex' : 'none' }}
       >
         <Camera className="w-24 h-24 text-white/20 mb-4" />
