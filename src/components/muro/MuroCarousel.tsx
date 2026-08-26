@@ -41,7 +41,7 @@ export function MuroCarousel({ contents, currentIndex, isPremium, transparentBg 
           transition={{ duration: 0.6, ease: 'easeInOut' }}
           className="absolute inset-0"
         >
-          <FullscreenPhoto content={currentPhoto} isPremium={isPremium} />
+          <FullscreenPhoto content={currentPhoto} isPremium={isPremium} transparentBg={transparentBg} />
         </motion.div>
       </AnimatePresence>
 
