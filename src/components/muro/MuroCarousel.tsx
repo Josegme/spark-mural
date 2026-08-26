@@ -12,9 +12,11 @@ interface MuroCarouselProps {
   contents: MuroContent[];
   currentIndex: number;
   isPremium: boolean;
+  /** Si hay fondo personalizado, el carrusel no pinta negro */
+  transparentBg?: boolean;
 }
 
-export function MuroCarousel({ contents, currentIndex, isPremium }: MuroCarouselProps) {
+export function MuroCarousel({ contents, currentIndex, isPremium, transparentBg = false }: MuroCarouselProps) {
   const photos = contents.filter(c => c.tipo === 'foto');
   
   if (photos.length === 0) {
