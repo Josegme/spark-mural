@@ -137,7 +137,7 @@ function FullscreenPhoto({ content, isPremium, transparentBg = false }: { conten
       ) : null}
       
       <div 
-        className="photo-fallback w-full h-full flex-col items-center justify-center hidden bg-black"
+        className={`photo-fallback w-full h-full flex-col items-center justify-center hidden ${transparentBg ? 'bg-transparent' : 'bg-black'}`}
         style={{ display: !imageUrl ? 'flex' : 'none' }}
       >
         <Camera className="w-24 h-24 text-white/20 mb-4" />
