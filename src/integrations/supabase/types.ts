@@ -344,6 +344,9 @@ export type Database = {
           limite_subidas_por_invitado: number | null
           logo_url: string | null
           moderacion_activa: boolean
+          muro_fondo_url: string | null
+          muro_ocultar_banner: boolean
+          muro_qr_flotante: boolean
           nombre: string
           pasarela_pago: Database["public"]["Enums"]["payment_gateway"] | null
           payment_id: string | null
@@ -386,6 +389,9 @@ export type Database = {
           limite_subidas_por_invitado?: number | null
           logo_url?: string | null
           moderacion_activa?: boolean
+          muro_fondo_url?: string | null
+          muro_ocultar_banner?: boolean
+          muro_qr_flotante?: boolean
           nombre: string
           pasarela_pago?: Database["public"]["Enums"]["payment_gateway"] | null
           payment_id?: string | null
@@ -428,6 +434,9 @@ export type Database = {
           limite_subidas_por_invitado?: number | null
           logo_url?: string | null
           moderacion_activa?: boolean
+          muro_fondo_url?: string | null
+          muro_ocultar_banner?: boolean
+          muro_qr_flotante?: boolean
           nombre?: string
           pasarela_pago?: Database["public"]["Enums"]["payment_gateway"] | null
           payment_id?: string | null
@@ -1406,6 +1415,9 @@ export type Database = {
           id: string
           logo_url: string
           moderacion_activa: boolean
+          muro_fondo_url: string
+          muro_ocultar_banner: boolean
+          muro_qr_flotante: boolean
           nombre: string
           qr_invitados_token: string
           tema_ia: string
