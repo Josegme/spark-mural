@@ -87,8 +87,15 @@ export function EventSettings({ event, onUpdate, onDelete, isUpdating, isDeletin
 
       const { data } = supabase.storage.from('invitacion-tarjetas').getPublicUrl(path);
       setFondoUrl(data.publicUrl);
-      onUpdate({ muro_fondo_url: data.publicUrl });
+      setOcultarBanner(true);
+      setQrFlotante(true);
+      onUpdate({
+        muro_fondo_url: data.publicUrl,
+        muro_ocultar_banner: true,
+        muro_qr_flotante: true,
+      });
       toast.success('Fondo del muro actualizado');
+
     } catch (err) {
       console.error(err);
       toast.error('No se pudo subir el fondo');

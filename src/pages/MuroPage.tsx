@@ -82,11 +82,12 @@ export default function MuroPage() {
     );
   }
 
-  // Usar qr_invitados_token para el QR de subida (consistente con el modal)
   const uploadToken = event?.qr_invitados_token || token || '';
   const fondoUrl = event.muro_fondo_url || null;
-  const ocultarBanner = !!event.muro_ocultar_banner;
+  // Si hay fondo personalizado se oculta la barra lateral automáticamente
+  const ocultarBanner = !!event.muro_ocultar_banner || !!fondoUrl;
   const mostrarQrFlotante = event.muro_qr_flotante !== false && ocultarBanner;
+
 
   return (
     <MuroLayout>
