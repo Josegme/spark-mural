@@ -72,7 +72,7 @@ export function MuroCarousel({ contents, currentIndex, isPremium, transparentBg 
 // Contador global de likes que nunca decrece entre fotos
 const globalLikesRef = { current: 0 };
 
-function FullscreenPhoto({ content, isPremium }: { content: MuroContent; isPremium: boolean }) {
+function FullscreenPhoto({ content, isPremium, transparentBg = false }: { content: MuroContent; isPremium: boolean; transparentBg?: boolean }) {
   const imageUrl = isPremium && content.url_ia ? content.url_ia : content.url_original;
   
   // Likes automáticos simulados - siempre incrementales
