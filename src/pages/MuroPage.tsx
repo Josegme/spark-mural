@@ -151,10 +151,25 @@ export default function MuroPage() {
             contents={photoContents}
             currentIndex={currentIndex}
             isPremium={event.es_premium}
+            transparentBg={!!fondoUrl}
           />
           
           {/* Mensajes flotantes alrededor de la foto */}
           {!isEventPaused && !activeGame && <MuroMessages messages={contents} />}
+
+          {/* QR flotante (cuando la barra lateral está oculta) */}
+          {mostrarQrFlotante && !activeGame && (
+            <div className="absolute bottom-6 right-6 z-30 flex flex-col items-center gap-1 rounded-2xl bg-white/95 p-3 shadow-2xl">
+              <QRCodeSVG
+                value={`${window.location.origin}/subir/${uploadToken}`}
+                size={92}
+                bgColor="#ffffff"
+                fgColor="#000000"
+                level="M"
+              />
+              <span className="text-[11px] font-semibold text-black/70">¡Subí tu foto!</span>
+            </div>
+          )}
         </div>
       </div>
     </MuroLayout>
