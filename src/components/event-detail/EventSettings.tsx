@@ -33,6 +33,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Image as ImageIcon, Upload, X } from 'lucide-react';
 import type { EventDetails } from '@/hooks/useEventDetails';
 import { useAuth } from '@/contexts/AuthContext';
 
