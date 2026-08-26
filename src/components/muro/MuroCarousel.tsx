@@ -120,7 +120,11 @@ function FullscreenPhoto({ content, isPremium, transparentBg = false }: { conten
         <img
           src={imageUrl}
           alt={`Foto de ${content.invitado_nombre || 'invitado'}`}
-          className="w-full h-full object-contain bg-black"
+          className={
+            transparentBg
+              ? 'w-full h-full object-contain p-4 md:p-8 drop-shadow-2xl'
+              : 'w-full h-full object-contain bg-black'
+          }
           loading="eager"
           crossOrigin="anonymous"
           onError={(e) => {
