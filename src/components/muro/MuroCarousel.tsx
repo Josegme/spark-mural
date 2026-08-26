@@ -31,7 +31,7 @@ export function MuroCarousel({ contents, currentIndex, isPremium, transparentBg 
   if (!currentPhoto) return null;
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-black">
+    <div className={`relative w-full h-full overflow-hidden ${transparentBg ? 'bg-transparent' : 'bg-black'}`}>
       <AnimatePresence mode="wait">
         <motion.div
           key={currentPhoto.id}
