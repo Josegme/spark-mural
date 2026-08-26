@@ -54,6 +54,52 @@ export function EventSettings({ event, onUpdate, onDelete, isUpdating, isDeletin
   }, [event.moderacion_activa]);
   const [uploadLimit, setUploadLimit] = useState(event.limite_subidas_por_invitado?.toString() || '');
   const [bannerColor, setBannerColor] = useState(event.color_banner || '#4c1d95');
+  const [fondoUrl, setFondoUrl] = useState<string | null>(event.muro_fondo_url ?? null);
+  const [ocultarBanner, setOcultarBanner] = useState(!!event.muro_ocultar_banner);
+  const [qrFlotante, setQrFlotante] = useState(event.muro_qr_flotante !== false);
+  const [uploadingFondo, setUploadingFondo] = useState(false);
+
+  useEffect(() => {
+    setFondoUrl(event.muro_fondo_url ?? null);
+    setOcultarBanner(!!event.muro_ocultar_banner);
+    setQrFlotante(event.muro_qr_flotante !== false);
+  }, [event.muro_fondo_url, event.muro_ocultar_banner, event.muro_qr_flotante]);
+
+  const handleFondoUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('El archivo debe ser una imagen');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error('La imagen no puede superar 8MB');
+      return;
+    }
+    setUploadingFondo(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${event.id}/muro-fondo-${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('invitacion-tarjetas')
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('invitacion-tarjetas').getPublicUrl(path);
+      setFondoUrl(data.publicUrl);
+      onUpdate({ muro_fondo_url: data.publicUrl });
+      toast.success('Fondo del muro actualizado');
+    } catch (err) {
+      console.error(err);
+      toast.error('No se pudo subir el fondo');
+    } finally {
+      setUploadingFondo(false);
+    }
+  };
+
+  const handleRemoveFondo = () => {
+    setFondoUrl(null);
+    onUpdate({ muro_fondo_url: null });
+    toast.success('Fondo eliminado');
+  };
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
 
