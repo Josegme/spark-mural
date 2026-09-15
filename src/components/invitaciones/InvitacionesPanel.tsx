@@ -59,6 +59,7 @@ export function InvitacionesPanel({ event }: Props) {
   const [tarjetaFormato, setTarjetaFormato] = useState<TarjetaFormato>(
     (event.invitacion_tarjeta_formato as TarjetaFormato) || 'post'
   );
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
 
   useEffect(() => {
