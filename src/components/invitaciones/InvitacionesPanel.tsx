@@ -13,8 +13,9 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
   Mail, QrCode, Users, CheckCircle2, ScanLine, Copy, Download, ExternalLink, Save, Loader2, Share2,
-  Image as ImageIcon, Upload, Trash2,
+  Image as ImageIcon, Upload, Trash2, Eye,
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useInvitacionesAdmin, useActivarInvitaciones, uploadTarjetaInvitacion } from '@/hooks/useInvitaciones';
 import { getCheckinUrl, getInvitacionUrl } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -58,6 +59,7 @@ export function InvitacionesPanel({ event }: Props) {
   const [tarjetaFormato, setTarjetaFormato] = useState<TarjetaFormato>(
     (event.invitacion_tarjeta_formato as TarjetaFormato) || 'post'
   );
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
 
   useEffect(() => {
@@ -293,9 +295,15 @@ export function InvitacionesPanel({ event }: Props) {
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Dimensiones recomendadas: {FORMATO_LABELS[tarjetaFormato].dims} px · máx 5 MB · PNG/JPG/WEBP
-                </p>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-xs text-muted-foreground">
+                    Dimensiones recomendadas: {FORMATO_LABELS[tarjetaFormato].dims} px · máx 5 MB · PNG/JPG/WEBP
+                  </p>
+                  <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+                    <Eye className="w-3.5 h-3.5 mr-1.5" /> Vista previa
+                  </Button>
+                </div>
+
 
                 {tarjetaUrl ? (
                   <div className="space-y-2">
@@ -350,6 +358,54 @@ export function InvitacionesPanel({ event }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Vista previa de la tarjeta</DialogTitle>
+            <DialogDescription>
+              Así se verá tu tarjeta en cada formato. Tocá un formato para seleccionarlo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-h-[65vh] overflow-y-auto p-1">
+            {(Object.keys(FORMATO_LABELS) as TarjetaFormato[]).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => { setTarjetaFormato(f); setPreviewOpen(false); }}
+                className={`text-left space-y-2 rounded-lg p-2 border transition-colors ${
+                  tarjetaFormato === f ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-muted/50'
+                }`}
+              >
+                <div className={`${FORMATO_LABELS[f].ratio} w-full rounded-lg overflow-hidden border bg-muted relative`}>
+                  {tarjetaUrl ? (
+                    <img src={tarjetaUrl} alt={`Tarjeta ${FORMATO_LABELS[f].label}`} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-muted">
+                      <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-2">
+                    <p className="text-white text-xs font-semibold leading-tight line-clamp-2">{event.nombre}</p>
+                    <p className="text-white/80 text-[10px]">
+                      {new Date(event.fecha_evento).toLocaleDateString('es-AR')}
+                      {event.hora_inicio ? ` · ${event.hora_inicio.slice(0, 5)}` : ''}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs font-medium">{FORMATO_LABELS[f].label}</p>
+                <p className="text-[11px] text-muted-foreground">{FORMATO_LABELS[f].dims} px</p>
+              </button>
+            ))}
+          </div>
+          {!tarjetaUrl && (
+            <p className="text-xs text-muted-foreground">
+              Todavía no subiste una imagen: se muestra un ejemplo con el nombre del evento.
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
+
 
       {/* Links */}
       {activa && linkInvitacion && (
