@@ -293,9 +293,15 @@ export function InvitacionesPanel({ event }: Props) {
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Dimensiones recomendadas: {FORMATO_LABELS[tarjetaFormato].dims} px · máx 5 MB · PNG/JPG/WEBP
-                </p>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-xs text-muted-foreground">
+                    Dimensiones recomendadas: {FORMATO_LABELS[tarjetaFormato].dims} px · máx 5 MB · PNG/JPG/WEBP
+                  </p>
+                  <Button type="button" size="sm" variant="outline" onClick={() => setPreviewOpen(true)}>
+                    <Eye className="w-3.5 h-3.5 mr-1.5" /> Vista previa
+                  </Button>
+                </div>
+
 
                 {tarjetaUrl ? (
                   <div className="space-y-2">
