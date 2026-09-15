@@ -13,8 +13,9 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
   Mail, QrCode, Users, CheckCircle2, ScanLine, Copy, Download, ExternalLink, Save, Loader2, Share2,
-  Image as ImageIcon, Upload, Trash2,
+  Image as ImageIcon, Upload, Trash2, Eye,
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useInvitacionesAdmin, useActivarInvitaciones, uploadTarjetaInvitacion } from '@/hooks/useInvitaciones';
 import { getCheckinUrl, getInvitacionUrl } from '@/lib/utils';
 import { toast } from 'sonner';
