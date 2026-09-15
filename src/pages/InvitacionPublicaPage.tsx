@@ -196,13 +196,6 @@ export default function InvitacionPublicaPage() {
                   </div>
                 )}
                 <div className="space-y-1.5">
-                  <Label htmlFor="restricciones">Restricciones alimentarias</Label>
-                  <Input id="restricciones" maxLength={300}
-                    placeholder="Vegetariano, sin TACC..."
-                    value={form.restricciones}
-                    onChange={e => setForm({ ...form, restricciones: e.target.value })} />
-                </div>
-                <div className="space-y-1.5">
                   <Label htmlFor="mensaje">Mensaje para el anfitrión</Label>
                   <Textarea id="mensaje" maxLength={500} rows={3}
                     value={form.mensaje} onChange={e => setForm({ ...form, mensaje: e.target.value })} />
