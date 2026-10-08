@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.send-invitacion-qr]
 verify_jwt = false
+
+[functions.notificar-cambio-fecha]
+verify_jwt = false
