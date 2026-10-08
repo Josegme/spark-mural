@@ -21,6 +21,7 @@ import { getCheckinUrl, getInvitacionUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import type { EventDetails } from '@/hooks/useEventDetails';
+import { ReprogramarEventoCard } from './ReprogramarEventoCard';
 
 interface Props {
   event: EventDetails & {
@@ -455,6 +456,18 @@ export function InvitacionesPanel({ event }: Props) {
           <StatCard icon={Users} label="Personas" value={totalPersonas} tone="text-primary" />
           <StatCard icon={ScanLine} label="Ingresaron" value={totalIngresos} tone="text-accent" />
         </div>
+      )}
+
+      {/* Reprogramar + aviso */}
+      {activa && (
+        <ReprogramarEventoCard
+          eventoId={event.id}
+          nombre={event.nombre}
+          fechaEvento={event.fecha_evento}
+          horaInicio={event.hora_inicio}
+          fechaLimiteRsvp={event.invitaciones_fecha_limite_rsvp ?? null}
+          invitados={invitaciones}
+        />
       )}
 
       {/* Lista */}
